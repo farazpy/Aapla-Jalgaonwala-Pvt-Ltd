@@ -114,9 +114,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ settings: initialSetti
           {subtitle}
         </p>
         <div className="pt-0.5">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50/90 border border-rose-200/80 text-xs sm:text-sm font-semibold text-[#9B111E]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#9B111E]" />
-            Helping woman achieve their dreams
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50/90 border border-rose-200/80 text-xs sm:text-sm font-semibold text-[#9B111E] shadow-2xs">
+            <Sparkles className="w-3.5 h-3.5 text-[#9B111E] animate-pulse" />
+            Empowering women to achieve their dreams
           </span>
         </div>
       </div>
