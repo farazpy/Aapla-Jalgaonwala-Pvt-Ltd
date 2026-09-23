@@ -61,7 +61,7 @@ export const AnnouncementBar: React.FC = () => {
         {/* Right Side: Email, Version & Support */}
         <div className="flex items-center justify-end gap-2.5 text-stone-100 text-[11px] sm:text-xs">
           <span className="hidden xl:inline-block px-1.5 py-0.2 bg-black/25 text-amber-200/90 text-[9.5px] font-bold rounded-md border border-amber-400/20 tracking-wider">
-            v1.4.0
+            v1.4.1
           </span>
           <a 
             href={`mailto:${emailDisplay}`} 

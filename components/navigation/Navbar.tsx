@@ -126,7 +126,7 @@ export const Navbar: React.FC = () => {
                     {storeTitle}
                   </span>
                   <span className="text-[9px] font-mono font-bold text-stone-400 bg-stone-100 border border-stone-200/80 px-1 py-0.2 rounded select-none">
-                    v1.4.0
+                    v1.4.1
                   </span>
                 </div>
                 <span className="text-[7.5px] xs:text-[8.5px] sm:text-[10px] font-semibold text-[#D9531E] tracking-widest uppercase truncate hidden xs:block">

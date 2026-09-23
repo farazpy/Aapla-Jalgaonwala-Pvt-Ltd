@@ -1,0 +1,14 @@
+name: Auto Deploy
+
+on:
+  push:
+    branches:
+      - main  # Trigger whenever you push to the 'main' branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger aaPanel Webhook
+        run: |
+          curl -k -s "https://74.208.133.80:9292/hook?access_key=GdmxzDK1PjZFt06HBrwPa0YTy8ZJXccnnx4c1U9NrhgQIm9x&site_id=21"
