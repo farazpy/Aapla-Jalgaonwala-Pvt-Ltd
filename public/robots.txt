@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /iframe/
+Disallow: /tracking/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /ref/
+
+Sitemap: https://aaplajalgaonwala.com/sitemap.xml

@@ -1,0 +1,16 @@
+{
+  "name": "Aapla Jalgaonwala",
+  "short_name": "AJW",
+  "description": "Authentic Khandeshi Banana Chips & Regional Snacks from Jalgaon",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FAF6ED",
+  "theme_color": "#9B111E",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

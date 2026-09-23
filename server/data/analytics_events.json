@@ -1,0 +1,17 @@
+[
+  {
+    "id": "ev_1788183504990_cx7bww",
+    "sessionId": "sid_1788165380799_kbzx9veqqqd3q2vd",
+    "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+    "eventName": "view_item",
+    "eventCategory": "ecommerce",
+    "path": "/product/black-pepper-flavour-banana-chips-aapla-jalgaonwala",
+    "targetId": "9",
+    "targetName": "Black Pepper Flavour Banana Chips | Aapla Jalgaonwala",
+    "value": 79,
+    "metadata": {
+      "category": "banana-chips"
+    },
+    "createdAt": "2026-08-31T13:38:24.990Z"
+  }
+]

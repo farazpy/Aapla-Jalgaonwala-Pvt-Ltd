@@ -1,0 +1,8 @@
+{
+  "name": "AJW Final Live Website",
+  "description": "Authentic Jalgaon taste with modern convenience. Premium banana chips, farsaan, masalas, and regional snacks with instant customer support assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,236 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-primary: #9B111E;
+    --color-primary-hover: #800A14;
+    --color-secondary: #D9531E;
+    --color-accent: #F59E0B;
+    --color-bg-cream: #FAFAF8;
+    --color-bg-warm: #FFFFFF;
+    --color-text-main: #1C1917;
+    --color-text-muted: #57534E;
+    --color-green-accent: #2D6A4F;
+  }
+
+  /* Metric override for system fallback font to match Plus Jakarta Sans bounding metrics exactly */
+  @font-face {
+    font-family: 'Plus Jakarta Sans Fallback';
+    src: local('BlinkMacSystemFont'), local('Segoe UI'), local('Roboto'), local('Helvetica Neue'), local('Arial');
+    ascent-override: 96%;
+    descent-override: 26%;
+    line-gap-override: 0%;
+    size-adjust: 100%;
+  }
+
+  body {
+    background-color: #FAFAF8;
+    color: #1C1917;
+    font-family: 'Plus Jakarta Sans', 'Plus Jakarta Sans Fallback', 'Mukta', 'Noto Sans Devanagari', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Universal interactive pointer cursor */
+  button,
+  a,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  select,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="switch"],
+  .cursor-pointer {
+    cursor: pointer !important;
+  }
+
+  button:disabled,
+  input:disabled,
+  select:disabled,
+  [disabled],
+  .cursor-not-allowed {
+    cursor: not-allowed !important;
+  }
+
+  /* Universal input, select, textarea and autofill styling - prevent blue tint and keep clean white background */
+  input,
+  textarea,
+  select {
+    background-color: #ffffff !important;
+    color: #1c1917;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  textarea:-webkit-autofill:active,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus,
+  select:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+    -webkit-text-fill-color: #1c1917 !important;
+    box-shadow: 0 0 0 1000px #ffffff inset !important;
+    background-color: #ffffff !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  input:focus,
+  input:active,
+  textarea:focus,
+  textarea:active,
+  select:focus,
+  select:active {
+    background-color: #ffffff !important;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F5F5F4;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9531E33;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D9531E66;
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(217, 83, 30, 0.12);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(155, 17, 30, 0.08);
+}
+
+/* Smooth hide scrollbars for horizontal carousels */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Google Places Autocomplete (.pac-container) High-Visibility Overlay */
+.pac-container {
+  z-index: 999999 !important;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+  border-radius: 1rem !important;
+  border: 1px solid rgba(217, 83, 30, 0.25) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  padding: 6px !important;
+  margin-top: 6px !important;
+  background-color: #ffffff !important;
+}
+
+.pac-item {
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  color: #1c1917 !important;
+  border-top: 1px solid #f5f5f4 !important;
+  cursor: pointer !important;
+  border-radius: 0.75rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.pac-item:first-child {
+  border-top: none !important;
+}
+
+.pac-item:hover, .pac-item-selected {
+  background-color: #fef3c7 !important;
+}
+
+.pac-icon {
+  margin-right: 10px !important;
+}
+
+.pac-item-query {
+  font-weight: 700 !important;
+  color: #9b111e !important;
+}
+
+/* Seamless Google Translation Engine Cleanup & Loader Suppression */
+[class*="VIpgJd"],
+[class*="goog-te-spinner"],
+[class*="goog-te-processing"],
+.goog-te-spinner-pos,
+.goog-te-spinner-animation,
+.goog-te-spinner,
+svg.goog-te-spinner,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf,
+.VIpgJd-ZVi9od-aZ2wEe-OiiCO,
+.VIpgJd-ZVi9od-aZ2wEe,
+.VIpgJd-yAWNEb-VIpgJd-fmcmS-sn54Q,
+iframe.goog-te-banner-frame,
+iframe.skiptranslate,
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame,
+.goog-te-banner,
+#goog-gt-tt,
+.goog-te-balloon-frame,
+#goog-gt-votingHiddenDiv {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  clip: rect(0, 0, 0, 0) !important;
+  position: absolute !important;
+  left: -9999px !important;
+  top: -9999px !important;
+  z-index: -9999 !important;
+}
+
+html {
+  top: 0px !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+.skiptranslate:not(.goog-te-combo) {
+  display: none !important;
+}
+
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+#google_translate_element {
+  display: none !important;
+}
+

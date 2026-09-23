@@ -1,0 +1,29 @@
+[
+  {
+    "id": "owner_1",
+    "name": "Faraz Khan",
+    "title": "Founder & Managing Director",
+    "bio": "Pioneering Khandeshi culinary heritage and authentic Jalgaon banana chips across India with stringent quality standards.",
+    "photoUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80",
+    "location": "Jalgaon & Pune",
+    "quote": "Bringing the authentic aroma and taste of Jalgaon bananas to every home in India.",
+    "role": "Founder & Visionary",
+    "socials": {
+      "linkedin": "https://linkedin.com",
+      "instagram": "https://instagram.com"
+    }
+  },
+  {
+    "id": "owner_2",
+    "name": "Mahesh Patil",
+    "title": "Co-Founder & Head of Production",
+    "bio": "Overseeing authentic stone-grinding of masalas and traditional frying recipes rooted in Khandesh traditions.",
+    "photoUrl": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80",
+    "location": "Jalgaon, Maharashtra",
+    "quote": "Tradition is our recipe, purity is our commitment.",
+    "role": "Master of Taste & Quality",
+    "socials": {
+      "linkedin": "https://linkedin.com"
+    }
+  }
+]

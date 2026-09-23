@@ -1,0 +1,62 @@
+[
+  {
+    "id": "32",
+    "slug": "diwali-special-offer-box-womens-business-group",
+    "name": "Diwali Special Offer Box – Aapla Jalgaonwala Women’s Business Group (Complete Diwali in One Box)",
+    "category": "combo-packs",
+    "categoryId": "combo-packs",
+    "categoryName": "Combo Packs & Gifting",
+    "description": "Complete Diwali in One Box! 🪔❤️ Specially curated by the Aapla Jalgaonwala Women’s Business Group.\n\nFarsan + Sweets + Firecrackers + Rangoli + Lakshmi Puja Essentials + Aapla Jalgaonwala Special = Everything you need for an auspicious and joyous Diwali celebration! Available exclusively for the first 1,000 customers.\n\n🎁 WHAT'S INSIDE THIS COMPLETE DIWALI BOX:\n\n1️⃣ 🥣 Homemade Diwali Farsan (Total 4.5 kg):\n• Chakli — 500 g\n• Chivda — 2 kg\n• Shankarpale — 500 g\n• Karanji — 500 g\n• Anarse — 500 g\n• Bhakarwadi — 500 g\n\n2️⃣ 🍬 Traditional Homemade Sweets (Total 2.5 kg):\n• Besan Ladoo — 250 g\n• Motichoor Ladoo — 250 g\n• Gulab Jamun — 1 kg\n• Rasgulla — 1 kg\n\n3️⃣ 🌶️ Aapla Jalgaonwala Special:\n• Special Chivda\n• 1 Time Family Masala\n\n4️⃣ 🪔 Complete Lakshmi Puja Kit:\n• Lakshmi Idol\n• Coconut, Betel Nut & Betel Leaves\n• Turmeric, Kumkum & Akshata\n• Camphor & Incense Sticks\n• Cotton Wicks\n• Other essential Puja items\n\n5️⃣ 🎆 Diwali Firecrackers:\n• Safe varieties suitable for children\n• Sparklers\n• Ground Spinners\n• Small Mixed Firecracker Box\n\n6️⃣ 🎨 Rangoli Kit:\n• Vibrant Rangoli Colors\n• Rangoli Designs / Stencils\n• Essential materials for Diwali decoration\n\n7️⃣ 🎁 Attractive Surprise Diwali Gift from Aapla Jalgaonwala\n\n💰 FLEXIBLE PAYMENT SCHEDULE (Total: ₹4,999/-):\n• 1️⃣ Booking Payment: ₹1,000/- at the time of booking to confirm your order (Non-refundable).\n• 2️⃣ Second Payment: ₹2,500/- before 1st October 2026.\n• 3️⃣ Final Payment: ₹1,499/- by 20th October 2026.\nTotal Offer Price: ₹1,000 + ₹2,500 + ₹1,499 = ₹4,999/- only!\n\n⚡ Limited Edition: Only for the First 1,000 Customers!\n👩 Orders and bookings are arranged through the Women’s Business Group.\n# With every order you place this Diwali, you will be supporting women and helping them build their own businesses. ❤️🙏",
+    "shortDescription": "Complete Diwali in One Box! 4.5kg+ Farsan, 2.5kg Sweets, Lakshmi Puja Kit, Safe Firecrackers, Rangoli Kit & Jalgaonwala Special Gifts curated by Women’s Business Group.",
+    "price": 4999,
+    "mrp": 6499,
+    "discount": 23,
+    "netQuantity": "Complete Box (approx 9.5 kg+ with Puja & Gift Kit)",
+    "flavour": "Festive Assorted Sweets & Savouries",
+    "tags": [
+      "Diwali Special",
+      "Women Business Group",
+      "Complete Diwali Box",
+      "Lakshmi Puja Kit",
+      "Diwali Farsan",
+      "Sweets & Ladoo",
+      "Firecrackers",
+      "Rangoli Kit",
+      "Festive Hamper",
+      "First 1000 Customers",
+      "Combo"
+    ],
+    "isFeatured": true,
+    "isBestSeller": true,
+    "isNew": true,
+    "isAvailable": true,
+    "stock": 1000,
+    "images": [
+      {
+        "id": "img-32-0",
+        "url": "https://res.cloudinary.com/xbtfj9zf/image/upload/v1788262602/cloudinary_assets/1788262600507_Diwali_Special_Box_Gift_Hamper.png",
+        "alt": "Diwali Special Offer Box – Aapla Jalgaonwala Women’s Business Group (Complete Diwali in One Box)",
+        "isPrimary": true
+      }
+    ],
+    "variants": [
+      {
+        "id": "var-diwali-booking",
+        "weight": "₹1,000 Booking Advance",
+        "price": 1000,
+        "mrp": 1000,
+        "stock": 1000
+      },
+      {
+        "id": "var-diwali-full",
+        "weight": "₹4,999 Full Payment",
+        "price": 4999,
+        "mrp": 6499,
+        "stock": 1000
+      }
+    ],
+    "ingredients": [],
+    "seoTitle": "Diwali Special Gift Box: Authentic Farsan & Sweets",
+    "seoDescription": "Order our Diwali Special Gift Box by Aapla Jalgaonwala. Get 4.5kg Farsan, 2.5kg Sweets, Puja kits & more. Celebrate with authentic taste. Buy your box today!"
+  }
+]
