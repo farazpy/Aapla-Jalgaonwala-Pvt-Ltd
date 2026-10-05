@@ -44,7 +44,22 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           return url;
         };
 
-        manifestLink.href = getSafeFaviconUrl(json.data?.siteWebmanifestUrl, '/favicons/site.webmanifest');
+        const getSafeManifestUrl = (url?: string, defaultPath: string = '/favicons/site.webmanifest') => {
+          if (!url || typeof url !== 'string' || !url.trim()) return defaultPath;
+          if (url.startsWith('http://') || url.startsWith('https://')) {
+            try {
+              const parsed = new URL(url);
+              if (parsed.origin !== window.location.origin) {
+                return defaultPath;
+              }
+            } catch {
+              return defaultPath;
+            }
+          }
+          return url;
+        };
+
+        manifestLink.href = getSafeManifestUrl(json.data?.siteWebmanifestUrl, '/favicons/site.webmanifest');
 
         // Ensure 96x96 PNG icon
         let icon96 = document.querySelector<HTMLLinkElement>("link[rel='icon'][sizes='96x96']");

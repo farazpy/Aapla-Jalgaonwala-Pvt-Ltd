@@ -35,7 +35,8 @@ import {
   ShieldCheck,
   UserCheck,
   Shield,
-  Bot
+  Bot,
+  Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/context/AuthContext';

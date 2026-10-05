@@ -443,191 +443,219 @@ export class CloudinaryMigrationService {
 
   /**
    * Replaces old Cloudinary URL with new TeleCloud S3 URL across all database tables & JSON storage files.
+   * STRICTLY scoped by item.type and item.entityId to guarantee zero cross-contamination
+   * (e.g., partner passbooks will NEVER touch products or categories).
    */
   private static async updateReferenceInDatabaseAndJson(oldUrl: string, newUrl: string, item: CloudinaryMigrationItem): Promise<void> {
+    if (!oldUrl || !newUrl || oldUrl === newUrl) return;
     const pool = getDbPool();
 
-    // A. Update Products
-    try {
-      const products = await readJson<any[]>('products.json', []);
-      let updatedProd = false;
-      for (const p of products) {
-        if (p.imageUrl === oldUrl) { p.imageUrl = newUrl; updatedProd = true; }
-        if (p.hoverImageUrl === oldUrl) { p.hoverImageUrl = newUrl; updatedProd = true; }
-        if (Array.isArray(p.images)) {
-          p.images.forEach((imgObj: any) => {
-            if (typeof imgObj === 'string' && imgObj === oldUrl) {
-              imgObj = newUrl;
-              updatedProd = true;
-            } else if (imgObj && imgObj.url === oldUrl) {
-              imgObj.url = newUrl;
-              updatedProd = true;
+    // A. Update Products ONLY when item.type === 'products'
+    if (item.type === 'products') {
+      try {
+        const products = await readJson<any[]>('products.json', []);
+        let updatedProd = false;
+        for (const p of products) {
+          if (String(p.id) === String(item.entityId) || p.imageUrl === oldUrl || p.hoverImageUrl === oldUrl) {
+            if (p.imageUrl === oldUrl) { p.imageUrl = newUrl; updatedProd = true; }
+            if (p.hoverImageUrl === oldUrl) { p.hoverImageUrl = newUrl; updatedProd = true; }
+            if (Array.isArray(p.images)) {
+              p.images.forEach((imgObj: any) => {
+                if (typeof imgObj === 'string' && imgObj === oldUrl) {
+                  imgObj = newUrl;
+                  updatedProd = true;
+                } else if (imgObj && imgObj.url === oldUrl) {
+                  imgObj.url = newUrl;
+                  updatedProd = true;
+                }
+              });
             }
+          }
+        }
+        if (updatedProd) {
+          await writeJson('products.json', products);
+          ProductRepository.clearCache();
+        }
+
+        if (pool) {
+          await pool.query('UPDATE products SET image_url = ? WHERE image_url = ? AND id = ?', [newUrl, oldUrl, item.entityId]).catch(async () => {
+            await pool.query('UPDATE products SET image_url = ? WHERE image_url = ?', [newUrl, oldUrl]).catch(() => {});
+          });
+          await pool.query('UPDATE products SET hover_image_url = ? WHERE hover_image_url = ? AND id = ?', [newUrl, oldUrl, item.entityId]).catch(async () => {
+            await pool.query('UPDATE products SET hover_image_url = ? WHERE hover_image_url = ?', [newUrl, oldUrl]).catch(() => {});
+          });
+          await pool.query('UPDATE product_images SET url = ? WHERE url = ?', [newUrl, oldUrl]).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[MigrationRef] Error updating products reference:', err);
+      }
+    }
+
+    // B. Update Categories ONLY when item.type === 'categories'
+    if (item.type === 'categories') {
+      try {
+        const categories = await readJson<any[]>('categories.json', []);
+        let updatedCat = false;
+        for (const c of categories) {
+          if (String(c.id) === String(item.entityId) || c.image === oldUrl) {
+            if (c.image === oldUrl) {
+              c.image = newUrl;
+              updatedCat = true;
+            }
+          }
+        }
+        if (updatedCat) {
+          await writeJson('categories.json', categories);
+          CategoryRepository.clearCache();
+        }
+
+        if (pool) {
+          await pool.query('UPDATE categories SET image = ? WHERE image = ? AND id = ?', [newUrl, oldUrl, item.entityId]).catch(async () => {
+            await pool.query('UPDATE categories SET image = ? WHERE image = ?', [newUrl, oldUrl]).catch(() => {});
           });
         }
+      } catch (err) {
+        console.warn('[MigrationRef] Error updating categories reference:', err);
       }
-      if (updatedProd) {
-        await writeJson('products.json', products);
-        ProductRepository.clearCache();
-      }
-
-      if (pool) {
-        await pool.query('UPDATE products SET image_url = ? WHERE image_url = ?', [newUrl, oldUrl]).catch(() => {});
-        await pool.query('UPDATE products SET hover_image_url = ? WHERE hover_image_url = ?', [newUrl, oldUrl]).catch(() => {});
-        await pool.query('UPDATE product_images SET url = ? WHERE url = ?', [newUrl, oldUrl]).catch(() => {});
-      }
-    } catch (err) {
-      console.warn('[MigrationRef] Error updating products reference:', err);
     }
 
-    // B. Update Categories
-    try {
-      const categories = await readJson<any[]>('categories.json', []);
-      let updatedCat = false;
-      for (const c of categories) {
-        if (c.image === oldUrl) {
-          c.image = newUrl;
-          updatedCat = true;
+    // C. Update Settings ONLY when item.type === 'settings'
+    if (item.type === 'settings') {
+      try {
+        const settings = await readJson<any>('settings.json', {});
+        let updatedSettings = false;
+        for (const [k, v] of Object.entries(settings)) {
+          if (typeof v === 'string' && v === oldUrl) {
+            settings[k] = newUrl;
+            updatedSettings = true;
+          }
         }
+        if (updatedSettings) {
+          await SettingsRepository.updateSettings(settings);
+        }
+      } catch (err) {
+        console.warn('[MigrationRef] Error updating settings reference:', err);
       }
-      if (updatedCat) {
-        await writeJson('categories.json', categories);
-        CategoryRepository.clearCache();
-      }
-
-      if (pool) {
-        await pool.query('UPDATE categories SET image = ? WHERE image = ?', [newUrl, oldUrl]).catch(() => {});
-      }
-    } catch (err) {
-      console.warn('[MigrationRef] Error updating categories reference:', err);
     }
 
-    // C. Update Settings
-    try {
-      const settings = await readJson<any>('settings.json', {});
-      let updatedSettings = false;
-      for (const [k, v] of Object.entries(settings)) {
-        if (typeof v === 'string' && v === oldUrl) {
-          settings[k] = newUrl;
-          updatedSettings = true;
+    // D. Update Woman Graphics ONLY when item.type === 'woman_graphics'
+    if (item.type === 'woman_graphics') {
+      try {
+        const wgList = await readJson<any[]>('woman_graphics.json', []);
+        let updatedWg = false;
+        for (const wg of wgList) {
+          if (String(wg.id) === String(item.entityId) || wg.image_url === oldUrl || wg.imageUrl === oldUrl) {
+            if (wg.image_url === oldUrl) { wg.image_url = newUrl; updatedWg = true; }
+            if (wg.imageUrl === oldUrl) { wg.imageUrl = newUrl; updatedWg = true; }
+          }
         }
+        if (updatedWg) {
+          await writeJson('woman_graphics.json', wgList);
+        }
+
+        if (pool) {
+          await pool.query('UPDATE woman_graphics SET image_url = ? WHERE image_url = ?', [newUrl, oldUrl]).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[MigrationRef] Error updating woman_graphics reference:', err);
       }
-      if (updatedSettings) {
-        await SettingsRepository.updateSettings(settings);
-      }
-    } catch (err) {
-      console.warn('[MigrationRef] Error updating settings reference:', err);
     }
 
-    // D. Update Woman Graphics
-    try {
-      const wgList = await readJson<any[]>('woman_graphics.json', []);
-      let updatedWg = false;
-      for (const wg of wgList) {
-        if (wg.image_url === oldUrl || wg.imageUrl === oldUrl) {
-          wg.image_url = newUrl;
-          wg.imageUrl = newUrl;
-          updatedWg = true;
+    // E. Update Gallery Media ONLY when item.type === 'gallery'
+    if (item.type === 'gallery') {
+      try {
+        const gallery = await readJson<any[]>('gallery.json', []);
+        let updatedGal = false;
+        for (const g of gallery) {
+          if (String(g.id) === String(item.entityId) || g.url === oldUrl || g.imgUrl === oldUrl || g.img_url === oldUrl || g.imageUrl === oldUrl) {
+            if (g.url === oldUrl) g.url = newUrl;
+            if (g.imgUrl === oldUrl) g.imgUrl = newUrl;
+            if (g.img_url === oldUrl) g.img_url = newUrl;
+            if (g.imageUrl === oldUrl) g.imageUrl = newUrl;
+            updatedGal = true;
+          }
         }
-      }
-      if (updatedWg) {
-        await writeJson('woman_graphics.json', wgList);
-      }
+        if (updatedGal) {
+          await writeJson('gallery.json', gallery);
+        }
 
-      if (pool) {
-        await pool.query('UPDATE woman_graphics SET image_url = ? WHERE image_url = ?', [newUrl, oldUrl]).catch(() => {});
+        if (pool) {
+          await pool.query('UPDATE gallery_media SET img_url = ? WHERE img_url = ?', [newUrl, oldUrl]).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[MigrationRef] Error updating gallery reference:', err);
       }
-    } catch (err) {
-      console.warn('[MigrationRef] Error updating woman_graphics reference:', err);
     }
 
-    // E. Update Gallery Media
-    try {
-      const gallery = await readJson<any[]>('gallery.json', []);
-      let updatedGal = false;
-      for (const g of gallery) {
-        if (g.url === oldUrl || g.imgUrl === oldUrl || g.img_url === oldUrl || g.imageUrl === oldUrl) {
-          g.url = newUrl;
-          g.imgUrl = newUrl;
-          g.img_url = newUrl;
-          g.imageUrl = newUrl;
-          updatedGal = true;
+    // F. Update Business Partners Passbooks ONLY when item.type === 'partners'
+    if (item.type === 'partners') {
+      try {
+        const partners = await readJson<any[]>('business_partners.json', []);
+        let updatedPart = false;
+        for (const p of partners) {
+          if (String(p.id) === String(item.entityId) || p.documentUrl === oldUrl || p.document_url === oldUrl) {
+            if (p.documentUrl === oldUrl) { p.documentUrl = newUrl; updatedPart = true; }
+            if (p.document_url === oldUrl) { p.document_url = newUrl; updatedPart = true; }
+          }
         }
-      }
-      if (updatedGal) {
-        await writeJson('gallery.json', gallery);
-      }
+        if (updatedPart) {
+          await writeJson('business_partners.json', partners);
+        }
 
-      if (pool) {
-        await pool.query('UPDATE gallery_media SET img_url = ? WHERE img_url = ?', [newUrl, oldUrl]).catch(() => {});
+        if (pool) {
+          await pool.query('UPDATE business_partners SET document_url = ? WHERE document_url = ?', [newUrl, oldUrl]).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[MigrationRef] Error updating business_partners reference:', err);
       }
-    } catch (err) {
-      console.warn('[MigrationRef] Error updating gallery reference:', err);
     }
 
-    // F. Update Business Partners Passbooks
-    try {
-      const partners = await readJson<any[]>('business_partners.json', []);
-      let updatedPart = false;
-      for (const p of partners) {
-        if (p.documentUrl === oldUrl || p.document_url === oldUrl) {
-          p.documentUrl = newUrl;
-          p.document_url = newUrl;
-          updatedPart = true;
+    // G. Update Cloudinary Assets Library ONLY when item.type === 'cloudinary_assets'
+    if (item.type === 'cloudinary_assets') {
+      try {
+        const assets = await readJson<any[]>('cloudinary_assets.json', []);
+        let updatedAsset = false;
+        for (const a of assets) {
+          if (String(a.id) === String(item.entityId) || a.url === oldUrl) {
+            if (a.url === oldUrl) {
+              a.url = newUrl;
+              updatedAsset = true;
+            }
+          }
         }
-      }
-      if (updatedPart) {
-        await writeJson('business_partners.json', partners);
-      }
+        if (updatedAsset) {
+          await writeJson('cloudinary_assets.json', assets);
+        }
 
-      if (pool) {
-        await pool.query('UPDATE business_partners SET document_url = ? WHERE document_url = ?', [newUrl, oldUrl]).catch(() => {});
+        if (pool) {
+          await pool.query('UPDATE cloudinary_assets SET url = ? WHERE url = ?', [newUrl, oldUrl]).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[MigrationRef] Error updating cloudinary_assets reference:', err);
       }
-    } catch (err) {
-      console.warn('[MigrationRef] Error updating business_partners reference:', err);
     }
 
-    // G. Update Cloudinary Assets Library
-    try {
-      const assets = await readJson<any[]>('cloudinary_assets.json', []);
-      let updatedAsset = false;
-      for (const a of assets) {
-        if (a.url === oldUrl) {
-          a.url = newUrl;
-          updatedAsset = true;
+    // H. Update Owners Photos ONLY when item.type === 'owners' or key starts with 'owners_'
+    if (item.type === ('owners' as any) || item.id.startsWith('owners_')) {
+      try {
+        const owners = await readJson<any[]>('owners.json', []);
+        let updatedOwner = false;
+        for (const o of owners) {
+          if (String(o.id) === String(item.entityId) || o.photoUrl === oldUrl || o.photo_url === oldUrl) {
+            if (o.photoUrl === oldUrl) { o.photoUrl = newUrl; updatedOwner = true; }
+            if (o.photo_url === oldUrl) { o.photo_url = newUrl; updatedOwner = true; }
+          }
         }
-      }
-      if (updatedAsset) {
-        await writeJson('cloudinary_assets.json', assets);
-      }
-
-      if (pool) {
-        await pool.query('UPDATE cloudinary_assets SET url = ? WHERE url = ?', [newUrl, oldUrl]).catch(() => {});
-      }
-    } catch (err) {
-      console.warn('[MigrationRef] Error updating cloudinary_assets reference:', err);
-    }
-
-    // H. Update Owners Photos
-    try {
-      const owners = await readJson<any[]>('owners.json', []);
-      let updatedOwner = false;
-      for (const o of owners) {
-        if (o.photoUrl === oldUrl || o.photo_url === oldUrl) {
-          o.photoUrl = newUrl;
-          o.photo_url = newUrl;
-          updatedOwner = true;
+        if (updatedOwner) {
+          await writeJson('owners.json', owners);
         }
-      }
-      if (updatedOwner) {
-        await writeJson('owners.json', owners);
-      }
 
-      if (pool) {
-        await pool.query('UPDATE owners SET photo_url = ? WHERE photo_url = ?', [newUrl, oldUrl]).catch(() => {});
+        if (pool) {
+          await pool.query('UPDATE owners SET photo_url = ? WHERE photo_url = ?', [newUrl, oldUrl]).catch(() => {});
+        }
+      } catch (err) {
+        console.warn('[MigrationRef] Error updating owners reference:', err);
       }
-    } catch (err) {
-      console.warn('[MigrationRef] Error updating owners reference:', err);
     }
 
     // Invalidate JSON cache
