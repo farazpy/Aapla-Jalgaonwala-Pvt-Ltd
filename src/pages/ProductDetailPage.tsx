@@ -167,7 +167,14 @@ export function ProductDetailPage() {
   }
 
   const isWishlisted = isInWishlist(product.id);
-  const images = product.images && product.images.length > 0 ? product.images : [{ id: '1', url: 'https://picsum.photos/seed/jalgaon/800/800', alt: product.name }];
+  const images = (product.images && product.images.length > 0 ? product.images : [{ id: '1', url: 'https://picsum.photos/seed/jalgaon/800/800', alt: product.name }]).map(img => {
+    if (!img?.url || !product.updatedAt || img.url.includes('v=') || img.url.includes('_cb=')) return img;
+    const v = new Date(product.updatedAt).getTime();
+    return {
+      ...img,
+      url: v && !isNaN(v) ? (img.url.includes('?') ? `${img.url}&v=${v}` : `${img.url}?v=${v}`) : img.url
+    };
+  });
   const currentImage = images[selectedImageIndex]?.url || images[0].url;
   const isOutOfStock = Boolean(product.stock <= 0 || product.isAvailable === false);
 

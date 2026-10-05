@@ -26,7 +26,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
 
   const isWishlisted = isInWishlist(product.id);
   const isOutOfStock = Boolean(product.stock <= 0 || product.isAvailable === false);
-  const rawImage = (product.images && product.images[0]?.url) || product.image || 'https://picsum.photos/seed/jalgaon/400/400';
+  let rawImage = (product.images && product.images[0]?.url) || product.image || 'https://picsum.photos/seed/jalgaon/400/400';
+  if (product.updatedAt && !rawImage.includes('v=') && !rawImage.includes('_cb=')) {
+    const v = new Date(product.updatedAt).getTime();
+    if (v && !isNaN(v)) {
+      rawImage = rawImage.includes('?') ? `${rawImage}&v=${v}` : `${rawImage}?v=${v}`;
+    }
+  }
   const imageProps = getResponsiveImageProps(rawImage, 240, '(max-width: 640px) 180px, 240px');
 
   // Normalize variants and compute price range from 1st to last variation

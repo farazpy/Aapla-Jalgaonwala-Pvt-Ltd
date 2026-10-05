@@ -515,6 +515,8 @@ apiRouter.put('/products/:slug', async (req: Request, res: Response) => {
 
     const wasOutOfStock = (existing.stock <= 0) || (existing.isAvailable === false);
     const updated = await ProductRepository.update(existing.id, updateData);
+    ProductRepository.clearCache();
+    systemCache.flush('products');
 
     // If product was previously out of stock and is now restocked, send back-in-stock notification emails
     const isNowInStock = (updated.stock > 0) && (updated.isAvailable !== false);
@@ -4522,81 +4524,6 @@ apiRouter.get('/admin/db', async (_req: Request, res: Response) => {
     );
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to check database'));
-  }
-});
-
-apiRouter.get('/admin/db/env-diagnostic', async (_req: Request, res: Response) => {
-  try {
-    const fs = await import('fs');
-    const path = await import('path');
-    const cwd = process.cwd();
-    const envInCwd = path.resolve(cwd, '.env');
-    const envInParent = path.resolve(cwd, '..', '.env');
-    const envInDirname = path.resolve(__dirname, '..', '.env');
-
-    const config = getDbConfig();
-    const dbTest = await testDbConnection();
-
-    const recognizedKeys = [
-      'PORT',
-      'NODE_ENV',
-      'APP_URL',
-      'DB_HOST',
-      'DB_PORT',
-      'DB_USER',
-      'DB_NAME',
-      'DB_URL',
-      'ADMIN_PIN',
-      'ADMIN_NOTIFICATION_EMAIL',
-      'TELECLOUD_ENDPOINT_URL',
-      'TELECLOUD_API_KEY',
-      'TELECLOUD_WORKSPACE_ID',
-      'CLOUDINARY_CLOUD_NAME',
-      'CLOUDINARY_API_KEY',
-      'RAZORPAY_KEY_ID',
-      'RAZORPAY_KEY_SECRET',
-      'SMTP_HOST',
-      'SMTP_PORT',
-      'SMTP_USER',
-      'TELEGRAM_BOT_TOKEN',
-      'TELEGRAM_CHAT_ID',
-      'GOOGLE_CLIENT_ID',
-      'GEMINI_API_KEY'
-    ];
-
-    const activeKeysStatus: Record<string, { present: boolean; preview?: string }> = {};
-    for (const k of recognizedKeys) {
-      const val = process.env[k];
-      if (val !== undefined && val !== '') {
-        const isSecret = k.includes('PASS') || k.includes('SECRET') || k.includes('KEY');
-        activeKeysStatus[k] = {
-          present: true,
-          preview: isSecret ? `[SET - ${val.length} chars]` : val
-        };
-      } else {
-        activeKeysStatus[k] = { present: false };
-      }
-    }
-
-    return res.json(createSuccessResponse({
-      cwd,
-      candidateFiles: {
-        [envInCwd]: fs.existsSync(envInCwd),
-        [envInParent]: fs.existsSync(envInParent),
-        [envInDirname]: fs.existsSync(envInDirname)
-      },
-      dbConfig: {
-        host: config.host || '(empty)',
-        port: config.port,
-        user: config.user || '(empty)',
-        database: config.database || '(empty)',
-        hasPassword: Boolean(config.password)
-      },
-      dbConnectionTest: dbTest,
-      envVariables: activeKeysStatus
-    }));
-  } catch (err: any) {
-    return res.status(500).json(createErrorResponse(err.message || 'Diagnostic failed'));
   }
 });
 

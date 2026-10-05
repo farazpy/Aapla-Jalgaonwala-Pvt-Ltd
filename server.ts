@@ -240,10 +240,13 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.text({ limit: '20mb', type: ['text/*', 'application/x-ndjson', 'application/octet-stream'] }));
 
-// Static uploads & favicons serving with browser caching
+// Static uploads & favicons serving
 app.use('/uploads', express.static(uploadsDir, {
-  maxAge: '7d',
-  etag: true
+  maxAge: 0,
+  etag: true,
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+  }
 }));
 app.use('/favicons', express.static(faviconsDir, {
   maxAge: '7d',

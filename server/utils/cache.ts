@@ -31,13 +31,13 @@ class SystemCacheManager {
 
   // Configurable default TTLs in seconds
   private categoryTtls: Record<string, number> = {
-    products: 3600,     // 1 hour
-    categories: 7200,   // 2 hours
-    coupons: 1800,      // 30 mins
-    settings: 86400,    // 24 hours
-    seo: 86400,         // 24 hours
+    products: 15,       // 15 seconds fast in-memory cache, instantly flushed on any admin update
+    categories: 60,     // 1 min
+    coupons: 60,        // 1 min
+    settings: 60,       // 1 min
+    seo: 300,           // 5 mins
     images: 604800,     // 7 days
-    general: 1800       // 30 mins
+    general: 60         // 1 min
   };
 
   /**
@@ -233,14 +233,22 @@ class SystemCacheManager {
 
       if (cached) {
         res.setHeader('X-Cache-Status', 'HIT');
-        const ttl = customTtlSeconds ?? (this.categoryTtls[category] || 3600);
-        res.setHeader('Cache-Control', `public, max-age=${ttl}, s-maxage=${ttl}, stale-while-revalidate=60`);
+        if (category === 'products') {
+          res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+        } else {
+          const ttl = customTtlSeconds ?? (this.categoryTtls[category] || 60);
+          res.setHeader('Cache-Control', `public, max-age=${ttl}, s-maxage=${ttl}, stale-while-revalidate=60`);
+        }
         return res.json(cached);
       }
 
       res.setHeader('X-Cache-Status', 'MISS');
-      const ttl = customTtlSeconds ?? (this.categoryTtls[category] || 3600);
-      res.setHeader('Cache-Control', `public, max-age=${ttl}, s-maxage=${ttl}, stale-while-revalidate=60`);
+      if (category === 'products') {
+        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      } else {
+        const ttl = customTtlSeconds ?? (this.categoryTtls[category] || 60);
+        res.setHeader('Cache-Control', `public, max-age=${ttl}, s-maxage=${ttl}, stale-while-revalidate=60`);
+      }
 
       // Intercept res.json to capture response payload
       const originalJson = res.json.bind(res);

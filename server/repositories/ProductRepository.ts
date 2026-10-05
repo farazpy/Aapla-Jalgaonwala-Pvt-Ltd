@@ -111,6 +111,46 @@ export class ProductRepository {
     const categoryId = row.cat_id ? String(row.cat_id) : (row.category_id ? String(row.category_id) : undefined);
     const categoryName = row.cat_name || row.categoryName || categorySlug.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
 
+    const updatedAtTimestamp = row.updated_at
+      ? new Date(row.updated_at).getTime()
+      : (row.updatedAt ? new Date(row.updatedAt).getTime() : undefined);
+    const updatedAtStr = row.updated_at
+      ? new Date(row.updated_at).toISOString()
+      : (row.updatedAt || undefined);
+    const createdAtStr = row.created_at
+      ? new Date(row.created_at).toISOString()
+      : (row.createdAt || undefined);
+
+    // Apply cache-busting timestamp version to image URLs so browsers fetch the latest updated image
+    if (updatedAtTimestamp && images.length > 0) {
+      images = images.map(img => {
+        if (!img || !img.url) return img;
+        let url = String(img.url);
+        // Don't duplicate if already present
+        if (!url.includes('v=') && !url.includes('_cb=')) {
+          url = url.includes('?') ? `${url}&v=${updatedAtTimestamp}` : `${url}?v=${updatedAtTimestamp}`;
+        }
+        return {
+          ...img,
+          url
+        };
+      });
+    }
+
+    if (updatedAtTimestamp && comboImages) {
+      const freshCombo: Record<string, string> = {};
+      for (const [k, v] of Object.entries(comboImages)) {
+        if (typeof v === 'string' && !v.includes('v=') && !v.includes('_cb=')) {
+          freshCombo[k] = v.includes('?') ? `${v}&v=${updatedAtTimestamp}` : `${v}?v=${updatedAtTimestamp}`;
+        } else {
+          freshCombo[k] = v;
+        }
+      }
+      comboImages = freshCombo;
+    }
+
+    const primaryImageUrl = images[0]?.url || (row.image ? String(row.image) : undefined);
+
     return {
       id: String(row.id),
       slug: row.slug,
@@ -132,12 +172,16 @@ export class ProductRepository {
       isNew: Boolean(row.is_new ?? row.isNew),
       isAvailable: Boolean(row.is_available ?? row.isAvailable ?? true),
       stock: Number(row.stock || 100),
+      image: primaryImageUrl,
+      imageUrl: primaryImageUrl,
       images,
       variants: variants.length > 0 ? variants : undefined,
       ingredients,
       seoTitle: row.seo_title || row.seoTitle,
       seoDescription: row.seo_description || row.seoDescription,
       comboImages,
+      createdAt: createdAtStr,
+      updatedAt: updatedAtStr,
       _is_fake: (row._is_fake === 1 || row._is_fake === true) ? 1 : 0
     } as any;
   }
