@@ -18,6 +18,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      'react': path.resolve(__dirname, './node_modules/react'),
+      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
       'next/image': path.resolve(__dirname, './src/components/ui/Image.tsx'),
       'next/link': path.resolve(__dirname, './src/lib/linkCompat.tsx'),
       'next/navigation': path.resolve(__dirname, './src/lib/navCompat.tsx'),
