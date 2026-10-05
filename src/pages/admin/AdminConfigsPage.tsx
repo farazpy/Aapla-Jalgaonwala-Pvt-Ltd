@@ -86,8 +86,18 @@ export default function AdminConfigsPage() {
   const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [showTelegramToken, setShowTelegramToken] = useState(false);
   const [showRazorpaySecret, setShowRazorpaySecret] = useState(false);
+  const [showGoogleClientSecret, setShowGoogleClientSecret] = useState(false);
   const [showCloudinarySecret, setShowCloudinarySecret] = useState(false);
   const [showTeleCloudApiKey, setShowTeleCloudApiKey] = useState(false);
+
+  // Razorpay test state
+  const [isTestingRazorpay, setIsTestingRazorpay] = useState(false);
+  const [razorpayTestResult, setRazorpayTestResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Google OAuth test state
+  const [isTestingGoogleAuth, setIsTestingGoogleAuth] = useState(false);
+  const [googleAuthTestResult, setGoogleAuthTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [copiedRedirectUri, setCopiedRedirectUri] = useState(false);
 
   // Video Management State
   const [videoList, setVideoList] = useState<VideoItem[]>([]);
@@ -137,6 +147,11 @@ export default function AdminConfigsPage() {
     enableCod: true,
     razorpayKeyId: '',
     razorpayKeySecret: '',
+
+    // Google Sign-In & Mobile App OAuth
+    enableGoogleAuth: true,
+    googleClientId: '',
+    googleClientSecret: '',
 
     // Google Maps
     googleMapsApiKey: ''
@@ -224,13 +239,38 @@ export default function AdminConfigsPage() {
     }
   };
 
+  const getAdminAuthHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (typeof window !== 'undefined') {
+      const authToken = localStorage.getItem('ajw_auth_token') || localStorage.getItem('token') || localStorage.getItem('ajw_admin_pin_token') || '';
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      const adminUser = localStorage.getItem('ajw_user') || localStorage.getItem('user');
+      if (adminUser) {
+        try {
+          const u = JSON.parse(adminUser);
+          if (u.id) headers['x-user-id'] = u.id;
+        } catch {}
+      }
+    }
+    return headers;
+  };
+
   const fetchConfigs = async () => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const res = await fetch('/api/settings');
-      const json = await res.json();
-      if (json.success && json.data) {
+      const adminHeaders = getAdminAuthHeaders();
+      let res = await fetch('/api/admin/settings', { headers: adminHeaders });
+      let json = await res.json().catch(() => null);
+      if (!json || !json.success) {
+        res = await fetch('/api/settings', { headers: adminHeaders });
+        json = await res.json().catch(() => null);
+      }
+      if (json && json.success && json.data) {
         setForm(prev => ({ ...prev, ...json.data }));
       }
     } catch (err: any) {
@@ -248,26 +288,120 @@ export default function AdminConfigsPage() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/settings', {
+      const adminHeaders = getAdminAuthHeaders();
+      let res = await fetch('/api/admin/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: adminHeaders,
         body: JSON.stringify(form)
       });
-      const json = await res.json().catch(() => ({ success: false, error: 'Server returned non-JSON response' }));
+      let json = await res.json().catch(() => null);
+      if (!json || !json.success) {
+        res = await fetch('/api/settings', {
+          method: 'PUT',
+          headers: adminHeaders,
+          body: JSON.stringify(form)
+        });
+        json = await res.json().catch(() => ({ success: false, error: 'Server returned non-JSON response' }));
+      }
 
-      if (json.success) {
+      if (json && json.success) {
         setSaveSuccess(true);
+        if (json.data) {
+          setForm(prev => ({ ...prev, ...json.data }));
+        }
         setTimeout(() => setSaveSuccess(false), 4000);
       } else {
-        const errText = typeof json.error === 'string'
+        const errText = typeof json?.error === 'string'
           ? json.error
-          : (json.error?.message || json.message || 'Failed to update system configurations.');
+          : (json?.error?.message || json?.message || 'Failed to update system configurations.');
         setErrorMessage(String(errText));
       }
     } catch (err: any) {
       setErrorMessage(typeof err?.message === 'string' ? err.message : 'Error occurred while saving configurations.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleTestRazorpay = async () => {
+    setIsTestingRazorpay(true);
+    setRazorpayTestResult(null);
+    try {
+      const res = await fetch('/api/admin/test-razorpay', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({
+          keyId: form.razorpayKeyId,
+          keySecret: form.razorpayKeySecret
+        })
+      });
+      const json = await res.json().catch(() => ({
+        success: false,
+        error: { message: `Server error (HTTP ${res.status}).` }
+      }));
+
+      if (json.success) {
+        setRazorpayTestResult({
+          success: true,
+          message: json.message || 'Razorpay credentials verified successfully! Live API connection established.'
+        });
+      } else {
+        const errText = typeof json.error === 'string'
+          ? json.error
+          : (json.error?.message || json.message || 'Razorpay connection test failed.');
+        setRazorpayTestResult({
+          success: false,
+          message: String(errText)
+        });
+      }
+    } catch (err: any) {
+      setRazorpayTestResult({
+        success: false,
+        message: typeof err?.message === 'string' ? err.message : 'Connection error while testing Razorpay.'
+      });
+    } finally {
+      setIsTestingRazorpay(false);
+    }
+  };
+
+  const handleTestGoogleAuth = async () => {
+    setIsTestingGoogleAuth(true);
+    setGoogleAuthTestResult(null);
+    try {
+      const res = await fetch('/api/admin/test-google-auth', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({
+          clientId: form.googleClientId,
+          clientSecret: form.googleClientSecret
+        })
+      });
+      const json = await res.json().catch(() => ({
+        success: false,
+        error: { message: `Server error (HTTP ${res.status}).` }
+      }));
+
+      if (json.success) {
+        setGoogleAuthTestResult({
+          success: true,
+          message: json.message || 'Google OAuth credentials format verified and Google OpenID Discovery reachable.'
+        });
+      } else {
+        const errText = typeof json.error === 'string'
+          ? json.error
+          : (json.error?.message || json.message || 'Google OAuth test failed.');
+        setGoogleAuthTestResult({
+          success: false,
+          message: String(errText)
+        });
+      }
+    } catch (err: any) {
+      setGoogleAuthTestResult({
+        success: false,
+        message: typeof err?.message === 'string' ? err.message : 'Connection error while testing Google OAuth.'
+      });
+    } finally {
+      setIsTestingGoogleAuth(false);
     }
   };
 
@@ -375,26 +509,6 @@ export default function AdminConfigsPage() {
       }
     }
     return String(err);
-  };
-
-  const getAdminAuthHeaders = (): Record<string, string> => {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json'
-    };
-    if (typeof window !== 'undefined') {
-      const authToken = localStorage.getItem('ajw_auth_token') || localStorage.getItem('token') || localStorage.getItem('ajw_admin_pin_token') || '';
-      if (authToken) {
-        headers['Authorization'] = `Bearer ${authToken}`;
-      }
-      const adminUser = localStorage.getItem('ajw_user') || localStorage.getItem('user');
-      if (adminUser) {
-        try {
-          const u = JSON.parse(adminUser);
-          if (u.id) headers['x-user-id'] = u.id;
-        } catch {}
-      }
-    }
-    return headers;
   };
 
   const handleTestStorage = async () => {
@@ -964,6 +1078,7 @@ export default function AdminConfigsPage() {
                     placeholder="rzp_live_xxxxxxxx or rzp_test_xxxxxxxx"
                     className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-[#9B111E]"
                   />
+                  <p className="mt-1 text-[11px] text-stone-500">From Razorpay Dashboard → Settings → API Keys</p>
                 </div>
 
                 <div>
@@ -984,8 +1099,36 @@ export default function AdminConfigsPage() {
                       {showRazorpaySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
+                  <p className="mt-1 text-[11px] text-stone-500">Stored safely in MySQL & used for webhook/payment verification</p>
                 </div>
               </div>
+
+              {/* Razorpay Test Connection Button */}
+              <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-stone-50/80 p-3.5 rounded-xl border border-stone-200/80">
+                <div className="text-[11px] text-stone-600">
+                  <span className="font-bold text-stone-800">Verify Gateway:</span> Test your Key ID and Secret against Razorpay's live API.
+                </div>
+                <button
+                  type="button"
+                  onClick={handleTestRazorpay}
+                  disabled={isTestingRazorpay || !form.razorpayKeyId}
+                  className="px-3.5 py-1.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold rounded-lg flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shrink-0"
+                >
+                  {isTestingRazorpay ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />}
+                  <span>{isTestingRazorpay ? 'Verifying...' : 'Test Razorpay Connection'}</span>
+                </button>
+              </div>
+
+              {razorpayTestResult && (
+                <div
+                  className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 ${
+                    razorpayTestResult.success ? 'bg-emerald-50 text-emerald-950 border-emerald-200' : 'bg-rose-50 text-rose-950 border-rose-200'
+                  }`}
+                >
+                  {razorpayTestResult.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />}
+                  <span className="font-medium leading-relaxed">{razorpayTestResult.message}</span>
+                </div>
+              )}
 
               {/* Cash on Delivery (COD) Payment Gateway Option */}
               <div className="pt-5 border-t border-stone-100">
@@ -1026,6 +1169,142 @@ export default function AdminConfigsPage() {
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* SECTION 4.5: GOOGLE SIGN-IN & MOBILE APP OAUTH CONFIGURATION */}
+            <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-6 space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-stone-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                    <Globe className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black text-stone-900 flex items-center gap-2">
+                      <span>Google Sign-In & Mobile App OAuth</span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                        form.googleClientId ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {form.googleClientId ? 'Configured' : 'Needs Setup'}
+                      </span>
+                    </h2>
+                    <p className="text-[11px] text-stone-500">
+                      Store Google OAuth client credentials for 1-Tap Google login, popup login, and Android App authentication.
+                    </p>
+                  </div>
+                </div>
+
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.enableGoogleAuth !== false}
+                    onChange={(e) => setForm({ ...form, enableGoogleAuth: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-stone-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  <span className="ml-2 text-xs font-bold text-stone-700">
+                    {form.enableGoogleAuth !== false ? 'Enabled' : 'Disabled'}
+                  </span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Google OAuth Client ID</label>
+                  <input
+                    type="text"
+                    value={form.googleClientId || ''}
+                    onChange={(e) => setForm({ ...form, googleClientId: e.target.value })}
+                    placeholder="xxxxxxxxxxxx-xxxxxxxxxxxxxxxx.apps.googleusercontent.com"
+                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 font-mono"
+                  />
+                  <p className="mt-1 text-[11px] text-stone-500">From Google Cloud Console → APIs & Services → Credentials</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">Google OAuth Client Secret</label>
+                  <div className="relative">
+                    <input
+                      type={showGoogleClientSecret ? 'text' : 'password'}
+                      value={form.googleClientSecret || ''}
+                      onChange={(e) => setForm({ ...form, googleClientSecret: e.target.value })}
+                      placeholder="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxx"
+                      className="w-full px-3.5 py-2 pr-10 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowGoogleClientSecret(!showGoogleClientSecret)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      {showGoogleClientSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-stone-500">Stored safely in MySQL & used for server-side authorization code exchange</p>
+                </div>
+              </div>
+
+              {/* Google OAuth Helper Configuration Guide */}
+              <div className="p-4 bg-blue-50/70 border border-blue-200/80 rounded-2xl space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-900">
+                  <HelpCircle className="w-4 h-4 text-blue-600" />
+                  <span>Google Cloud Console Setup Checklist:</span>
+                </div>
+                <div className="space-y-2 text-[11px] text-blue-950">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-white/80 p-2.5 rounded-xl border border-blue-200/60">
+                    <div>
+                      <span className="font-bold text-stone-800">Authorized JavaScript Origins:</span>
+                      <div className="font-mono text-stone-600 text-[10px] break-all">https://aaplajalgaonwala.com, {typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'}</div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 bg-white/80 p-2.5 rounded-xl border border-blue-200/60">
+                    <div>
+                      <span className="font-bold text-stone-800">Authorized Redirect URI:</span>
+                      <div className="font-mono text-stone-600 text-[10px] break-all">https://aaplajalgaonwala.com/auth/callback</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                          navigator.clipboard.writeText('https://aaplajalgaonwala.com/auth/callback');
+                          setCopiedRedirectUri(true);
+                          setTimeout(() => setCopiedRedirectUri(false), 2500);
+                        }
+                      }}
+                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer shrink-0 self-start sm:self-auto"
+                    >
+                      {copiedRedirectUri ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                      <span>{copiedRedirectUri ? 'Copied URI!' : 'Copy URI'}</span>
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-blue-800">
+                    📱 <strong>Android App Integration:</strong> Add an Android OAuth Client ID in the same Google Cloud project with package name <code>com.aaplajalgaonwala.app</code>. The backend will automatically recognize both web and app Google users.
+                  </p>
+                </div>
+              </div>
+
+              {/* Test Google OAuth Button */}
+              <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <p className="text-[11px] text-stone-500">Validate Google Client ID syntax and check connectivity to Google OpenID service.</p>
+                <button
+                  type="button"
+                  onClick={handleTestGoogleAuth}
+                  disabled={isTestingGoogleAuth || !form.googleClientId}
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shrink-0"
+                >
+                  {isTestingGoogleAuth ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
+                  <span>{isTestingGoogleAuth ? 'Testing Google OAuth...' : 'Test Google OAuth Setup'}</span>
+                </button>
+              </div>
+
+              {googleAuthTestResult && (
+                <div
+                  className={`p-3.5 rounded-xl border text-xs flex items-start gap-2.5 ${
+                    googleAuthTestResult.success ? 'bg-emerald-50 text-emerald-950 border-emerald-200' : 'bg-rose-50 text-rose-950 border-rose-200'
+                  }`}
+                >
+                  {googleAuthTestResult.success ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />}
+                  <span className="font-medium leading-relaxed">{googleAuthTestResult.message}</span>
+                </div>
+              )}
             </div>
 
             {/* SECTION 5: GOOGLE MAPS API */}

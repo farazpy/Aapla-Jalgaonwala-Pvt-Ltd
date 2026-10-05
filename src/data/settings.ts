@@ -60,6 +60,10 @@ export const initialSiteSettings: SiteSettings = {
   enableCod: true,
   razorpayKeyId: 'rzp_test_ajwKey123',
   razorpayKeySecret: 'ajwSecretKey9890',
+  enableGoogleAuth: true,
+  googleClientId: '',
+  googleClientSecret: '',
+  googleMapsApiKey: '',
   womenPartnerFee: 699,
   womenPartnerAutoApprove: true,
   shippingZones: [

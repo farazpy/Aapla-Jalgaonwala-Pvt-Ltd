@@ -52,6 +52,9 @@
   "enableCod": true,
   "razorpayKeyId": "rzp_live_TQ5cpGrMx0a1hK",
   "razorpayKeySecret": "PFhCNb6axriTnd81N2QcN0b8",
+  "enableGoogleAuth": true,
+  "googleClientId": "",
+  "googleClientSecret": "",
   "womenPartnerFee": 699,
   "womenPartnerAutoApprove": true,
   "shippingZones": [

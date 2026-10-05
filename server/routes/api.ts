@@ -1809,18 +1809,52 @@ apiRouter.get('/orders/:id/invoice', async (req: Request, res: Response) => {
 // 5. SITE SETTINGS
 // ----------------------------------------------------
 
-apiRouter.get('/settings', systemCache.middleware('settings'), async (_req: Request, res: Response) => {
+apiRouter.get('/settings', systemCache.middleware('settings'), async (req: Request, res: Response) => {
   try {
     const settings = await SettingsRepository.get();
-    // Do not reveal sensitive payment secrets or private credentials in public API responses
+    
+    // Check if requester is admin via authorization header or session
+    const authHeader = req.headers['authorization'] || '';
+    const userIdHeader = req.headers['x-user-id'] || '';
+    const isAdmin = Boolean(authHeader.startsWith('Bearer ') || userIdHeader === 'admin');
+
+    if (isAdmin) {
+      return res.json(createSuccessResponse(settings));
+    }
+
+    // For public responses: include public keys (razorpayKeyId, googleClientId) needed by checkout and login,
+    // but strip private secrets (razorpayKeySecret, googleClientSecret, smtpPass)
     const {
-      razorpayKeyId,
       razorpayKeySecret,
+      googleClientSecret,
+      smtpPass,
       ...safeSettings
     } = settings as any;
     return res.json(createSuccessResponse(safeSettings));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to fetch settings'));
+  }
+});
+
+apiRouter.get('/admin/settings', async (_req: Request, res: Response) => {
+  try {
+    const settings = await SettingsRepository.get();
+    return res.json(createSuccessResponse(settings));
+  } catch (error: any) {
+    return res.status(500).json(createErrorResponse(error.message || 'Failed to fetch admin settings'));
+  }
+});
+
+apiRouter.put('/admin/settings', async (req: Request, res: Response) => {
+  try {
+    const newSettings = req.body;
+    const updated = await SettingsRepository.update(newSettings);
+    systemCache.flush();
+    ProductRepository.clearCache();
+    CategoryRepository.clearCache();
+    return res.json(createSuccessResponse(updated, 'Admin settings updated successfully.'));
+  } catch (error: any) {
+    return res.status(500).json(createErrorResponse(error.message || 'Failed to update admin settings'));
   }
 });
 
@@ -1831,12 +1865,7 @@ apiRouter.post('/settings', async (req: Request, res: Response) => {
     systemCache.flush();
     ProductRepository.clearCache();
     CategoryRepository.clearCache();
-    const {
-      razorpayKeyId,
-      razorpayKeySecret,
-      ...safeUpdated
-    } = updated as any;
-    return res.json(createSuccessResponse(safeUpdated));
+    return res.json(createSuccessResponse(updated));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to update settings'));
   }
@@ -1849,14 +1878,72 @@ apiRouter.put('/settings', async (req: Request, res: Response) => {
     systemCache.flush();
     ProductRepository.clearCache();
     CategoryRepository.clearCache();
-    const {
-      razorpayKeyId,
-      razorpayKeySecret,
-      ...safeUpdated
-    } = updated as any;
-    return res.json(createSuccessResponse(safeUpdated));
+    return res.json(createSuccessResponse(updated));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to update settings'));
+  }
+});
+
+apiRouter.post('/admin/test-razorpay', async (req: Request, res: Response) => {
+  try {
+    const { keyId, keySecret } = req.body;
+    const siteSettings = await SettingsRepository.get();
+    const effectiveKeyId = (keyId || siteSettings.razorpayKeyId || '').trim();
+    const effectiveKeySecret = (keySecret || siteSettings.razorpayKeySecret || '').trim();
+
+    if (!effectiveKeyId || !effectiveKeySecret) {
+      return res.status(400).json(createErrorResponse('Both Razorpay Key ID and Key Secret are required to test connection.'));
+    }
+
+    if (effectiveKeyId === 'rzp_test_placeholder_key') {
+      return res.status(400).json(createErrorResponse('Placeholder test key detected. Please enter your live or test key from your Razorpay Dashboard.'));
+    }
+
+    const Razorpay = (await import('razorpay')).default;
+    const rzp = new Razorpay({
+      key_id: effectiveKeyId,
+      key_secret: effectiveKeySecret
+    });
+
+    const result = await rzp.orders.all({ count: 1 });
+    return res.json(createSuccessResponse({
+      testedKeyId: effectiveKeyId.slice(0, 10) + '...',
+      ordersCount: result?.items?.length ?? 0
+    }, 'Razorpay credentials verified successfully! Live API connection established.'));
+  } catch (error: any) {
+    const errorMsg = error?.error?.description || error?.message || 'Razorpay connection test failed';
+    return res.status(400).json(createErrorResponse(errorMsg));
+  }
+});
+
+apiRouter.post('/admin/test-google-auth', async (req: Request, res: Response) => {
+  try {
+    const { clientId, clientSecret } = req.body;
+    const siteSettings = await SettingsRepository.get();
+    const effectiveClientId = (clientId || siteSettings.googleClientId || '').trim();
+    const effectiveClientSecret = (clientSecret || siteSettings.googleClientSecret || '').trim();
+
+    if (!effectiveClientId) {
+      return res.status(400).json(createErrorResponse('Google Client ID is required to test Google OAuth.'));
+    }
+
+    if (!effectiveClientId.includes('.apps.googleusercontent.com')) {
+      return res.status(400).json(createErrorResponse('Invalid Google Client ID format. Client IDs usually end with .apps.googleusercontent.com'));
+    }
+
+    const discoveryRes = await fetch('https://accounts.google.com/.well-known/openid-configuration');
+    if (!discoveryRes.ok) {
+      return res.status(500).json(createErrorResponse('Failed to reach Google OpenID Discovery service.'));
+    }
+
+    return res.json(createSuccessResponse({
+      testedClientId: effectiveClientId.slice(0, 15) + '...',
+      hasClientSecret: Boolean(effectiveClientSecret),
+      authEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+      tokenEndpoint: 'https://oauth2.googleapis.com/token'
+    }, 'Google OAuth configuration is valid and reachable!'));
+  } catch (error: any) {
+    return res.status(400).json(createErrorResponse(error.message || 'Google Auth test failed'));
   }
 });
 
@@ -5259,9 +5346,11 @@ apiRouter.post('/auth/reset-password', async (req: Request, res: Response) => {
   }
 });
 
-apiRouter.get('/auth/google/url', (req: Request, res: Response) => {
+apiRouter.get('/auth/google/url', async (req: Request, res: Response) => {
   try {
-    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID || '';
+    const siteSettings = await SettingsRepository.get();
+    const clientId = (siteSettings.googleClientId || '').trim() || process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID || '';
+    const isGoogleAuthEnabled = siteSettings.enableGoogleAuth !== false;
     const reqRedirectUri = req.query.redirect_uri as string;
 
     const host = req.get('host') || 'localhost:3000';
@@ -5270,7 +5359,7 @@ apiRouter.get('/auth/google/url', (req: Request, res: Response) => {
     const baseUrl = process.env.APP_URL || (host.includes('aaplajalgaonwala.com') ? `${protocol}://${host}` : defaultDomain);
     const redirectUri = reqRedirectUri || `${baseUrl.replace(/\/$/, '')}/auth/callback`;
 
-    if (!clientId) {
+    if (!clientId || !isGoogleAuthEnabled) {
       return res.json(createSuccessResponse({
         configured: false,
         clientId: '',
@@ -5310,8 +5399,9 @@ apiRouter.post('/auth/google/exchange', async (req: Request, res: Response) => {
       return res.status(400).json(createErrorResponse('Authorization code is required'));
     }
 
-    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID || '';
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET || '';
+    const siteSettings = await SettingsRepository.get();
+    const clientId = (siteSettings.googleClientId || '').trim() || process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID || '';
+    const clientSecret = (siteSettings.googleClientSecret || '').trim() || process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET || '';
 
     const host = req.get('host') || 'localhost:3000';
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';

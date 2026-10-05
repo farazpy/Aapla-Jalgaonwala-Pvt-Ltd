@@ -333,8 +333,11 @@ export interface SiteSettings {
   razorpayKeySecret?: string;
   enableCod?: boolean;
 
-  // Google API Keys
+  // Google OAuth & API Keys
   googleMapsApiKey?: string;
+  googleClientId?: string;
+  googleClientSecret?: string;
+  enableGoogleAuth?: boolean;
 
   // Product Reviews & Moderation Settings
   reviewsEnabled?: boolean;
