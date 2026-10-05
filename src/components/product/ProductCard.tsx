@@ -26,7 +26,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) 
 
   const isWishlisted = isInWishlist(product.id);
   const isOutOfStock = Boolean(product.stock <= 0 || product.isAvailable === false);
-  let rawImage = (product.images && product.images[0]?.url) || product.image || 'https://picsum.photos/seed/jalgaon/400/400';
+  
+  // Strict Confidential Document Filter
+  const isConfidentialDoc = (url?: string): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    const lower = url.toLowerCase();
+    return (
+      lower.includes('partner_passbook') ||
+      lower.includes('passbook') ||
+      lower.includes('aadhaar') ||
+      lower.includes('pan_card') ||
+      lower.includes('kyc')
+    );
+  };
+
+  const safeImages = (product.images || []).filter(img => img && img.url && !isConfidentialDoc(img.url));
+  let rawImage = safeImages[0]?.url || (!isConfidentialDoc(product.image) ? product.image : undefined) || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=600&q=80';
   if (product.updatedAt && !rawImage.includes('v=') && !rawImage.includes('_cb=')) {
     const v = new Date(product.updatedAt).getTime();
     if (v && !isNaN(v)) {

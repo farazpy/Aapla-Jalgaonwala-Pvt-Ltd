@@ -94,7 +94,15 @@ function ShopContent() {
         if (maxPrice < 1000) params.set('maxPrice', maxPrice.toString());
         if (sortBy) params.set('sort', sortBy);
 
-        const res = await fetch(`/api/products?${params.toString()}`);
+        params.set('_t', Date.now().toString());
+
+        const res = await fetch(`/api/products?${params.toString()}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache'
+          }
+        });
         const json = await res.json();
         if (isMounted) {
           const list = json.data || (Array.isArray(json) ? json : []);

@@ -65,6 +65,23 @@ export class ProductRepository {
       images = [];
     }
 
+    // STRICT CONFIDENTIALITY & PRIVACY ENFORCEMENT:
+    // Confidential documents (such as partner bank passbooks, Aadhaar cards, KYC verification docs)
+    // MUST NEVER be included in product images, product gallery, or product responses under any circumstances.
+    const isConfidentialDoc = (url?: string): boolean => {
+      if (!url || typeof url !== 'string') return false;
+      const lower = url.toLowerCase();
+      return (
+        lower.includes('partner_passbook') ||
+        lower.includes('passbook') ||
+        lower.includes('aadhaar') ||
+        lower.includes('pan_card') ||
+        lower.includes('kyc')
+      );
+    };
+
+    images = images.filter(img => img && img.url && !isConfidentialDoc(img.url));
+
     let variants: ProductVariant[] = variantMap?.get(String(row.id)) || [];
     if (variants.length === 0 && row.variants) {
       try {

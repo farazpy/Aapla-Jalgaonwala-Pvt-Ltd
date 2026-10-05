@@ -4604,6 +4604,12 @@ apiRouter.post('/upload', safeUploadMiddleware, async (req: Request, res: Respon
     const useTeleCloud = await isTeleCloudConfiguredAsync();
     const useCloudinary = !useTeleCloud && await isCloudinaryConfiguredAsync();
 
+    const isConfidentialUpload =
+      targetFolder.toLowerCase().includes('passbook') ||
+      targetFolder.toLowerCase().includes('partner_passbook') ||
+      targetFolder.toLowerCase().includes('aadhaar') ||
+      targetFolder.toLowerCase().includes('kyc');
+
     // Process all uploaded files in parallel
     if (rawFiles.length > 0) {
       const uploadTasks = rawFiles.map(async (file) => {
@@ -4614,23 +4620,25 @@ apiRouter.post('/upload', safeUploadMiddleware, async (req: Request, res: Respon
               caption: uploadCaption
             });
 
-            await MediaRepository.create({
-              url: tResult.url,
-              imgUrl: tResult.url,
-              imageUrl: tResult.url,
-              title: file.originalname,
-              alt: file.originalname,
-              folder: targetFolder,
-              size: tResult.size,
-              mimeType: tResult.mimeType || 'image/png'
-            }).catch(err => console.warn('[MediaRepo Warning]', err));
+            if (!isConfidentialUpload) {
+              await MediaRepository.create({
+                url: tResult.url,
+                imgUrl: tResult.url,
+                imageUrl: tResult.url,
+                title: file.originalname,
+                alt: file.originalname,
+                folder: targetFolder,
+                size: tResult.size,
+                mimeType: tResult.mimeType || 'image/png'
+              }).catch(err => console.warn('[MediaRepo Warning]', err));
 
-            await CloudinaryAssetRepository.addAsset({
-              url: tResult.url,
-              name: file.originalname,
-              bytes: tResult.size,
-              format: tResult.mimeType?.split('/')[1] || 'png'
-            }).catch(err => console.warn('[AssetRepo Warning]', err));
+              await CloudinaryAssetRepository.addAsset({
+                url: tResult.url,
+                name: file.originalname,
+                bytes: tResult.size,
+                format: tResult.mimeType?.split('/')[1] || 'png'
+              }).catch(err => console.warn('[AssetRepo Warning]', err));
+            }
 
             return {
               filename: tResult.filename,
@@ -4667,18 +4675,20 @@ apiRouter.post('/upload', safeUploadMiddleware, async (req: Request, res: Respon
               format: 'webp'
             });
 
-            await MediaRepository.create({
-              url: processed.url,
-              imgUrl: processed.url,
-              imageUrl: processed.url,
-              title: file.originalname,
-              alt: file.originalname,
-              folder: targetFolder,
-              size: processed.size,
-              width: processed.width,
-              height: processed.height,
-              mimeType: 'image/webp'
-            }).catch(err => console.warn('[MediaRepo Warning]', err));
+            if (!isConfidentialUpload) {
+              await MediaRepository.create({
+                url: processed.url,
+                imgUrl: processed.url,
+                imageUrl: processed.url,
+                title: file.originalname,
+                alt: file.originalname,
+                folder: targetFolder,
+                size: processed.size,
+                width: processed.width,
+                height: processed.height,
+                mimeType: 'image/webp'
+              }).catch(err => console.warn('[MediaRepo Warning]', err));
+            }
 
             await CloudinaryAssetRepository.addAsset({
               url: processed.url,

@@ -167,7 +167,26 @@ export function ProductDetailPage() {
   }
 
   const isWishlisted = isInWishlist(product.id);
-  const images = (product.images && product.images.length > 0 ? product.images : [{ id: '1', url: 'https://picsum.photos/seed/jalgaon/800/800', alt: product.name }]).map(img => {
+
+  // Strict Confidential Document Filter
+  const isConfidentialDoc = (url?: string): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    const lower = url.toLowerCase();
+    return (
+      lower.includes('partner_passbook') ||
+      lower.includes('passbook') ||
+      lower.includes('aadhaar') ||
+      lower.includes('pan_card') ||
+      lower.includes('kyc')
+    );
+  };
+
+  const filteredRawImages = (product.images || []).filter(img => img && img.url && !isConfidentialDoc(img.url));
+  const rawList = filteredRawImages.length > 0
+    ? filteredRawImages
+    : [{ id: '1', url: (!isConfidentialDoc(product.image) ? product.image : undefined) || 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=800&q=80', alt: product.name }];
+
+  const images = rawList.map(img => {
     if (!img?.url || !product.updatedAt || img.url.includes('v=') || img.url.includes('_cb=')) return img;
     const v = new Date(product.updatedAt).getTime();
     return {
