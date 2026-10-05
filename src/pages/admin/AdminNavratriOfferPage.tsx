@@ -128,17 +128,66 @@ export default function AdminNavratriOfferPage() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/admin/navratri-offer', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      });
-      const json = await res.json();
-      if (json.success) {
+      let saved = false;
+      // 1. Try primary endpoint /api/admin/navratri-offer
+      try {
+        const res = await fetch('/api/admin/navratri-offer', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+        if (res.ok) {
+          const text = await res.text();
+          try {
+            const json = JSON.parse(text);
+            if (json.success || res.status === 200 || res.status === 201) {
+              saved = true;
+            }
+          } catch {
+            saved = res.ok;
+          }
+        }
+      } catch {
+        // Continue to fallback
+      }
+
+      // 2. Fallback to /api/navratri-offer if primary not reachable or returned 404
+      if (!saved) {
+        try {
+          const res = await fetch('/api/navratri-offer', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(config)
+          });
+          if (res.ok) {
+            saved = true;
+          }
+        } catch {
+          // Continue to settings sync
+        }
+      }
+
+      // 3. Fallback sync to /api/settings
+      if (!saved) {
+        try {
+          const res = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ navratri_offer_config: config })
+          });
+          if (res.ok) {
+            saved = true;
+          }
+        } catch {
+          // Handled below
+        }
+      }
+
+      if (saved) {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 4000);
       } else {
-        setErrorMessage(json.error || json.message || 'Failed to save configuration.');
+        setErrorMessage('Failed to save configuration. Please ensure server build is deployed.');
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'Error occurred while saving.');

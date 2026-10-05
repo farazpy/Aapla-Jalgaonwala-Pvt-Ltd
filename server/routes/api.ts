@@ -1911,7 +1911,7 @@ const defaultNavratriOffer = {
   ]
 };
 
-apiRouter.get('/navratri-offer', async (_req: Request, res: Response) => {
+apiRouter.get(['/navratri-offer', '/admin/navratri-offer'], async (_req: Request, res: Response) => {
   try {
     const pool = getDbPool();
     if (pool) {
@@ -1932,7 +1932,27 @@ apiRouter.get('/navratri-offer', async (_req: Request, res: Response) => {
   }
 });
 
-apiRouter.put('/admin/navratri-offer', async (req: Request, res: Response) => {
+apiRouter.put(['/navratri-offer', '/admin/navratri-offer'], async (req: Request, res: Response) => {
+  try {
+    const config = req.body;
+    await writeJson('navratri_offer.json', config);
+
+    const pool = getDbPool();
+    if (pool) {
+      await pool.query(
+        `INSERT INTO site_settings (setting_key, setting_value)
+         VALUES ('navratri_offer_config', ?)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+        [JSON.stringify(config)]
+      );
+    }
+    return res.json(createSuccessResponse(config, 'Navratri offer updated successfully.'));
+  } catch (error: any) {
+    return res.status(500).json(createErrorResponse(error.message || 'Failed to update Navratri offer config'));
+  }
+});
+
+apiRouter.post(['/navratri-offer', '/admin/navratri-offer'], async (req: Request, res: Response) => {
   try {
     const config = req.body;
     await writeJson('navratri_offer.json', config);
