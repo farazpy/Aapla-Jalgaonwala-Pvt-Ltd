@@ -1,6 +1,5 @@
 import { Category } from '@/types';
-import { readJson, writeJson } from '../utils/jsonStorage';
-import { getDbPool } from '../database/connection';
+import { getDbPool, setLastDbError } from '../database/connection';
 import { initialCategories } from '@/data/categories';
 import { addCloudinaryOriginalFlag } from '../utils/cloudinary';
 
@@ -30,108 +29,71 @@ export class CategoryRepository {
       return cachedCategories.data;
     }
 
-    const isInitializedMarker = await readJson<{ initialized: boolean } | null>(SEED_MARKER, null);
     const pool = getDbPool();
-    let categories: Category[] = [];
+    if (!pool) {
+      const err = new Error('Database connection failed. No MySQL connection pool available.');
+      setLastDbError(err);
+      throw err;
+    }
 
-    if (pool) {
-      try {
-        const [rows]: any = await pool.query('SELECT * FROM categories ORDER BY id ASC');
-        if (Array.isArray(rows)) {
-          if (rows.length === 0 && !isInitializedMarker) {
-            // Auto-seed initial categories into MySQL ONCE
-            for (const cat of initialCategories) {
-              await pool.query(
-                `INSERT INTO categories (id, slug, name, tagline, description, image, product_count)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                 ON DUPLICATE KEY UPDATE name=VALUES(name), tagline=VALUES(tagline), description=VALUES(description), image=VALUES(image)`,
-                [cat.id, cat.slug, cat.name, cat.tagline || cat.description, cat.description, cat.image || '', cat.productCount || 0]
-              ).catch(() => {});
-            }
-            await writeJson(SEED_MARKER, { initialized: true });
-            cachedCategories = { data: initialCategories, timestamp: Date.now() };
-            return initialCategories;
-          }
-
-          // Check if any initial category is missing, if so insert it dynamically to keep DB in sync
-          const existingSlugs = new Set((rows as any[]).map(r => String(r.slug || '').toLowerCase()));
+    try {
+      const [rows]: any = await pool.query('SELECT * FROM categories ORDER BY id ASC');
+      if (Array.isArray(rows)) {
+        if (rows.length === 0) {
+          // Auto-seed initial categories into MySQL ONCE if table is completely empty
           for (const cat of initialCategories) {
-            if (!existingSlugs.has(cat.slug.toLowerCase())) {
-              try {
-                await pool.query(
-                  `INSERT INTO categories (id, slug, name, tagline, description, image, product_count)
-                   VALUES (?, ?, ?, ?, ?, ?, ?)`,
-                  [cat.id, cat.slug, cat.name, cat.tagline || cat.description, cat.description, cat.image || '', cat.productCount || 0]
-                );
-                rows.push({
-                  id: cat.id,
-                  slug: cat.slug,
-                  name: cat.name,
-                  tagline: cat.tagline || cat.description,
-                  description: cat.description,
-                  image: cat.image || '',
-                  product_count: cat.productCount || 0
-                });
-                console.log(`[CategoryRepo] Auto-seeded missing category: ${cat.slug}`);
-              } catch (err: any) {
-                console.warn(`[CategoryRepo] Failed to auto-seed missing category ${cat.slug}:`, err?.message || err);
-              }
-            }
+            await pool.query(
+              `INSERT INTO categories (id, slug, name, tagline, description, image, product_count)
+               VALUES (?, ?, ?, ?, ?, ?, ?)
+               ON DUPLICATE KEY UPDATE name=VALUES(name), tagline=VALUES(tagline), description=VALUES(description), image=VALUES(image)`,
+              [cat.id, cat.slug, cat.name, cat.tagline || cat.description, cat.description, cat.image || '', cat.productCount || 0]
+            ).catch(() => {});
           }
-
-          if (rows.length === 0 && isInitializedMarker) {
-            return [];
+          const [seededRows]: any = await pool.query('SELECT * FROM categories ORDER BY id ASC');
+          if (Array.isArray(seededRows)) {
+            rows.push(...seededRows);
           }
-
-          // Get product counts for each category in 1 fast query
-          const [counts]: any = await pool.query(
-            'SELECT category_id, COUNT(*) as count FROM products WHERE is_available = TRUE GROUP BY category_id'
-          ).catch(() => [[]]);
-
-          const countMap = new Map<string, number>();
-          if (Array.isArray(counts)) {
-            counts.forEach((c: any) => {
-              if (c.category_id) {
-                countMap.set(String(c.category_id), Number(c.count) || 0);
-              }
-            });
-          }
-
-          categories = (rows as any[]).map(r => {
-            const countFromId = countMap.get(String(r.id)) || 0;
-            const countFromSlug = countMap.get(String(r.slug)) || 0;
-            const totalCount = countFromId + (r.id !== r.slug ? countFromSlug : 0);
-            const cleanName = String(r.name || '').replace(/Banana Chipss/gi, 'Banana Chips');
-            return {
-              id: String(r.id),
-              slug: r.slug,
-              name: cleanName,
-              tagline: r.tagline || r.description || '',
-              description: r.description || '',
-              image: r.image || '',
-              productCount: totalCount || r.product_count || 0
-            };
-          });
-
-          cachedCategories = { data: categories, timestamp: Date.now() };
-          return categories;
         }
-      } catch (err) {
-        console.warn('[CategoryRepo] MySQL query failed, fallback to local JSON:', err);
-      }
-    }
 
-    const jsonCategories = await readJson<Category[]>(FILE_NAME, []);
-    if ((!jsonCategories || jsonCategories.length === 0) && !isInitializedMarker) {
-      await writeJson(FILE_NAME, initialCategories);
-      await writeJson(SEED_MARKER, { initialized: true });
-      cachedCategories = { data: initialCategories, timestamp: Date.now() };
-      return initialCategories;
+        // Get product counts for each category in 1 fast query
+        const [counts]: any = await pool.query(
+          'SELECT category_id, COUNT(*) as count FROM products WHERE is_available = TRUE GROUP BY category_id'
+        ).catch(() => [[]]);
+
+        const countMap = new Map<string, number>();
+        if (Array.isArray(counts)) {
+          counts.forEach((c: any) => {
+            if (c.category_id) {
+              countMap.set(String(c.category_id), Number(c.count) || 0);
+            }
+          });
+        }
+
+        const categories: Category[] = (rows as any[]).map(r => {
+          const countFromId = countMap.get(String(r.id)) || 0;
+          const countFromSlug = countMap.get(String(r.slug)) || 0;
+          const totalCount = countFromId + (r.id !== r.slug ? countFromSlug : 0);
+          const cleanName = String(r.name || '').replace(/Banana Chipss/gi, 'Banana Chips');
+          return {
+            id: String(r.id),
+            slug: r.slug,
+            name: cleanName,
+            tagline: r.tagline || r.description || '',
+            description: r.description || '',
+            image: r.image || '',
+            productCount: totalCount || r.product_count || 0
+          };
+        });
+
+        cachedCategories = { data: categories, timestamp: Date.now() };
+        return categories;
+      }
+      return [];
+    } catch (err: any) {
+      setLastDbError(err);
+      console.warn('[CategoryRepo] MySQL query failed:', err);
+      throw err;
     }
-    
-    categories = jsonCategories && jsonCategories.length > 0 ? jsonCategories : initialCategories;
-    cachedCategories = { data: categories, timestamp: Date.now() };
-    return categories;
   }
 
   static async getBySlug(slugOrId: string): Promise<Category | null> {

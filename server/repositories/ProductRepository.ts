@@ -1,8 +1,7 @@
 import { Product, ProductVariant, Category } from '@/types';
 import { readJson, writeJson } from '../utils/jsonStorage';
-import { getDbPool } from '../database/connection';
+import { getDbPool, setLastDbError } from '../database/connection';
 import { CategoryRepository } from './CategoryRepository';
-import { initialProducts } from '@/data/products';
 import { addCloudinaryOriginalFlag } from '../utils/cloudinary';
 
 const FILE_NAME = 'products.json';
@@ -190,128 +189,84 @@ export class ProductRepository {
         : productMemoryCache.data.filter(p => p.isAvailable);
     }
 
-    let fetchedProducts: Product[] = [];
     const pool = getDbPool();
-    if (pool) {
-      try {
-        const query = `
-          SELECT p.*, c.id AS cat_id, c.slug AS cat_slug, c.name AS cat_name
-          FROM products p
-          LEFT JOIN categories c ON (p.category_id = c.id OR p.category_id = c.slug)
-          ORDER BY p.created_at DESC
-        `;
-        const [rows]: any = await pool.query(query);
-        if (Array.isArray(rows) && rows.length > 0) {
-          const productIds = rows.map((r: any) => r.id);
-          const imageMap = new Map<string, any[]>();
-          const variantMap = new Map<string, ProductVariant[]>();
+    if (!pool) {
+      const err = new Error('Database connection failed. No MySQL connection pool available. Please verify DB credentials in .env.');
+      setLastDbError(err);
+      throw err;
+    }
 
-          // Batch fetch ALL images in a single SQL query
-          if (productIds.length > 0) {
-            try {
-              const [imgRows]: any = await pool.query(
-                'SELECT * FROM product_images WHERE product_id IN (?) ORDER BY is_primary DESC, id ASC',
-                [productIds]
-              );
-              if (Array.isArray(imgRows)) {
-                for (const img of imgRows) {
-                  const pid = String(img.product_id);
-                  if (!imageMap.has(pid)) {
-                    imageMap.set(pid, []);
-                  }
-                  imageMap.get(pid)!.push({
-                    id: img.id,
-                    url: img.url,
-                    alt: img.alt || '',
-                    isPrimary: Boolean(img.is_primary)
-                  });
-                }
-              }
-            } catch (_) {}
-
-            // Batch fetch ALL product variants in a single SQL query
-            try {
-              const [varRows]: any = await pool.query(
-                'SELECT * FROM product_variants WHERE product_id IN (?) ORDER BY price ASC',
-                [productIds]
-              );
-              if (Array.isArray(varRows)) {
-                for (const v of varRows) {
-                  const pid = String(v.product_id);
-                  if (!variantMap.has(pid)) {
-                    variantMap.set(pid, []);
-                  }
-                  variantMap.get(pid)!.push({
-                    id: String(v.id),
-                    weight: String(v.weight),
-                    price: Number(v.price),
-                    mrp: Number(v.mrp || v.price),
-                    stock: Number(v.stock ?? 100)
-                  });
-                }
-              }
-            } catch (_) {}
-          }
-
-          fetchedProducts = rows.map((r: any) => this.mapSingleRowToProduct(r, imageMap, variantMap));
-        }
-      } catch (err: any) {
-        try {
-          const [simpleRows]: any = await pool.query('SELECT * FROM products ORDER BY created_at DESC');
-          if (Array.isArray(simpleRows) && simpleRows.length > 0) {
-            const productIds = simpleRows.map((r: any) => r.id);
-            const imageMap = new Map<string, any[]>();
-            const variantMap = new Map<string, ProductVariant[]>();
-            try {
-              const [imgRows]: any = await pool.query(
-                'SELECT * FROM product_images WHERE product_id IN (?) ORDER BY is_primary DESC',
-                [productIds]
-              );
-              if (Array.isArray(imgRows)) {
-                for (const img of imgRows) {
-                  const pid = String(img.product_id);
-                  if (!imageMap.has(pid)) imageMap.set(pid, []);
-                  imageMap.get(pid)!.push({ id: img.id, url: img.url, alt: img.alt || '', isPrimary: Boolean(img.is_primary) });
-                }
-              }
-            } catch (_) {}
-
-            try {
-              const [varRows]: any = await pool.query(
-                'SELECT * FROM product_variants WHERE product_id IN (?) ORDER BY price ASC',
-                [productIds]
-              );
-              if (Array.isArray(varRows)) {
-                for (const v of varRows) {
-                  const pid = String(v.product_id);
-                  if (!variantMap.has(pid)) variantMap.set(pid, []);
-                  variantMap.get(pid)!.push({
-                    id: String(v.id),
-                    weight: String(v.weight),
-                    price: Number(v.price),
-                    mrp: Number(v.mrp || v.price),
-                    stock: Number(v.stock ?? 100)
-                  });
-                }
-              }
-            } catch (_) {}
-
-            fetchedProducts = simpleRows.map((r: any) => this.mapSingleRowToProduct(r, imageMap, variantMap));
-          }
-        } catch {
-          // Fallback to JSON
-        }
+    try {
+      const query = `
+        SELECT p.*, c.id AS cat_id, c.slug AS cat_slug, c.name AS cat_name
+        FROM products p
+        LEFT JOIN categories c ON (p.category_id = c.id OR p.category_id = c.slug)
+        ORDER BY p.created_at DESC
+      `;
+      const [rows]: any = await pool.query(query);
+      if (!Array.isArray(rows) || rows.length === 0) {
+        productMemoryCache = { data: [], timestamp: Date.now() };
+        return [];
       }
+
+      const productIds = rows.map((r: any) => r.id);
+      const imageMap = new Map<string, any[]>();
+      const variantMap = new Map<string, ProductVariant[]>();
+
+      // Batch fetch ALL images in a single SQL query
+      if (productIds.length > 0) {
+        try {
+          const [imgRows]: any = await pool.query(
+            'SELECT * FROM product_images WHERE product_id IN (?) ORDER BY is_primary DESC, id ASC',
+            [productIds]
+          );
+          if (Array.isArray(imgRows)) {
+            for (const img of imgRows) {
+              const pid = String(img.product_id);
+              if (!imageMap.has(pid)) {
+                imageMap.set(pid, []);
+              }
+              imageMap.get(pid)!.push({
+                id: img.id,
+                url: img.url,
+                alt: img.alt || '',
+                isPrimary: Boolean(img.is_primary)
+              });
+            }
+          }
+        } catch (_) {}
+
+        // Batch fetch ALL product variants in a single SQL query
+        try {
+          const [varRows]: any = await pool.query(
+            'SELECT * FROM product_variants WHERE product_id IN (?) ORDER BY price ASC',
+            [productIds]
+          );
+          if (Array.isArray(varRows)) {
+            for (const v of varRows) {
+              const pid = String(v.product_id);
+              if (!variantMap.has(pid)) {
+                variantMap.set(pid, []);
+              }
+              variantMap.get(pid)!.push({
+                id: String(v.id),
+                weight: String(v.weight),
+                price: Number(v.price),
+                mrp: Number(v.mrp || v.price),
+                stock: Number(v.stock ?? 100)
+              });
+            }
+          }
+        } catch (_) {}
+      }
+
+      const products = rows.map((r: any) => this.mapSingleRowToProduct(r, imageMap, variantMap));
+      productMemoryCache = { data: products, timestamp: Date.now() };
+      return includeUnavailable ? products : products.filter(p => p.isAvailable);
+    } catch (err: any) {
+      setLastDbError(err);
+      throw err;
     }
-
-    if (fetchedProducts.length === 0) {
-      fetchedProducts = await readJson<Product[]>(FILE_NAME, initialProducts);
-    }
-
-    const products = fetchedProducts.length > 0 ? fetchedProducts : initialProducts;
-
-    productMemoryCache = { data: products, timestamp: Date.now() };
-    return includeUnavailable ? products : products.filter(p => p.isAvailable);
   }
 
   static async getBySlug(slug: string): Promise<Product | null> {
@@ -370,24 +325,27 @@ export class ProductRepository {
 
   static async getById(id: string): Promise<Product | null> {
     const pool = getDbPool();
-    if (pool) {
-      try {
-        const [rows] = await pool.query(
-          `SELECT p.*, c.id AS cat_id, c.slug AS cat_slug, c.name AS cat_name
-           FROM products p
-           LEFT JOIN categories c ON (p.category_id = c.id OR p.category_id = c.slug)
-           WHERE p.id = ?`,
-          [id]
-        );
-        if (Array.isArray(rows) && rows.length > 0) {
-          return await this.mapRowToProduct((rows as any[])[0], pool);
-        }
-      } catch (err) {
-        console.warn('[ProductRepo] MySQL getById failed, using fallback:', err);
-      }
+    if (!pool) {
+      const err = new Error('Database connection failed. No MySQL connection pool available.');
+      setLastDbError(err);
+      throw err;
     }
-    const products = await this.getAll(true);
-    return products.find(p => p.id === id) || null;
+    try {
+      const [rows] = await pool.query(
+        `SELECT p.*, c.id AS cat_id, c.slug AS cat_slug, c.name AS cat_name
+         FROM products p
+         LEFT JOIN categories c ON (p.category_id = c.id OR p.category_id = c.slug)
+         WHERE p.id = ?`,
+        [id]
+      );
+      if (Array.isArray(rows) && rows.length > 0) {
+        return await this.mapRowToProduct((rows as any[])[0], pool);
+      }
+      return null;
+    } catch (err: any) {
+      setLastDbError(err);
+      throw err;
+    }
   }
 
   static async create(data: Partial<Product>): Promise<Product> {
@@ -464,85 +422,88 @@ export class ProductRepository {
     };
     (newProduct as any)._is_fake = isFakeVal;
 
-    // 1. Try MySQL Database insert
+    // 1. Ensure MySQL Database pool is active
     const pool = getDbPool();
-    if (pool) {
-      try {
-        // First check if slug is already taken to return clean validation
-        const [existingSlugs] = await pool.query(
-          'SELECT id FROM products WHERE slug = ?',
-          [newProduct.slug]
-        );
-        if (Array.isArray(existingSlugs) && existingSlugs.length > 0) {
-          throw new Error(`A product with the slug "${newProduct.slug}" already exists. Please choose a different slug or unique name.`);
-        }
-
-        const [insertRes] = await pool.query(
-          `INSERT INTO products (
-            id, slug, name, category_id, description, short_description, price, mrp, profit, discount,
-            net_quantity, flavour, tags, is_featured, is_best_seller, is_new, is_available, stock,
-            seo_title, seo_description, _is_fake
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            newProduct.id,
-            newProduct.slug,
-            newProduct.name,
-            resolvedCat.id,
-            newProduct.description,
-            newProduct.shortDescription,
-            newProduct.price,
-            newProduct.mrp,
-            newProduct.profit || 0,
-            newProduct.discount,
-            newProduct.netQuantity,
-            newProduct.flavour || null,
-            JSON.stringify(newProduct.tags),
-            newProduct.isFeatured ? 1 : 0,
-            newProduct.isBestSeller ? 1 : 0,
-            newProduct.isNew ? 1 : 0,
-            newProduct.isAvailable ? 1 : 0,
-            newProduct.stock,
-            newProduct.seoTitle,
-            newProduct.seoDescription,
-            isFakeVal
-          ]
-        );
-
-        const realId = (insertRes as any).insertId;
-        if (realId) {
-          newProduct.id = realId;
-        }
-        const insertIdStr = String(newProduct.id);
-
-        // Save Primary Image in MySQL
-        if (images[0]?.url) {
-          await pool.query(
-            `INSERT INTO product_images (id, product_id, url, alt, is_primary) VALUES (?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE url = VALUES(url)`,
-            [`img-${insertIdStr}-0`, insertIdStr, images[0].url, newProduct.name, 1]
-          );
-        }
-
-        // Save Variants in MySQL
-        if (cleanVariants.length > 0) {
-          for (const v of cleanVariants) {
-            const variantId = `var-${insertIdStr}-${v.weight}-${Date.now()}`;
-            await pool.query(
-              `INSERT INTO product_variants (id, product_id, weight, price, mrp, stock)
-               VALUES (?, ?, ?, ?, ?, ?)
-               ON DUPLICATE KEY UPDATE weight = VALUES(weight), price = VALUES(price), mrp = VALUES(mrp), stock = VALUES(stock)`,
-              [variantId, insertIdStr, v.weight, v.price, v.mrp, v.stock ?? 100]
-            );
-          }
-        }
-      } catch (err: any) {
-        console.warn('[ProductRepo] MySQL insert failed:', err);
-        throw err;
-      }
+    if (!pool) {
+      const err = new Error('Database connection failed. Cannot create product without active MySQL database.');
+      setLastDbError(err);
+      throw err;
     }
 
-    // 2. Save to JSON fallback storage
-    await this.save(newProduct);
+    try {
+      // First check if slug is already taken to return clean validation
+      const [existingSlugs] = await pool.query(
+        'SELECT id FROM products WHERE slug = ?',
+        [newProduct.slug]
+      );
+      if (Array.isArray(existingSlugs) && existingSlugs.length > 0) {
+        throw new Error(`A product with the slug "${newProduct.slug}" already exists. Please choose a different slug or unique name.`);
+      }
+
+      const [insertRes] = await pool.query(
+        `INSERT INTO products (
+          id, slug, name, category_id, description, short_description, price, mrp, profit, discount,
+          net_quantity, flavour, tags, is_featured, is_best_seller, is_new, is_available, stock,
+          seo_title, seo_description, _is_fake
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          newProduct.id,
+          newProduct.slug,
+          newProduct.name,
+          resolvedCat.id,
+          newProduct.description,
+          newProduct.shortDescription,
+          newProduct.price,
+          newProduct.mrp,
+          newProduct.profit || 0,
+          newProduct.discount,
+          newProduct.netQuantity,
+          newProduct.flavour || null,
+          JSON.stringify(newProduct.tags),
+          newProduct.isFeatured ? 1 : 0,
+          newProduct.isBestSeller ? 1 : 0,
+          newProduct.isNew ? 1 : 0,
+          newProduct.isAvailable ? 1 : 0,
+          newProduct.stock,
+          newProduct.seoTitle,
+          newProduct.seoDescription,
+          isFakeVal
+        ]
+      );
+
+      const realId = (insertRes as any).insertId;
+      if (realId) {
+        newProduct.id = realId;
+      }
+      const insertIdStr = String(newProduct.id);
+
+      // Save Primary Image in MySQL
+      if (images[0]?.url) {
+        await pool.query(
+          `INSERT INTO product_images (id, product_id, url, alt, is_primary) VALUES (?, ?, ?, ?, ?)
+           ON DUPLICATE KEY UPDATE url = VALUES(url)`,
+          [`img-${insertIdStr}-0`, insertIdStr, images[0].url, newProduct.name, 1]
+        );
+      }
+
+      // Save Variants in MySQL
+      if (cleanVariants.length > 0) {
+        for (const v of cleanVariants) {
+          const variantId = `var-${insertIdStr}-${v.weight}-${Date.now()}`;
+          await pool.query(
+            `INSERT INTO product_variants (id, product_id, weight, price, mrp, stock)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE weight = VALUES(weight), price = VALUES(price), mrp = VALUES(mrp), stock = VALUES(stock)`,
+            [variantId, insertIdStr, v.weight, v.price, v.mrp, v.stock ?? 100]
+          );
+        }
+      }
+    } catch (err: any) {
+      setLastDbError(err);
+      console.warn('[ProductRepo] MySQL insert failed:', err);
+      throw err;
+    }
+
     return newProduct;
   }
 
@@ -816,12 +777,17 @@ export class ProductRepository {
             }
           }
         }
-      } catch (err) {
-        console.warn('[ProductRepo] MySQL update failed, updating JSON storage fallback:', err);
+      } catch (err: any) {
+        setLastDbError(err);
+        console.warn('[ProductRepo] MySQL update failed:', err);
+        throw err;
       }
+    } else {
+      const err = new Error('Database connection failed. Cannot update product without active MySQL database.');
+      setLastDbError(err);
+      throw err;
     }
 
-    await this.save(updatedProduct);
     this.clearCache();
     return updatedProduct;
   }
@@ -841,20 +807,20 @@ export class ProductRepository {
   static async delete(id: string): Promise<boolean> {
     this.clearCache();
     const pool = getDbPool();
-    if (pool) {
-      try {
-        await pool.query('DELETE FROM product_variants WHERE product_id = ?', [id]);
-        await pool.query('DELETE FROM product_images WHERE product_id = ?', [id]);
-        await pool.query('DELETE FROM products WHERE id = ?', [id]);
-      } catch (err) {
-        console.warn('[ProductRepo] MySQL delete failed:', err);
-      }
+    if (!pool) {
+      const err = new Error('Database connection failed. Cannot delete product without active MySQL database.');
+      setLastDbError(err);
+      throw err;
     }
-
-    const products = await readJson<Product[]>(FILE_NAME, []);
-    const filtered = products.filter(p => p.id !== id);
-    await writeJson(FILE_NAME, filtered);
-    return true;
+    try {
+      await pool.query('DELETE FROM product_variants WHERE product_id = ?', [id]);
+      await pool.query('DELETE FROM product_images WHERE product_id = ?', [id]);
+      await pool.query('DELETE FROM products WHERE id = ?', [id]);
+      return true;
+    } catch (err: any) {
+      setLastDbError(err);
+      throw err;
+    }
   }
 
   static async save(product: Product): Promise<Product> {

@@ -902,7 +902,7 @@ export function AdminLayout({
                 <Link href="/admin" className="text-stone-400 hover:text-stone-800 transition-colors shrink-0 flex items-center gap-1.5">
                   <span>Store Admin</span>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-600 border border-stone-200/80 leading-none shrink-0" title="Admin Version">
-                    v1.8.0
+                    v1.8.2
                   </span>
                 </Link>
                 <span className="text-stone-300 shrink-0">/</span>

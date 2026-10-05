@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { apiRouter } from './server/routes/api';
-import { initDatabase, getDbPool, getDbConfig } from './server/database/connection';
+import { initDatabase, getDbPool, getDbConfig, getLastDbError, resetDbPool } from './server/database/connection';
 import { UserRepository } from './server/repositories/UserRepository';
 import { SettingsRepository } from './server/repositories/SettingsRepository';
 import { initOrderCleanupJob } from './server/utils/orderCleanup';
@@ -50,9 +50,27 @@ function escapeHtml(str: string): string {
 const app = express();
 
 // Critical Middleware: Intercept and display an elegant full-screen database connection failure error page
-// if there is a startup or persistent connection block to the MySQL Database
+// if there is a startup or persistent connection block to the MySQL Database (except for the /database diagnostics page)
 app.use((req: Request, res: Response, next) => {
-  if (dbInitError) {
+  const currentDbError = dbInitError || getLastDbError();
+  const pool = getDbPool();
+
+  if (currentDbError || !pool) {
+    if (req.path === '/database' || req.path === '/database/') {
+      return next();
+    }
+
+    const err = currentDbError || new Error('Database connection failed. No active MySQL connection pool available.');
+
+    if (req.path.startsWith('/api')) {
+      return res.status(503).json({
+        success: false,
+        error: 'Database Connection Failure',
+        message: err.message || 'MySQL connection is unavailable. Verify .env credentials on VPS.',
+        code: err.code || 'DB_OFFLINE'
+      });
+    }
+
     res.status(503).send(`
       <!DOCTYPE html>
       <html lang="en">
@@ -80,7 +98,7 @@ app.use((req: Request, res: Response, next) => {
               <i class="fa-solid fa-database text-3xl text-amber-200"></i>
             </div>
             <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Database Connection Failed</h1>
-            <p class="text-sm text-stone-100/90 mt-1.5 font-medium">Critical system initialization block on start</p>
+            <p class="text-sm text-stone-100/90 mt-1.5 font-medium">Critical system initialization block: strictly no fallback database</p>
             <div class="absolute top-4 right-4 bg-red-950/40 text-red-200 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-red-500/20 tracking-wider">
               Error 503
             </div>
@@ -96,17 +114,17 @@ app.use((req: Request, res: Response, next) => {
               <div class="space-y-1 text-xs">
                 <p class="text-stone-700 font-semibold">Message:</p>
                 <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-800 font-mono text-[11px] leading-relaxed break-words whitespace-pre-wrap select-all">
-                  ${escapeHtml(dbInitError.message || dbInitError)}
+                  ${escapeHtml(err.message || String(err))}
                 </div>
               </div>
-              ${dbInitError.code ? `
+              ${err.code ? `
                 <div class="grid grid-cols-2 gap-4 pt-2 text-[11px] font-semibold text-stone-600">
                   <div>
-                    <span class="text-stone-400">Error Code:</span> <code class="font-mono text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded">${escapeHtml(dbInitError.code)}</code>
+                    <span class="text-stone-400">Error Code:</span> <code class="font-mono text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded">${escapeHtml(err.code)}</code>
                   </div>
-                  ${dbInitError.errno ? `
+                  ${err.errno ? `
                     <div>
-                      <span class="text-stone-400">Error No:</span> <code class="font-mono text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded">${escapeHtml(String(dbInitError.errno))}</code>
+                      <span class="text-stone-400">Error No:</span> <code class="font-mono text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded">${escapeHtml(String(err.errno))}</code>
                     </div>
                   ` : ''}
                 </div>
@@ -154,7 +172,7 @@ app.use((req: Request, res: Response, next) => {
                 </li>
                 <li class="flex items-start gap-2.5">
                   <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5 animate-pulse"></i>
-                  <span><b>Port open & allowed?</b> If connecting to a remote database, verify MySQL allows external connections in <code class="bg-stone-100 text-stone-800 px-1 py-0.2 rounded font-mono">mysqld.cnf</code> (<code class="bg-stone-100 text-stone-800 px-1.5 py-0.2 rounded font-mono">bind-address = 0.0.0.0</code>) and firewalls allow inbound traffic to Port 3306.</span>
+                  <span><b>Access /database Inspector:</b> You can always navigate to <a href="/database" class="underline text-[#9B111E] font-bold">/database</a> to view connection diagnostics and table status directly.</span>
                 </li>
               </ul>
             </div>
@@ -163,9 +181,14 @@ app.use((req: Request, res: Response, next) => {
           {/* Footer banner */}
           <div class="bg-stone-50 border-t border-stone-200/80 p-5 text-center flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-stone-500">
             <span>Aapla Jalgaonwala VPS Deployment Engine</span>
-            <button onclick="window.location.reload()" class="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl flex items-center gap-2 transition-all shadow-sm cursor-pointer">
-              <i class="fa-solid fa-arrows-rotate"></i> Retry Connection
-            </button>
+            <div class="flex items-center gap-2">
+              <a href="/database" class="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 rounded-xl transition-all shadow-xs">
+                Inspect /database
+              </a>
+              <button onclick="window.location.reload()" class="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl flex items-center gap-2 transition-all shadow-sm cursor-pointer">
+                <i class="fa-solid fa-arrows-rotate"></i> Retry Connection
+              </button>
+            </div>
           </div>
         </div>
       </body>
@@ -566,14 +589,124 @@ app.get(['/auth/callback', '/auth/callback/', '/api/auth/google/callback'], oaut
 app.get('/database', async (req: Request, res: Response) => {
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
   
+  if (req.query.retry === '1') {
+    resetDbPool();
+    try {
+      await initDatabase();
+    } catch (_) {}
+    return res.redirect('/database');
+  }
+
+  const { host, port, user, database } = getDbConfig();
   const pool = getDbPool();
-  if (!pool) {
+  const currentDbError = dbInitError || getLastDbError();
+
+  if (!pool || currentDbError) {
+    const err = currentDbError || new Error('Database pool could not be created or credentials incomplete in .env');
     return res.status(503).send(`
-      <div style="font-family: system-ui, sans-serif; padding: 40px; background: #FFF5F5; border: 1px solid #FEB2B2; color: #9B111E; border-radius: 12px; max-w: 600px; margin: 40px auto;">
-        <h2>Database Connection Offline</h2>
-        <p>Your database pool is currently offline or failed to initialize on VPS start. Please check your credentials in .env and make sure MySQL is running.</p>
-        <button onclick="window.location.reload()" style="background: #9B111E; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Retry Connection</button>
-      </div>
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="robots" content="noindex, nofollow">
+        <title>Database Status & Schema Inspector - Aapla Jalgaonwala</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap');
+          body { font-family: 'Plus Jakarta Sans', sans-serif; }
+          h1 { font-family: 'Playfair Display', serif; }
+        </style>
+      </head>
+      <body class="bg-stone-50 text-stone-900 min-h-screen p-4 sm:p-8">
+        <div class="max-w-4xl mx-auto space-y-6">
+          <!-- Header Banner -->
+          <div class="bg-gradient-to-r from-[#9B111E] to-[#D9531E] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 shrink-0">
+                <i class="fa-solid fa-database text-2xl text-amber-200"></i>
+              </div>
+              <div>
+                <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Database Architecture Inspector</h1>
+                <p class="text-xs text-stone-100/90 mt-1 font-medium flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-rose-500 inline-block animate-ping"></span>
+                  Connection Status: <span class="font-bold underline">Offline / Connection Failed</span>
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 bg-black/25 text-[10px] font-extrabold uppercase tracking-wider rounded-full border border-white/15">
+                No-Index Protected
+              </span>
+              <a href="/database?retry=1" class="px-4 py-2 bg-white hover:bg-stone-100 text-[#9B111E] font-bold text-xs rounded-xl transition-all shadow-sm flex items-center gap-2">
+                <i class="fa-solid fa-arrows-rotate"></i> Re-test Connection
+              </a>
+            </div>
+          </div>
+
+          <!-- Connection parameters -->
+          <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-xs space-y-4">
+            <h2 class="text-xs font-black uppercase tracking-wider text-[#9B111E] flex items-center gap-2">
+              <i class="fa-solid fa-circle-nodes"></i> Configured Database Parameters (.env)
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold">
+              <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
+                <p class="text-[10px] text-stone-400 uppercase font-black">Host Server</p>
+                <p class="font-mono text-stone-800 font-bold mt-1">${escapeHtml(host || 'Not Set')}:${escapeHtml(String(port || '3306'))}</p>
+              </div>
+              <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
+                <p class="text-[10px] text-stone-400 uppercase font-black">Database Name</p>
+                <p class="font-mono text-stone-800 font-bold mt-1">${escapeHtml(database || 'Not Set')}</p>
+              </div>
+              <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
+                <p class="text-[10px] text-stone-400 uppercase font-black">Username</p>
+                <p class="font-mono text-stone-800 font-bold mt-1">${escapeHtml(user || 'Not Set')}</p>
+              </div>
+              <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
+                <p class="text-[10px] text-stone-400 uppercase font-black">Password Configured</p>
+                <p class="font-mono text-stone-800 font-bold mt-1">${process.env.DB_PASSWORD ? '✅ YES' : '❌ NO'}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Error Details -->
+          <div class="bg-white rounded-3xl p-6 border border-rose-200 shadow-xs space-y-4">
+            <h2 class="text-xs font-black uppercase tracking-wider text-rose-700 flex items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation"></i> MySQL Driver Error Report
+            </h2>
+            <div class="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-900 font-mono text-xs leading-relaxed break-words whitespace-pre-wrap select-all">
+              ${escapeHtml(err.message || String(err))}
+            </div>
+            ${err.code ? `
+              <div class="flex items-center gap-6 text-xs text-stone-600 font-semibold pt-1">
+                <div><span class="text-stone-400 font-bold">Error Code:</span> <code class="font-mono text-rose-700 bg-rose-50 px-2 py-0.5 rounded">${escapeHtml(err.code)}</code></div>
+                ${err.errno ? `<div><span class="text-stone-400 font-bold">Error No:</span> <code class="font-mono text-rose-700 bg-rose-50 px-2 py-0.5 rounded">${escapeHtml(String(err.errno))}</code></div>` : ''}
+              </div>
+            ` : ''}
+          </div>
+
+          <!-- Troubleshooting -->
+          <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-xs space-y-3">
+            <h3 class="text-xs font-black uppercase tracking-wider text-stone-800">VPS Troubleshooting Steps</h3>
+            <ul class="text-xs text-stone-600 space-y-2 font-medium">
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-600 font-bold">1.</span>
+                <span>Check if MySQL service is running on VPS: <code class="bg-stone-100 px-1.5 py-0.5 rounded font-mono text-stone-800">systemctl status mysql</code> or <code class="bg-stone-100 px-1.5 py-0.5 rounded font-mono text-stone-800">service mysql status</code></span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-600 font-bold">2.</span>
+                <span>Verify credentials in <code class="bg-stone-100 px-1.5 py-0.5 rounded font-mono text-stone-800">.env</code>: DB_HOST, DB_USER, DB_PASSWORD, DB_NAME, DB_PORT.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-600 font-bold">3.</span>
+                <span>Ensure user has permission to connect and database exists in MySQL: <code class="bg-stone-100 px-1.5 py-0.5 rounded font-mono text-stone-800">CREATE DATABASE IF NOT EXISTS ${escapeHtml(database || 'aaplajalgaonwala')};</code></span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </body>
+      </html>
     `);
   }
 
@@ -762,7 +895,7 @@ app.get('/database', async (req: Request, res: Response) => {
             <h2 class="text-xs font-black uppercase tracking-wider text-[#9B111E] flex items-center gap-2">
               <i class="fa-solid fa-circle-nodes"></i> Active Database Settings
             </h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold">
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-xs font-semibold">
               <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
                 <p class="text-[10px] text-stone-400 uppercase font-black">Host Server</p>
                 <p class="font-mono text-stone-800 font-bold mt-1">${escapeHtml(host || '127.0.0.1')}:${escapeHtml(String(port || '3306'))}</p>
@@ -778,6 +911,10 @@ app.get('/database', async (req: Request, res: Response) => {
               <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
                 <p class="text-[10px] text-stone-400 uppercase font-black">Total Schema Tables</p>
                 <p class="font-mono text-stone-800 font-bold mt-1 text-[#9B111E]">${tableMetadata.length} Tables</p>
+              </div>
+              <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl col-span-2 md:col-span-1">
+                <p class="text-[10px] text-stone-400 uppercase font-black">Total Records</p>
+                <p class="font-mono text-emerald-700 font-bold mt-1">${tableMetadata.reduce((acc, t) => acc + (t.rowCount > 0 ? t.rowCount : 0), 0).toLocaleString()} Rows</p>
               </div>
             </div>
           </div>

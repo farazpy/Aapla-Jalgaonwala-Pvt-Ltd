@@ -2,6 +2,15 @@ import mysql from 'mysql2/promise';
 
 let pool: mysql.Pool | null = null;
 let poolFailed = false;
+let lastDbError: any = null;
+
+export function getLastDbError(): any {
+  return lastDbError;
+}
+
+export function setLastDbError(err: any) {
+  lastDbError = err;
+}
 
 function getEnvValue(...aliases: string[]): string {
   // First check exact case
@@ -70,6 +79,7 @@ export function resetDbPool() {
     pool = null;
   }
   poolFailed = false;
+  lastDbError = null;
   tablesInitialized = false;
 }
 
@@ -80,7 +90,13 @@ export function getDbPool(): mysql.Pool | null {
   const { host, port, user, password, database } = getDbConfig();
 
   if (!host || !user || !database) {
-    console.log(`[MySQL] Credentials incomplete. Provided host: "${host}", user: "${user}", database: "${database}".`);
+    const missing: string[] = [];
+    if (!host) missing.push('DB_HOST');
+    if (!user) missing.push('DB_USER');
+    if (!database) missing.push('DB_NAME');
+    const msg = `Incomplete database credentials in .env. Missing: ${missing.join(', ')}. Provided host: "${host}", user: "${user}", database: "${database}".`;
+    console.log(`[MySQL] ${msg}`);
+    lastDbError = new Error(msg);
     return null;
   }
 
@@ -110,6 +126,7 @@ export function getDbPool(): mysql.Pool | null {
     return pool;
   } catch (err: any) {
     poolFailed = true;
+    lastDbError = err;
     console.warn(`[MySQL] Connection pool creation failed for host "${host}", database "${database}":`, err?.message || err);
     return null;
   }
@@ -835,9 +852,17 @@ export function resetDbPoolFailure() {
 export async function initDatabase(): Promise<mysql.Pool | null> {
   const p = getDbPool();
   if (!p) {
-    throw new Error('Database pool could not be created. Ensure DB_HOST, DB_USER, and DB_NAME are correctly set in .env');
+    const err = lastDbError || new Error('Database pool could not be created. Ensure DB_HOST, DB_USER, and DB_NAME are correctly set in .env');
+    lastDbError = err;
+    throw err;
   }
   // Execute a test query to verify live connection to MySQL on startup
-  await p.query('SELECT 1');
-  return p;
+  try {
+    await p.query('SELECT 1');
+    lastDbError = null;
+    return p;
+  } catch (err: any) {
+    lastDbError = err;
+    throw err;
+  }
 }
