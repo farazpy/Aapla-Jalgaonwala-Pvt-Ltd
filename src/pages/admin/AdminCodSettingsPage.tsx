@@ -68,9 +68,14 @@ export default function AdminCodSettingsPage() {
     setErrorMessage(null);
 
     try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const authToken = localStorage.getItem('ajw_auth_token') || localStorage.getItem('token') || '';
+
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify({
           enableCod,
           codAdvanceFeeEnabled,
@@ -86,7 +91,7 @@ export default function AdminCodSettingsPage() {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 4000);
       } else {
-        throw new Error(json.error?.message || 'Failed to save settings.');
+        throw new Error(json.error?.message || json.message || 'Failed to save settings.');
       }
     } catch (err: any) {
       setErrorMessage(err.message || 'An error occurred while saving.');

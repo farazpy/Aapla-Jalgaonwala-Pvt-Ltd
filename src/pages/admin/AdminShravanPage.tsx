@@ -118,7 +118,7 @@ export default function AdminShravanPage() {
       ]}
       actions={
         <Link
-          href="/upwas-special"
+          to="/upwas-special"
           target="_blank"
           className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-amber-300 font-bold text-xs rounded-xl shadow-xs hover:bg-stone-800 transition-all"
         >

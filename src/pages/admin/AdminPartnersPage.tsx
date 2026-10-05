@@ -561,15 +561,15 @@ export default function AdminPartnersPage() {
     setIsTogglingAutoApprove(true);
     try {
       const nextSetting = !autoApprove;
-      const getRes = await fetch('/api/settings');
-      const getJson = await getRes.json();
-      const currentSettings = getJson.success ? getJson.data : {};
+      const authToken = localStorage.getItem('ajw_auth_token') || localStorage.getItem('token') || '';
 
-      const res = await fetch('/api/settings', {
+      const res = await fetch('/api/admin/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify({
-          ...currentSettings,
           womenPartnerAutoApprove: nextSetting
         })
       });
@@ -754,15 +754,15 @@ export default function AdminPartnersPage() {
     setFeeSaveSuccess(false);
     setFeeError(null);
     try {
-      const getRes = await fetch('/api/settings');
-      const getJson = await getRes.json();
-      const currentSettings = getJson.success ? getJson.data : {};
+      const authToken = localStorage.getItem('ajw_auth_token') || localStorage.getItem('token') || '';
 
-      const res = await fetch('/api/settings', {
+      const res = await fetch('/api/admin/settings', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify({
-          ...currentSettings,
           womenPartnerFee: Number(tempFeeInput)
         })
       });
@@ -775,7 +775,7 @@ export default function AdminPartnersPage() {
           setIsFeeModalOpen(false);
         }, 1200);
       } else {
-        throw new Error(json.error?.message || 'Failed to save fee.');
+        throw new Error(json.error?.message || json.message || 'Failed to save fee.');
       }
     } catch (err: any) {
       setFeeError(err.message || 'Error saving fee.');

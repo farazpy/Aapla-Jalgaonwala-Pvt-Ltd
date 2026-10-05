@@ -129,53 +129,11 @@
     "ourStoryHeroTitle": "Rooted in Soil. Crafted for Modern Taste.",
     "ourStoryHeroSubtitle": "How two visionaries from Jalgaon connected local farming families directly with snack lovers across India.",
     "navratri_offer_config": {
-      "featuredImage": "https://s3.htknetwork.in/f/a6xetsn3",
-      "price": 499,
-      "description": "Special Navratri Festivity Pack containing 500g Salted Banana Chips, 500g Spicy Masala Banana Chips, 500g Sweet Potato Chivda, 500g Spicy Potato Chivda, and a FREE pack of nutritious Rajgira Ladoos! Made 100% Satvik with Sendha Namak (Rock Salt) in separate dedicated frying lines.",
-      "products": [
-        {
-          "id": "item-1",
-          "name": "Salty Banana Chips",
-          "weight": "500g Pack",
-          "desc": "Melt-in-your-mouth wafer thin raw banana wafers salted with pure Himalayan Sendha Namak (Rock Salt).",
-          "img": "https://s3.htknetwork.in/f/75r9jg2C",
-          "badge": "Fasting Approved"
-        },
-        {
-          "id": "item-2",
-          "name": "Spicy Masala Banana Chips",
-          "weight": "500g Pack",
-          "desc": "Crispy raw banana wafers tossed with fast-compliant spicy red chilli powder and rock salt.",
-          "img": "https://s3.htknetwork.in/f/W57W97p5",
-          "badge": "Spicy Delight"
-        },
-        {
-          "id": "item-3",
-          "name": "Sweet Potato Chiwda",
-          "weight": "200g Pack",
-          "desc": "Crisp hand-grated Jalgaon potato salli blended with premium cashew nuts, sweet raisins, and roasted peanuts.",
-          "img": "https://s3.htknetwork.in/f/enVq6qbw",
-          "badge": "Sweet & Crunchy"
-        },
-        {
-          "id": "item-4",
-          "name": "Spicy Potato Chiwda",
-          "weight": "200g Pack",
-          "desc": "Thin golden matchstick potato salli seasoned with a spicy Navratri spice mix and crunchy rock salt.",
-          "img": "https://s3.htknetwork.in/f/Zx9JpBxP",
-          "badge": "Spicy & Savoury"
-        },
-        {
-          "id": "item-5",
-          "name": "Rajgira Amaranth Sweet Ladoo",
-          "weight": "FREE GIFT",
-          "desc": "Mouthwatering, soft, nutrient-packed amaranth puffed seeds balls sweetened with jaggery/pure sugar.",
-          "img": "https://s3.htknetwork.in/f/W58Xnuqq",
-          "badge": "Free Gift 🎁",
-          "isGift": true
-        }
-      ]
+      "price": 499
     },
     "test": 1
+  },
+  "navratri_offer": {
+    "price": 499
   }
 }
