@@ -28,6 +28,7 @@ export interface CartToastData {
 
 interface CartContextType {
   cart: CartItem[];
+  isLoaded: boolean;
   addToCart: (product: Product, variant?: ProductVariant, quantity?: number, openCart?: boolean) => void;
   removeFromCart: (productId: string, variantId?: string) => void;
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
@@ -47,10 +48,36 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCart = localStorage.getItem('aapla_cart');
+        if (savedCart && savedCart !== 'undefined' && savedCart !== 'null') {
+          const parsed = JSON.parse(savedCart);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch (e) {
+        console.warn('Error reading aapla_cart from localStorage:', e);
+      }
+    }
+    return [];
+  });
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCouponInfo | null>(null);
+  const [isLoaded, setIsLoaded] = useState(true);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCouponInfo | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const savedCoupon = localStorage.getItem('aapla_applied_coupon');
+        if (savedCoupon && savedCoupon !== 'undefined' && savedCoupon !== 'null') {
+          const parsedCpn = JSON.parse(savedCoupon);
+          if (parsedCpn && parsedCpn.code) return parsedCpn;
+        }
+      } catch (e) {
+        console.warn('Error reading aapla_applied_coupon:', e);
+      }
+    }
+    return null;
+  });
   const [manuallyRemoved, setManuallyRemoved] = useState(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('ajw_coupon_removed') === 'true';
@@ -60,14 +87,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [cartToast, setCartToast] = useState<CartToastData | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Safely hydrate from localStorage on mount
+  // Safely verify and re-sync from localStorage on mount
   useEffect(() => {
     try {
       const savedCart = localStorage.getItem('aapla_cart');
       if (savedCart && savedCart !== 'undefined' && savedCart !== 'null') {
         const parsed = JSON.parse(savedCart);
-        if (Array.isArray(parsed)) {
-          queueMicrotask(() => setCart(parsed));
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setCart(parsed);
         }
       }
 
@@ -75,13 +102,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (savedCoupon && savedCoupon !== 'undefined' && savedCoupon !== 'null') {
         const parsedCpn = JSON.parse(savedCoupon);
         if (parsedCpn && parsedCpn.code) {
-          queueMicrotask(() => setAppliedCoupon(parsedCpn));
+          setAppliedCoupon(parsedCpn);
         }
       }
     } catch (e) {
       console.error('Error loading cart/coupon state:', e);
     } finally {
-      queueMicrotask(() => setIsLoaded(true));
+      setIsLoaded(true);
     }
   }, []);
 

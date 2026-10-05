@@ -34,13 +34,18 @@ export class SettingsRepository {
     if (pool) {
       try {
         const [rows]: any = await pool.query(
-          'SELECT setting_key, setting_value FROM site_settings WHERE setting_key IN ("general_settings", "google_auth_config", "razorpay_config")'
+          'SELECT setting_key, setting_value FROM site_settings'
         );
         if (Array.isArray(rows) && rows.length > 0) {
           const rowMap: Record<string, any> = {};
           for (const r of rows) {
             try {
-              rowMap[r.setting_key] = typeof r.setting_value === 'string' ? JSON.parse(r.setting_value) : r.setting_value;
+              let parsed = typeof r.setting_value === 'string' ? JSON.parse(r.setting_value) : r.setting_value;
+              // If it was double-encoded as JSON string, parse once more
+              if (typeof parsed === 'string' && (parsed.startsWith('{') || parsed.startsWith('"') || parsed.startsWith('['))) {
+                try { parsed = JSON.parse(parsed); } catch {}
+              }
+              rowMap[r.setting_key] = parsed;
             } catch {
               rowMap[r.setting_key] = r.setting_value;
             }
@@ -57,16 +62,29 @@ export class SettingsRepository {
 
           if (rowMap['google_auth_config']) {
             const googleConf = rowMap['google_auth_config'];
-            if (googleConf.googleClientId) result.googleClientId = googleConf.googleClientId;
-            if (googleConf.googleClientSecret) result.googleClientSecret = googleConf.googleClientSecret;
+            if (googleConf.googleClientId) result.googleClientId = String(googleConf.googleClientId).trim();
+            if (googleConf.googleClientSecret) result.googleClientSecret = String(googleConf.googleClientSecret).trim();
             if (typeof googleConf.enableGoogleAuth === 'boolean') result.enableGoogleAuth = googleConf.enableGoogleAuth;
           }
 
           if (rowMap['razorpay_config']) {
             const rzpConf = rowMap['razorpay_config'];
-            if (rzpConf.razorpayKeyId) result.razorpayKeyId = rzpConf.razorpayKeyId;
-            if (rzpConf.razorpayKeySecret) result.razorpayKeySecret = rzpConf.razorpayKeySecret;
+            if (rzpConf.razorpayKeyId) result.razorpayKeyId = String(rzpConf.razorpayKeyId).trim();
+            if (rzpConf.razorpayKeySecret) result.razorpayKeySecret = String(rzpConf.razorpayKeySecret).trim();
             if (typeof rzpConf.enableRazorpay === 'boolean') result.enableRazorpay = rzpConf.enableRazorpay;
+          }
+
+          if (rowMap['google_client_id'] !== undefined && rowMap['google_client_id'] !== null) {
+            result.googleClientId = String(rowMap['google_client_id']).trim();
+          }
+          if (rowMap['google_client_secret'] !== undefined && rowMap['google_client_secret'] !== null) {
+            result.googleClientSecret = String(rowMap['google_client_secret']).trim();
+          }
+          if (rowMap['razorpay_key_id'] !== undefined && rowMap['razorpay_key_id'] !== null) {
+            result.razorpayKeyId = String(rowMap['razorpay_key_id']).trim();
+          }
+          if (rowMap['razorpay_key_secret'] !== undefined && rowMap['razorpay_key_secret'] !== null) {
+            result.razorpayKeySecret = String(rowMap['razorpay_key_secret']).trim();
           }
         }
       } catch (err: any) {
@@ -131,6 +149,15 @@ export class SettingsRepository {
     const pool = getDbPool();
     if (pool) {
       try {
+        await pool.query(`
+          CREATE TABLE IF NOT EXISTS site_settings (
+            setting_key VARCHAR(128) PRIMARY KEY,
+            setting_value LONGTEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          )
+        `);
+        await pool.query(`ALTER TABLE site_settings MODIFY COLUMN setting_value LONGTEXT NOT NULL`).catch(() => {});
+
         const generalJson = JSON.stringify(updated);
         const googleAuthJson = JSON.stringify({
           googleClientId: (updated.googleClientId || '').trim(),
@@ -143,14 +170,28 @@ export class SettingsRepository {
           enableRazorpay: updated.enableRazorpay !== false
         });
 
-        await pool.query(
-          `INSERT INTO site_settings (setting_key, setting_value)
-           VALUES ('general_settings', ?), ('google_auth_config', ?), ('razorpay_config', ?)
-           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-          [generalJson, googleAuthJson, razorpayJson]
-        );
-      } catch (err) {
-        console.warn('[MySQL] Error updating site_settings in DB:', err);
+        const itemsToSave: [string, string][] = [
+          ['general_settings', generalJson],
+          ['google_auth_config', googleAuthJson],
+          ['razorpay_config', razorpayJson],
+          ['google_client_id', JSON.stringify((updated.googleClientId || '').trim())],
+          ['google_client_secret', JSON.stringify((updated.googleClientSecret || '').trim())],
+          ['razorpay_key_id', JSON.stringify((updated.razorpayKeyId || '').trim())],
+          ['razorpay_key_secret', JSON.stringify((updated.razorpayKeySecret || '').trim())]
+        ];
+
+        for (const [sKey, sVal] of itemsToSave) {
+          await pool.query(
+            `INSERT INTO site_settings (setting_key, setting_value)
+             VALUES (?, ?)
+             ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()`,
+            [sKey, sVal, sVal]
+          );
+        }
+        console.log('[SettingsRepository] Successfully persisted updated site settings to MySQL database!');
+      } catch (err: any) {
+        console.error('[MySQL] CRITICAL error updating site_settings in DB:', err?.message || err);
+        throw new Error(`Failed to persist settings into MySQL: ${err?.message || err}`);
       }
     }
 

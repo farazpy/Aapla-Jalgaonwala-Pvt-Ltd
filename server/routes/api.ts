@@ -1809,7 +1809,11 @@ apiRouter.get('/orders/:id/invoice', async (req: Request, res: Response) => {
 // 5. SITE SETTINGS
 // ----------------------------------------------------
 
-apiRouter.get('/settings', systemCache.middleware('settings'), async (req: Request, res: Response) => {
+apiRouter.get('/settings', async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   try {
     const settings = await SettingsRepository.get();
     
@@ -3405,18 +3409,8 @@ const handleRazorpayCreateOrder = async (req: Request, res: Response) => {
     const keySecret = (siteSettings.razorpayKeySecret || '').trim() || process.env.RAZORPAY_KEY_SECRET;
 
     if (!keyId || !keySecret || keyId === 'rzp_test_placeholder_key') {
-      // Mock order ID for preview/testing environments
-      return res.json(
-        createSuccessResponse({
-          id: `order_mock_${Date.now()}`,
-          key: keyId || 'rzp_test_placeholder_key',
-          amount: Math.round(Number(amount) * 100),
-          currency,
-          receipt: receipt || `rcpt_${Date.now()}`,
-          status: 'created',
-          isMock: true,
-          isSimulation: true
-        })
+      return res.status(400).json(
+        createErrorResponse('Razorpay payment gateway is not configured. Please configure your live Razorpay Key ID and Key Secret in Admin Website Configurations.')
       );
     }
 
@@ -3435,8 +3429,7 @@ const handleRazorpayCreateOrder = async (req: Request, res: Response) => {
 
     return res.json(createSuccessResponse({
       ...order,
-      key: keyId,
-      isSimulation: false
+      key: keyId
     }));
   } catch (error: any) {
     console.error('[Razorpay Error]:', error);
@@ -3449,21 +3442,27 @@ apiRouter.post('/payment/razorpay/create-order', handleRazorpayCreateOrder);
 
 apiRouter.post('/payment/razorpay/verify', async (req: Request, res: Response) => {
   try {
-    const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature, isSimulation, isCodAdvance, advanceFeePaid, remainingBalance } = req.body;
+    const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature, isCodAdvance, advanceFeePaid, remainingBalance } = req.body;
 
     const siteSettings = await SettingsRepository.get();
     const keySecret = (siteSettings.razorpayKeySecret || '').trim() || process.env.RAZORPAY_KEY_SECRET;
 
-    // Verify HMAC signature if live credentials and parameters are supplied
-    if (keySecret && razorpay_order_id && razorpay_payment_id && razorpay_signature && !isSimulation) {
-      const expectedSignature = crypto
-        .createHmac('sha256', keySecret)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-        .digest('hex');
+    if (!keySecret) {
+      return res.status(400).json(createErrorResponse('Razorpay key secret is not configured on the server.'));
+    }
 
-      if (expectedSignature !== razorpay_signature) {
-        return res.status(400).json(createErrorResponse('Invalid payment signature verification'));
-      }
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
+      return res.status(400).json(createErrorResponse('Missing required Razorpay payment verification parameters.'));
+    }
+
+    // Verify cryptographic HMAC signature
+    const expectedSignature = crypto
+      .createHmac('sha256', keySecret)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest('hex');
+
+    if (expectedSignature !== razorpay_signature) {
+      return res.status(400).json(createErrorResponse('Invalid payment signature verification.'));
     }
 
     if (orderId) {
@@ -3475,8 +3474,8 @@ apiRouter.post('/payment/razorpay/verify', async (req: Request, res: Response) =
           codAdvanceFeePaid: Number(advanceFeePaid || 0),
           codRemainingBalance: Number(remainingBalance || 0),
           paymentDetails: {
-            method: isSimulation || !keySecret ? 'COD Deposit (Razorpay Simulation)' : 'COD Deposit (Razorpay)',
-            transactionId: razorpay_payment_id || `pay_cod_${Date.now()}`,
+            method: 'COD Deposit (Razorpay)',
+            transactionId: razorpay_payment_id,
             razorpayOrderId: razorpay_order_id,
             advanceFeePaid: Number(advanceFeePaid || 0),
             remainingBalance: Number(remainingBalance || 0),
@@ -3489,8 +3488,8 @@ apiRouter.post('/payment/razorpay/verify', async (req: Request, res: Response) =
           paymentStatus: 'Paid',
           paymentMethod: 'Razorpay',
           paymentDetails: {
-            method: isSimulation || !keySecret ? 'Razorpay (Test/Simulation)' : 'Razorpay',
-            transactionId: razorpay_payment_id || `pay_${Date.now()}`,
+            method: 'Razorpay',
+            transactionId: razorpay_payment_id,
             razorpayOrderId: razorpay_order_id,
             paidAt: new Date().toISOString()
           }
@@ -3504,7 +3503,7 @@ apiRouter.post('/payment/razorpay/verify', async (req: Request, res: Response) =
       }
     }
 
-    return res.json(createSuccessResponse({ verified: true, isSimulation: Boolean(isSimulation || !keySecret) }));
+    return res.json(createSuccessResponse({ verified: true }));
   } catch (error: any) {
     console.error('[Razorpay Verify] Error:', error);
     return res.status(500).json(createErrorResponse(error.message || 'Payment verification failed'));
@@ -5531,7 +5530,7 @@ apiRouter.get('/auth/google/url', async (req: Request, res: Response) => {
 
     const host = req.get('host') || 'localhost:3000';
     const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-    const defaultDomain = 'http://aaplajalgaonwala.com';
+    const defaultDomain = 'https://aaplajalgaonwala.com';
     const baseUrl = process.env.APP_URL || (host.includes('aaplajalgaonwala.com') ? `${protocol}://${host}` : defaultDomain);
     const redirectUri = reqRedirectUri || `${baseUrl.replace(/\/$/, '')}/auth/callback`;
 
@@ -5540,7 +5539,10 @@ apiRouter.get('/auth/google/url', async (req: Request, res: Response) => {
         configured: false,
         clientId: '',
         redirectUri,
-        url: ''
+        url: '',
+        message: !clientId
+          ? 'Google OAuth is not configured. Please enter your Google Client ID & Secret in Admin Website Configurations.'
+          : 'Google Sign-In is currently disabled in Website Configurations.'
       }));
     }
 
@@ -6773,7 +6775,14 @@ apiRouter.post('/partner-program/register', async (req: Request, res: Response) 
     // Cryptographic signature verification using existing Razorpay secret from MySQL / settings
     const keySecret = (siteSettings.razorpayKeySecret || '').trim() || process.env.RAZORPAY_KEY_SECRET;
 
-    if (!isAdminBypass && !isFreeOnboarding && keySecret && razorpay_order_id && effectivePaymentId && razorpay_signature && !isSimulation && !effectivePaymentId.startsWith('pay_sim_')) {
+    if (!isAdminBypass && !isFreeOnboarding) {
+      if (!keySecret) {
+        return res.status(400).json(createErrorResponse('Payment gateway key secret is not configured on the server.'));
+      }
+      if (!razorpay_order_id || !effectivePaymentId || !razorpay_signature) {
+        return res.status(400).json(createErrorResponse('Missing payment transaction verification credentials.'));
+      }
+
       const expectedSignature = crypto
         .createHmac('sha256', keySecret)
         .update(`${razorpay_order_id}|${effectivePaymentId}`)

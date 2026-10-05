@@ -232,10 +232,11 @@ async function ensureTablesExist(dbPool: mysql.Pool) {
   await runQuery(`
     CREATE TABLE IF NOT EXISTS site_settings (
       setting_key VARCHAR(128) PRIMARY KEY,
-      setting_value JSON NOT NULL,
+      setting_value LONGTEXT NOT NULL,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
+  await runQuery(`ALTER TABLE site_settings MODIFY COLUMN setting_value LONGTEXT NOT NULL`).catch(() => {});
 
   await runQuery(`
     CREATE TABLE IF NOT EXISTS product_reviews (

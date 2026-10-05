@@ -574,37 +574,6 @@ export default function WomenBusinessPartnerPage() {
       }
       const orderData = orderJson.data;
 
-      if (orderData.isSimulation || !orderData.key || orderData.key === 'rzp_test_placeholder_key') {
-        const simulatedPaymentId = `pay_sim_${Date.now()}`;
-        const registerRes = await fetch('/api/partner-program/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...finalPayload,
-            ...(verifiedPartnerCode ? { partnerCode: verifiedPartnerCode } : {}),
-            paymentRef: simulatedPaymentId,
-            transactionId: simulatedPaymentId,
-            razorpay_payment_id: simulatedPaymentId,
-            razorpay_order_id: orderData.id,
-            razorpay_signature: 'simulated_signature',
-            paymentAmount: registrationFee,
-            isSimulation: true
-          })
-        });
-
-        const registerJson = await registerRes.json();
-        if (!registerRes.ok || !registerJson.success) {
-          throw new Error(registerJson.error?.message || 'Registration failed. Please try again.');
-        }
-
-        const partner = registerJson.data.partner;
-        setPortalPartner(partner);
-        localStorage.setItem('ajw_active_partner_code', partner.partnerCode);
-        navigate('/woman-partner-login');
-        setIsRegistering(false);
-        return;
-      }
-
       const options = {
         key: orderData.key,
         amount: orderData.amount,
@@ -637,8 +606,7 @@ export default function WomenBusinessPartnerPage() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
-                paymentAmount: registrationFee,
-                isSimulation: orderData.isSimulation
+                paymentAmount: registrationFee
               })
             });
 

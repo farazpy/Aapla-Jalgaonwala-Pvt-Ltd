@@ -39,6 +39,7 @@ export default function CheckoutPage() {
   const navigate = useNavigate();
   const {
     cart,
+    isLoaded,
     totalItems,
     subtotal,
     clearCart,
@@ -415,7 +416,7 @@ export default function CheckoutPage() {
     }
   }, [pincode]);
 
-  if (cart.length === 0) {
+  if (isLoaded && cart.length === 0) {
     return (
       <div className="py-20 bg-[#FAF6ED] min-h-screen text-center">
         <SEO title="Checkout | Aapla Jalgaonwala" description="Complete your order." />
@@ -424,13 +425,21 @@ export default function CheckoutPage() {
             <h2 className="text-xl font-bold text-stone-900 mb-2">Your Cart is Empty</h2>
             <p className="text-xs text-stone-500 mb-6">Please add items to your cart before proceeding to checkout.</p>
             <Link
-              href="/shop"
+              to="/shop"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#9B111E] text-white font-bold text-xs"
             >
               <span>Return to Shop</span>
             </Link>
           </div>
         </Container>
+      </div>
+    );
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="py-20 bg-[#FAF6ED] min-h-screen flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-[#9B111E] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -587,42 +596,9 @@ export default function CheckoutPage() {
 
       const razorpayOrder = payResult.data;
 
-      // Handle Test / Simulation mode when real Razorpay keys aren't configured in production
-      if (razorpayOrder.isSimulation || !razorpayOrder.key || razorpayOrder.key === 'rzp_test_placeholder_key') {
-        setIsSubmitting(true);
-        const verifyRes = await fetch('/api/payment/razorpay/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            orderId: dbOrder.id,
-            razorpay_payment_id: `pay_sim_${Date.now()}`,
-            razorpay_order_id: razorpayOrder.id,
-            razorpay_signature: 'simulated_signature',
-            isSimulation: true,
-            isCodAdvance: isCodAdvanceCharge,
-            advanceFeePaid: codAdvanceFee,
-            remainingBalance: codRemainingBalance
-          })
-        });
-
-        const verifyResult = await verifyRes.json();
-        if (verifyResult.success) {
-          Analytics.trackPurchaseComplete({
-            orderId: dbOrder.id,
-            totalAmount: estimatedTotal,
-            paymentMethod: isCodAdvanceCharge ? 'COD_ADVANCE' : 'ONLINE_RAZORPAY',
-            itemsCount: totalItems,
-            referralCode: referralPartnerCode || undefined
-          });
-          clearCart();
-          navigate(`/order/${dbOrder.id}?${isCodAdvanceCharge ? 'status=success&codAdvance=true' : 'payment=success'}`);
-          return;
-        }
-      }
-
-      // Ensure Razorpay SDK is available for live key
+      // Ensure Razorpay SDK is available
       if (typeof window === 'undefined' || !(window as any).Razorpay) {
-        throw new Error('Razorpay payment gateway is loading. Please try placing your order again in a few seconds.');
+        throw new Error('Razorpay payment gateway script is still loading. Please try placing your order again in a moment.');
       }
 
       const options = {
@@ -646,7 +622,6 @@ export default function CheckoutPage() {
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
-                isSimulation: razorpayOrder.isSimulation,
                 isCodAdvance: isCodAdvanceCharge,
                 advanceFeePaid: codAdvanceFee,
                 remainingBalance: codRemainingBalance

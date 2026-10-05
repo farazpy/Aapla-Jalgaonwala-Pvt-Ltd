@@ -50,11 +50,12 @@
   "mobileWebAppTitle": "AJW",
   "enableRazorpay": true,
   "enableCod": true,
-  "razorpayKeyId": "rzp_live_TQ5cpGrMx0a1hK",
+  "razorpayKeyId": "test",
   "razorpayKeySecret": "PFhCNb6axriTnd81N2QcN0b8",
   "enableGoogleAuth": true,
-  "googleClientId": "",
-  "googleClientSecret": "",
+  "googleClientId": "573462718288-jb8dgh8ajprmohm19hgqmquechgeor65.apps.googleusercontent.com",
+  "googleClientSecret": "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",
+  "googleMapsApiKey": "AIzaSyAbNiuFadspC4jDCx8tM1YldRXTl8y_p1E",
   "navratriHeroImageUrl": "https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=1200&q=80",
   "navratriPrice": 599,
   "navratriMrp": 899,
@@ -100,8 +101,11 @@
       "freeDeliveryAbove": 799
     }
   ],
-  "storageProvider": "telecloud",
   "teleCloudEndpoint": "https://s3.htknetwork.in/api/v1/upload",
+  "teleCloudApiKey": "",
+  "teleCloudWorkspaceId": "",
+  "teleCloudCaption": "Uploaded via Aapla Jalgaonwala Admin",
+  "storageProvider": "telecloud",
   "cloudinaryCloudName": "db7nvcm4i",
   "cloudinaryApiKey": "146947749955785",
   "cloudinaryApiSecret": "1ekM5mUg2jcm72wsM_W6dQuulcQ",
@@ -120,8 +124,56 @@
   "enableTelegramAlerts": true,
   "telegramBotToken": "8754963062:AAFVubdouQBT0Jd49p0uEmtGNCrVm2e_Lyc",
   "telegramChatId": "-1004359010863",
-  "googleMapsApiKey": "AIzaSyAbNiuFadspC4jDCx8tM1YldRXTl8y_p1E",
   "ourStoryHeroImageUrl": "https://res.cloudinary.com/xbtfj9zf/image/upload/fl_original/v1786888534/ChatGPT_Image_Aug_16_2026_07_25_24_PM.png",
   "ourStoryHeroTitle": "Rooted in Soil. Crafted for Modern Taste.",
-  "ourStoryHeroSubtitle": "How two visionaries from Jalgaon connected local farming families directly with snack lovers across India."
+  "ourStoryHeroSubtitle": "How two visionaries from Jalgaon connected local farming families directly with snack lovers across India.",
+  "navratri_offer_config": {
+    "featuredImage": "https://s3.htknetwork.in/f/a6xetsn3",
+    "price": 499,
+    "description": "Special Navratri Festivity Pack containing 500g Salted Banana Chips, 500g Spicy Masala Banana Chips, 500g Sweet Potato Chivda, 500g Spicy Potato Chivda, and a FREE pack of nutritious Rajgira Ladoos! Made 100% Satvik with Sendha Namak (Rock Salt) in separate dedicated frying lines.",
+    "products": [
+      {
+        "id": "item-1",
+        "name": "Salty Banana Chips",
+        "weight": "500g Pack",
+        "desc": "Melt-in-your-mouth wafer thin raw banana wafers salted with pure Himalayan Sendha Namak (Rock Salt).",
+        "img": "https://s3.htknetwork.in/f/75r9jg2C",
+        "badge": "Fasting Approved"
+      },
+      {
+        "id": "item-2",
+        "name": "Spicy Masala Banana Chips",
+        "weight": "500g Pack",
+        "desc": "Crispy raw banana wafers tossed with fast-compliant spicy red chilli powder and rock salt.",
+        "img": "https://s3.htknetwork.in/f/W57W97p5",
+        "badge": "Spicy Delight"
+      },
+      {
+        "id": "item-3",
+        "name": "Sweet Potato Chiwda",
+        "weight": "200g Pack",
+        "desc": "Crisp hand-grated Jalgaon potato salli blended with premium cashew nuts, sweet raisins, and roasted peanuts.",
+        "img": "https://s3.htknetwork.in/f/enVq6qbw",
+        "badge": "Sweet & Crunchy"
+      },
+      {
+        "id": "item-4",
+        "name": "Spicy Potato Chiwda",
+        "weight": "200g Pack",
+        "desc": "Thin golden matchstick potato salli seasoned with a spicy Navratri spice mix and crunchy rock salt.",
+        "img": "https://s3.htknetwork.in/f/Zx9JpBxP",
+        "badge": "Spicy & Savoury"
+      },
+      {
+        "id": "item-5",
+        "name": "Rajgira Amaranth Sweet Ladoo",
+        "weight": "FREE GIFT",
+        "desc": "Mouthwatering, soft, nutrient-packed amaranth puffed seeds balls sweetened with jaggery/pure sugar.",
+        "img": "https://s3.htknetwork.in/f/W58Xnuqq",
+        "badge": "Free Gift 🎁",
+        "isGift": true
+      }
+    ]
+  },
+  "test": 1
 }

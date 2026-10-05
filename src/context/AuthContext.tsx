@@ -322,23 +322,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }, 1000);
         });
       } else {
-        // Direct Google Sign-In with real user credentials
-        const emailInput = prompt('Enter your Google Account email address:');
-        if (!emailInput || !emailInput.trim()) return;
-
-        const email = emailInput.trim().toLowerCase();
-        const defaultName = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-        const nameInput = prompt('Enter your full name as on your Google Account:', defaultName);
-        const name = (nameInput && nameInput.trim()) ? nameInput.trim() : defaultName;
-        const picture = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=9B111E&color=fff&size=200&bold=true`;
-        const googleId = `g_${Date.now()}`;
-
-        await loginWithGoogle({
-          email,
-          name,
-          picture,
-          googleId
-        });
+        const errorMsg = authData.message || 'Google OAuth is not configured. Please configure Google Client ID & Secret in Website Configurations or contact store support.';
+        throw new Error(errorMsg);
       }
     } catch (err: any) {
       console.error('[Google OAuth] Failed to initiate:', err);
