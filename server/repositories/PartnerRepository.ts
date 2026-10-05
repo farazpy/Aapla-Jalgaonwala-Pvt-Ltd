@@ -435,7 +435,7 @@ export class PartnerRepository {
             newPartner.razorpayPaymentId || newPartner.paymentRef || null,
             newPartner.razorpayOrderId || null,
             newPartner.paymentAmount || 0,
-            newPartner.paymentDate ? new Date(newPartner.paymentDate) : null,
+            newPartner.paymentDate ? toSqlDateTime(newPartner.paymentDate) : toSqlDateTime(new Date()),
             newPartner.commissionRate,
             newPartner.customerDiscountRate,
             newPartner.totalOrdersCount,
@@ -446,9 +446,9 @@ export class PartnerRepository {
             newPartner.referredByPartnerCode || null,
             newPartner.referralBonusEarned || 0,
             newPartner.notes,
-            newPartner.approvedAt || null,
-            newPartner.createdAt,
-            newPartner.updatedAt
+            newPartner.approvedAt ? toSqlDateTime(newPartner.approvedAt) : null,
+            toSqlDateTime(newPartner.createdAt),
+            toSqlDateTime(newPartner.updatedAt)
           ]
         );
       } catch (err) {

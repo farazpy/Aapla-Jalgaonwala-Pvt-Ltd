@@ -183,6 +183,7 @@ export default function AdminPartnersPage() {
     aadhaarPanNumber: '',
     status: 'active',
     customPartnerCode: '',
+    referredByPartnerCode: '',
     adminNotes: '',
     isAdminBypass: true
   });
@@ -384,24 +385,34 @@ export default function AdminPartnersPage() {
       const fallbackIfsc = addPartnerForm.ifscCode.trim() || (cleanPhonePe ? 'PHONEPE_UPI' : 'ADMIN_BYPASS');
       const fallbackBankName = addPartnerForm.bankName.trim() || (cleanPhonePe ? 'PhonePe / GPay' : (addPartnerForm.upiId ? 'UPI Account' : 'Admin Manual'));
 
+      const authToken = localStorage.getItem('ajw_auth_token') || localStorage.getItem('token') || '';
+
       const finalPayload = {
         ...addPartnerForm,
         phone: cleanPhone,
         phonePeNumber: cleanPhonePe,
+        partnerCode: addPartnerForm.customPartnerCode.trim() || undefined,
+        referredByPartnerCode: addPartnerForm.referredByPartnerCode.trim() || undefined,
         bankAccountNumber: addPartnerForm.bankAccountNumber.trim() || fallbackAccount,
         ifscCode: fallbackIfsc,
         bankName: fallbackBankName,
-        bankAccountName: addPartnerForm.bankAccountName.trim() || addPartnerForm.fullName.trim()
+        bankAccountName: addPartnerForm.bankAccountName.trim() || addPartnerForm.fullName.trim(),
+        isAdminBypass: true,
+        paymentRef: 'ADMIN_ONBOARDED',
+        paymentStatus: 'paid'
       };
 
       const res = await fetch('/api/partner-program/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
         body: JSON.stringify(finalPayload)
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error?.message || 'Failed to add partner.');
+        throw new Error(json.error?.message || json.message || 'Failed to add partner.');
       }
       setIsAddPartnerModalOpen(false);
 
@@ -427,7 +438,7 @@ export default function AdminPartnersPage() {
 
       setBulkActionFeedback({
         type: 'success',
-        message: `✨ Partner ${createdPartner?.fullName || ''} (${createdPartner?.partnerCode || ''}) added successfully and displayed below!`
+        message: `✨ Partner ${createdPartner?.fullName || ''} (${createdPartner?.partnerCode || ''}) added successfully and saved to database!`
       });
 
       setAddPartnerForm({
@@ -448,6 +459,7 @@ export default function AdminPartnersPage() {
         aadhaarPanNumber: '',
         status: 'active',
         customPartnerCode: '',
+        referredByPartnerCode: '',
         adminNotes: '',
         isAdminBypass: true
       });
@@ -4004,8 +4016,43 @@ export default function AdminPartnersPage() {
                         value={addPartnerForm.customPartnerCode}
                         onChange={(e) => setAddPartnerForm({ ...addPartnerForm, customPartnerCode: e.target.value.toUpperCase() })}
                         className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-mono font-bold uppercase focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                      />
+                      >
+                      </input>
                     </div>
+                  </div>
+                </div>
+
+                {/* SECTION 6: Referred By Woman Partner (Optional) */}
+                <div className="bg-stone-50/70 p-4 rounded-2xl border border-stone-200/70 space-y-3">
+                  <div className="flex items-center justify-between border-b border-stone-200/50 pb-1.5">
+                    <div className="flex items-center gap-2 text-xs font-bold text-stone-800 uppercase tracking-wider">
+                      <Users className="w-3.5 h-3.5 text-[#9B111E]" />
+                      <span>6. Referred By Woman Partner (Optional)</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                      ₹200 Bonus to Referrer
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-stone-700 block">
+                      Select Referring Woman Partner (Parent Referrer)
+                    </label>
+                    <select
+                      value={addPartnerForm.referredByPartnerCode}
+                      onChange={(e) => setAddPartnerForm({ ...addPartnerForm, referredByPartnerCode: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
+                    >
+                      <option value="">None (Direct / Direct Onboarding)</option>
+                      {partners.map((p) => (
+                        <option key={p.id} value={p.partnerCode}>
+                          {p.fullName} ({p.partnerCode}) - {p.city || p.state} [{p.phone}]
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-stone-500">
+                      If another woman partner (e.g. Partner A) referred this woman (Partner B), select Partner A here. Partner A will automatically receive the ₹200 invite reward linked directly to her partner account.
+                    </p>
                   </div>
                 </div>
 

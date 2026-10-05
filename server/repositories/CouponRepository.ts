@@ -10,6 +10,13 @@ export const initialCoupons: Coupon[] = [];
 let couponMemoryCache: { data: Coupon[]; timestamp: number } | null = null;
 const CACHE_TTL_MS = 60000;
 
+function toSqlDateTime(val?: string | Date | null): string {
+  if (!val) return new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const d = typeof val === 'string' ? new Date(val) : val;
+  if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 19).replace('T', ' ');
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 function safeParseArray(val: any): string[] {
   if (!val) return [];
   if (Array.isArray(val)) return val.map(String);
@@ -250,7 +257,7 @@ export class CouponRepository {
             newCoupon.isActive ? 1 : 0,
             newCoupon.isAutoApply ? 1 : 0,
             newCoupon.autoApplyTitle || null,
-            newCoupon.createdAt
+            toSqlDateTime(newCoupon.createdAt)
           ]
         );
       } catch (err) {
