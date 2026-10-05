@@ -1279,11 +1279,18 @@ apiRouter.post('/orders', async (req: Request, res: Response) => {
       return res.status(400).json(createErrorResponse('Cash on Delivery is currently disabled by store admin. Please checkout using Razorpay Online Payment.'));
     }
 
-    const isCodAdvanceEnabled = siteSettings.codAdvanceFeeEnabled !== false && Number(siteSettings.codAdvanceFeeAmount || 50) > 0;
-    const codAdvanceAmount = isCodAdvanceEnabled ? Number(siteSettings.codAdvanceFeeAmount || 50) : 0;
+    const isCodAdvanceEnabled = siteSettings.enableCod !== false && siteSettings.codAdvanceFeeEnabled === true && Number(siteSettings.codAdvanceFeeAmount || 0) > 0;
+    let codAdvanceAmount = 0;
+    if (isCodAdvanceEnabled) {
+      if (siteSettings.codAdvanceFeeType === 'percentage') {
+        codAdvanceAmount = Math.round((orderData.totalAmount * Number(siteSettings.codAdvanceFeeAmount || 10)) / 100);
+      } else {
+        codAdvanceAmount = Math.min(Number(siteSettings.codAdvanceFeeAmount || 50), orderData.totalAmount);
+      }
+    }
 
     const isOnlineRazorpay = orderData.paymentMethod === 'Razorpay';
-    const isCodWithAdvance = orderData.paymentMethod === 'COD' && isCodAdvanceEnabled && codAdvanceAmount > 0;
+    const isCodWithAdvance = (orderData.paymentMethod === 'COD' || orderData.paymentMethod === 'Cash on Delivery') && isCodAdvanceEnabled && codAdvanceAmount > 0;
     const requiresOnlinePayment = isOnlineRazorpay || isCodWithAdvance;
 
     if (requiresOnlinePayment) {
@@ -3408,9 +3415,9 @@ const handleRazorpayCreateOrder = async (req: Request, res: Response) => {
     const keyId = (siteSettings.razorpayKeyId || '').trim() || process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     const keySecret = (siteSettings.razorpayKeySecret || '').trim() || process.env.RAZORPAY_KEY_SECRET;
 
-    if (!keyId || !keySecret || keyId === 'rzp_test_placeholder_key') {
+    if (!keyId || !keySecret || keyId === 'rzp_test_placeholder_key' || keyId === 'test' || keySecret === 'test' || keyId.length < 8) {
       return res.status(400).json(
-        createErrorResponse('Razorpay payment gateway is not configured. Please configure your live Razorpay Key ID and Key Secret in Admin Website Configurations.')
+        createErrorResponse('Razorpay payment gateway credentials are not configured or are invalid. Please update your valid Razorpay Key ID (rzp_test_... or rzp_live_...) and Key Secret in Admin > Configurations.')
       );
     }
 
@@ -3433,7 +3440,10 @@ const handleRazorpayCreateOrder = async (req: Request, res: Response) => {
     }));
   } catch (error: any) {
     console.error('[Razorpay Error]:', error);
-    return res.status(500).json(createErrorResponse(error.message || 'Razorpay order creation failed'));
+    const desc = error?.error?.description || error?.message || 'Razorpay order creation failed';
+    return res.status(400).json(
+      createErrorResponse(`Payment gateway error: ${desc}. Please verify your Razorpay Key ID and Secret in Admin Website Configurations.`)
+    );
   }
 };
 

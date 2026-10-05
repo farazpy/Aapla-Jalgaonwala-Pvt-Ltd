@@ -264,10 +264,16 @@ export default function AdminConfigsPage() {
     setErrorMessage(null);
     try {
       const adminHeaders = getAdminAuthHeaders();
-      let res = await fetch('/api/admin/settings', { headers: adminHeaders });
+      let res = await fetch(`/api/admin/settings?t=${Date.now()}`, {
+        headers: adminHeaders,
+        cache: 'no-store'
+      });
       let json = await res.json().catch(() => null);
       if (!json || !json.success) {
-        res = await fetch('/api/settings', { headers: adminHeaders });
+        res = await fetch(`/api/settings?t=${Date.now()}`, {
+          headers: adminHeaders,
+          cache: 'no-store'
+        });
         json = await res.json().catch(() => null);
       }
       if (json && json.success && json.data) {

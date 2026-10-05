@@ -8,6 +8,7 @@ import { SectionHeading } from '@/components/ui/SectionHeading';
 import { Image } from '@/components/ui/Image';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
+import { useSettings } from '@/context/SettingsContext';
 import { INDIAN_STATES_AND_CITIES, ALL_STATES } from '@/data/indianStatesAndCities';
 import {
   ShieldCheck,
@@ -69,8 +70,9 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [saveAddressToAccount, setSaveAddressToAccount] = useState(false);
 
-  // Site settings for COD Advance Fee
-  const [siteSettings, setSiteSettings] = useState<any>(null);
+  // Site settings for COD Advance Fee and Payment Gateways
+  const { settings: globalSettings, refreshSettings } = useSettings();
+  const [siteSettings, setSiteSettings] = useState<any>(globalSettings || null);
 
   // Cities dynamic dropdown selection
   const [customCities, setCustomCities] = useState<string[]>([]);
@@ -121,8 +123,13 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // Fetch real-time settings on mount with cache: 'no-store'
   useEffect(() => {
-    fetch('/api/settings')
+    refreshSettings();
+    fetch(`/api/settings?t=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+    })
       .then((r) => r.json())
       .then((j) => {
         if (j.success && j.data) {
@@ -133,7 +140,17 @@ export default function CheckoutPage() {
         }
       })
       .catch((err) => console.warn('Failed to fetch settings in checkout:', err));
-  }, []);
+  }, [refreshSettings]);
+
+  // Sync when global settings update
+  useEffect(() => {
+    if (globalSettings) {
+      setSiteSettings(globalSettings);
+      if (globalSettings.enableCod === false) {
+        setPaymentMethod('ONLINE');
+      }
+    }
+  }, [globalSettings]);
 
   // Auto-fill from user account on load / auth change
   useEffect(() => {
@@ -313,10 +330,15 @@ export default function CheckoutPage() {
 
   const estimatedTotal = finalTotal;
 
-  const isCodEnabled = siteSettings ? siteSettings.enableCod !== false : true;
-  const isCodAdvanceEnabled = Boolean(isCodEnabled && siteSettings?.codAdvanceFeeEnabled !== false && Number(siteSettings?.codAdvanceFeeAmount || 50) > 0);
-  const codFeeAmountSetting = Number(siteSettings?.codAdvanceFeeAmount || 50);
-  const codFeeTypeSetting = siteSettings?.codAdvanceFeeType || 'fixed';
+  const effectiveSettings = siteSettings || globalSettings;
+  const isCodEnabled = effectiveSettings ? effectiveSettings.enableCod !== false : true;
+  const isCodAdvanceEnabled = Boolean(
+    isCodEnabled &&
+    effectiveSettings?.codAdvanceFeeEnabled === true &&
+    Number(effectiveSettings?.codAdvanceFeeAmount || 0) > 0
+  );
+  const codFeeAmountSetting = Number(effectiveSettings?.codAdvanceFeeAmount || 50);
+  const codFeeTypeSetting = effectiveSettings?.codAdvanceFeeType || 'fixed';
 
   // Fallback check: If COD is disabled, ensure paymentMethod is ONLINE
   useEffect(() => {

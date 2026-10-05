@@ -17,15 +17,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const fetchSettings = useCallback(async () => {
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch(`/api/settings?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+      });
       const json = await res.json();
       if (json.success && json.data) {
-        // Merge with initialSiteSettings to ensure all keys are present
-        setSettings(prev => ({
+        // Authoritative server data overrides defaults cleanly
+        setSettings({
           ...initialSiteSettings,
-          ...prev,
           ...json.data
-        }));
+        });
       }
     } catch (err) {
       console.warn('[SettingsContext] Failed to fetch settings from API, using fallback defaults:', err);

@@ -42,7 +42,10 @@ export default function AdminCodSettingsPage() {
   const fetchSettings = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/settings');
+      const res = await fetch(`/api/settings?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+      });
       const json = await res.json();
       if (json.success && json.data) {
         const d = json.data;

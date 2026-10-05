@@ -7,7 +7,7 @@ import { addCloudinaryOriginalFlag } from '../utils/cloudinary';
 const FILE_NAME = 'settings.json';
 
 let settingsMemoryCache: { data: SiteSettings; timestamp: number } | null = null;
-const CACHE_TTL_MS = 60000;
+const CACHE_TTL_MS = 2000;
 
 export class SettingsRepository {
   static clearCache() {
