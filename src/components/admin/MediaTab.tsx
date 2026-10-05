@@ -445,6 +445,12 @@ export const MediaTab: React.FC<{
     setIsSubmitting(true);
 
     try {
+      const authToken = localStorage.getItem('ajw_auth_token') || localStorage.getItem('token') || '';
+      const authHeaders = {
+        'Content-Type': 'application/json',
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+      };
+
       if (editingItemId) {
         // Update existing item
         const payload = activeSubTab === 'gallery'
@@ -453,17 +459,18 @@ export const MediaTab: React.FC<{
 
         const res = await fetch('/api/media', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify(payload)
         });
-        const json = await res.json();
-        if (json.success) {
+        const json = await res.json().catch(() => null);
+        if (json && json.success) {
           showToast(`Updated ${activeSubTab === 'gallery' ? 'gallery photo' : 'video showcase item'} successfully!`);
           setIsModalOpen(false);
           setEditingItemId(null);
           await fetchMedia();
         } else {
-          alert(json.error || 'Failed to update item');
+          const errMsg = typeof json?.error === 'string' ? json.error : (json?.error?.message || json?.message || 'Failed to update item');
+          alert(errMsg);
         }
       } else {
         // Create new item
@@ -473,22 +480,23 @@ export const MediaTab: React.FC<{
 
         const res = await fetch('/api/media', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders,
           body: JSON.stringify(payload)
         });
 
-        const json = await res.json();
-        if (json.success) {
+        const json = await res.json().catch(() => null);
+        if (json && json.success) {
           showToast(activeSubTab === 'gallery' ? '🎉 Added new photo to Our Story Gallery!' : '🎉 Added new video to Our Story Showcase!');
           setIsModalOpen(false);
           await fetchMedia();
         } else {
-          alert(json.error || 'Failed to add media item');
+          const errMsg = typeof json?.error === 'string' ? json.error : (json?.error?.message || json?.message || 'Failed to add media item');
+          alert(errMsg);
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving media:', err);
-      alert('Error saving media item');
+      alert(err?.message || 'Error saving media item');
     } finally {
       setIsSubmitting(false);
     }

@@ -2336,31 +2336,72 @@ apiRouter.post('/media', async (req: Request, res: Response) => {
   }
 });
 
-apiRouter.put('/media/:id', async (req: Request, res: Response) => {
+const handleUpdateMedia = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    const updateData = req.body;
-    if (updateData.videoUrl || updateData.duration || updateData.type === 'video') {
-      const updated = await MediaRepository.updateVideo(id, updateData);
-      return res.json(createSuccessResponse(updated));
-    } else {
-      const updated = await MediaRepository.updateGalleryItem(id, updateData);
-      return res.json(createSuccessResponse(updated));
+    const id = req.params.id || req.body?.id || req.body?._id;
+    if (!id) {
+      return res.status(400).json(createErrorResponse('Media ID is required'));
     }
+    const updateData = req.body || {};
+    const isVideo = Boolean(
+      updateData.videoUrl ||
+      updateData.duration ||
+      updateData.type === 'video' ||
+      updateData.mediaType === 'video' ||
+      updateData.speaker
+    );
+
+    let updated = isVideo
+      ? await MediaRepository.updateVideo(id, updateData)
+      : await MediaRepository.updateGalleryItem(id, updateData);
+
+    if (!updated) {
+      updated = isVideo
+        ? await MediaRepository.updateGalleryItem(id, updateData)
+        : await MediaRepository.updateVideo(id, updateData);
+    }
+
+    if (!updated) {
+      return res.status(404).json(createErrorResponse('Media item not found'));
+    }
+
+    return res.json(createSuccessResponse(updated, 'Media updated successfully'));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to update media'));
   }
-});
+};
 
-apiRouter.delete('/media/:id', async (req: Request, res: Response) => {
+apiRouter.put('/media', handleUpdateMedia);
+apiRouter.put('/media/:id', handleUpdateMedia);
+
+const handleDeleteMedia = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    await MediaRepository.delete(id);
-    return res.json(createSuccessResponse({ id, deleted: true }));
+    const id = (req.params.id || req.query.id || req.body?.id) as string;
+    const mediaType = (req.query.type || req.body?.type || req.body?.mediaType) as string;
+
+    if (!id) {
+      return res.status(400).json(createErrorResponse('Media ID is required'));
+    }
+
+    let deleted = false;
+    if (mediaType === 'video') {
+      deleted = await MediaRepository.deleteVideo(id);
+      if (!deleted) deleted = await MediaRepository.delete(id);
+    } else if (mediaType === 'gallery') {
+      deleted = await MediaRepository.deleteGalleryItem(id);
+      if (!deleted) deleted = await MediaRepository.delete(id);
+    } else {
+      deleted = await MediaRepository.delete(id);
+    }
+
+    return res.json(createSuccessResponse({ id, deleted: true }, 'Media deleted successfully'));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to delete media'));
   }
-});
+};
+
+apiRouter.delete('/media', handleDeleteMedia);
+apiRouter.delete('/media/:id', handleDeleteMedia);
 
 // ----------------------------------------------------
 // 8. SEO

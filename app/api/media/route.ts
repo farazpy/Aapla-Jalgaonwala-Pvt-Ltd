@@ -77,7 +77,25 @@ export async function PUT(req: NextRequest) {
     if (!body || !body.id) {
       return createErrorResponse('Media ID is required', 'INVALID_ID', 400);
     }
-    const updated = await MediaRepository.updateGalleryItem(body.id, body);
+    const id = String(body.id);
+    const isVideo = Boolean(
+      body.mediaType === 'video' ||
+      body.type === 'video' ||
+      body.videoUrl ||
+      body.duration ||
+      body.speaker
+    );
+
+    let updated = isVideo
+      ? await MediaRepository.updateVideo(id, body)
+      : await MediaRepository.updateGalleryItem(id, body);
+
+    if (!updated) {
+      updated = isVideo
+        ? await MediaRepository.updateGalleryItem(id, body)
+        : await MediaRepository.updateVideo(id, body);
+    }
+
     if (!updated) {
       return createErrorResponse('Media item not found', 'NOT_FOUND', 404);
     }
@@ -100,11 +118,17 @@ export async function DELETE(req: NextRequest) {
     let success = false;
     if (mediaType === 'video') {
       success = await MediaRepository.deleteVideo(id);
+      if (!success) success = await MediaRepository.delete(id);
     } else {
       success = await MediaRepository.deleteGalleryItem(id);
+      if (!success) success = await MediaRepository.delete(id);
     }
 
-    return createSuccessResponse({ success }, 'Media deleted successfully');
+    if (!success) {
+      return createErrorResponse('Media item not found or already deleted', 'NOT_FOUND', 404);
+    }
+
+    return createSuccessResponse({ id, deleted: true }, 'Media deleted successfully');
   } catch (error) {
     return handleApiError(error, req, 'media', 'DELETE');
   }
