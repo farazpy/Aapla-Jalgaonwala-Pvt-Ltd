@@ -196,8 +196,8 @@ export async function sendTelegramAlertDetailed(
   try {
     const settings = await SettingsRepository.get();
 
-    const botToken = (options?.botToken || settings.telegramBotToken || '').trim();
-    const chatId = (options?.chatId || settings.telegramChatId || '').trim();
+    const botToken = (options?.botToken || process.env.TELEGRAM_BOT_TOKEN || settings.telegramBotToken || '').trim();
+    const chatId = (options?.chatId || process.env.TELEGRAM_CHAT_ID || settings.telegramChatId || '').trim();
     const enabled = options?.botToken ? true : (settings.enableTelegramAlerts !== false);
 
     if (!enabled) {

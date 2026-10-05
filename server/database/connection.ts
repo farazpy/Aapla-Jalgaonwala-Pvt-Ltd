@@ -833,5 +833,11 @@ export function resetDbPoolFailure() {
 }
 
 export async function initDatabase(): Promise<mysql.Pool | null> {
-  return getDbPool();
+  const p = getDbPool();
+  if (!p) {
+    throw new Error('Database pool could not be created. Ensure DB_HOST, DB_USER, and DB_NAME are correctly set in .env');
+  }
+  // Execute a test query to verify live connection to MySQL on startup
+  await p.query('SELECT 1');
+  return p;
 }

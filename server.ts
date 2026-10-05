@@ -10,10 +10,172 @@ import { UserRepository } from './server/repositories/UserRepository';
 import { SettingsRepository } from './server/repositories/SettingsRepository';
 import { initOrderCleanupJob } from './server/utils/orderCleanup';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables with comprehensive VPS loading paths & fallbacks
+const envPaths = [
+  path.join(process.cwd(), '.env'),
+  path.join(process.cwd(), '..', '.env'),
+  path.join(path.dirname(process.argv[1] || ''), '.env'),
+  path.join(path.dirname(process.argv[1] || ''), '..', '.env'),
+];
+
+let loadedEnvPath = null;
+for (const p of envPaths) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p });
+    loadedEnvPath = p;
+    break;
+  }
+}
+
+if (!loadedEnvPath) {
+  // Final standard fallback
+  dotenv.config();
+}
+
+console.log(`[EnvConfig] Initialized environment variables on VPS using config path: ${loadedEnvPath || 'System Environment Variables Only'}`);
+
+// Global variable to capture critical database initialization connection error on startup
+let dbInitError: any = null;
+
+function escapeHtml(str: string): string {
+  if (typeof str !== 'string') return String(str || '');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
 const app = express();
+
+// Critical Middleware: Intercept and display an elegant full-screen database connection failure error page
+// if there is a startup or persistent connection block to the MySQL Database
+app.use((req: Request, res: Response, next) => {
+  if (dbInitError) {
+    res.status(503).send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Database Connection Failure - Aapla Jalgaonwala</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap');
+          body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+          }
+          h1 {
+            font-family: 'Playfair Display', serif;
+          }
+        </style>
+      </head>
+      <body class="bg-stone-50 text-stone-900 min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-2xl w-full bg-white rounded-3xl border-2 border-[#9B111E]/20 shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div class="bg-gradient-to-r from-[#9B111E] to-[#D9531E] p-6 sm:p-8 text-white text-center relative">
+            <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/20">
+              <i class="fa-solid fa-database text-3xl text-amber-200"></i>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Database Connection Failed</h1>
+            <p class="text-sm text-stone-100/90 mt-1.5 font-medium">Critical system initialization block on start</p>
+            <div class="absolute top-4 right-4 bg-red-950/40 text-red-200 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border border-red-500/20 tracking-wider">
+              Error 503
+            </div>
+          </div>
+
+          {/* Error Details */}
+          <div class="p-6 sm:p-8 space-y-6">
+            <div class="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-3">
+              <div class="flex items-center gap-2 border-b border-stone-200/60 pb-2.5">
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-600 animate-ping"></span>
+                <p class="text-xs font-black text-[#9B111E] uppercase tracking-wider">MySQL Driver Report</p>
+              </div>
+              <div class="space-y-1 text-xs">
+                <p class="text-stone-700 font-semibold">Message:</p>
+                <div class="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-800 font-mono text-[11px] leading-relaxed break-words whitespace-pre-wrap select-all">
+                  ${escapeHtml(dbInitError.message || dbInitError)}
+                </div>
+              </div>
+              ${dbInitError.code ? `
+                <div class="grid grid-cols-2 gap-4 pt-2 text-[11px] font-semibold text-stone-600">
+                  <div>
+                    <span class="text-stone-400">Error Code:</span> <code class="font-mono text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded">${escapeHtml(dbInitError.code)}</code>
+                  </div>
+                  ${dbInitError.errno ? `
+                    <div>
+                      <span class="text-stone-400">Error No:</span> <code class="font-mono text-rose-700 font-bold bg-rose-50 px-1.5 py-0.5 rounded">${escapeHtml(String(dbInitError.errno))}</code>
+                    </div>
+                  ` : ''}
+                </div>
+              ` : ''}
+            </div>
+
+            {/* Resolved Env Debugging */}
+            <div class="bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-3">
+              <p class="text-xs font-black text-stone-800 uppercase tracking-wider">Resolved Credentials from .env</p>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="p-2.5 bg-white border border-stone-200 rounded-xl">
+                  <p class="text-[10px] text-stone-400 font-bold uppercase">DB Host</p>
+                  <p class="font-mono text-stone-800 font-bold mt-0.5">${escapeHtml(process.env.DB_HOST || 'Not Defined')}:${escapeHtml(process.env.DB_PORT || '3306')}</p>
+                </div>
+                <div class="p-2.5 bg-white border border-stone-200 rounded-xl">
+                  <p class="text-[10px] text-stone-400 font-bold uppercase">DB Name</p>
+                  <p class="font-mono text-stone-800 font-bold mt-0.5">${escapeHtml(process.env.DB_NAME || 'Not Defined')}</p>
+                </div>
+                <div class="p-2.5 bg-white border border-stone-200 rounded-xl">
+                  <p class="text-[10px] text-stone-400 font-bold uppercase">DB Username</p>
+                  <p class="font-mono text-stone-800 font-bold mt-0.5">${escapeHtml(process.env.DB_USER || 'Not Defined')}</p>
+                </div>
+                <div class="p-2.5 bg-white border border-stone-200 rounded-xl">
+                  <p class="text-[10px] text-stone-400 font-bold uppercase">DB Password Setup</p>
+                  <p class="font-mono text-stone-800 font-bold mt-0.5">${process.env.DB_PASSWORD ? '✅ YES (Configured)' : '❌ NO (Empty)'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Actionable Troubleshooting checklist */}
+            <div class="space-y-3">
+              <h4 class="text-xs font-black text-stone-900 uppercase tracking-wider">VPS Troubleshooting Checklist</h4>
+              <ul class="text-xs text-stone-600 space-y-2 font-medium">
+                <li class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5 animate-pulse"></i>
+                  <span><b>Is MySQL running?</b> Check status on your VPS: <code class="bg-stone-100 text-stone-800 px-1 py-0.2 rounded font-mono">systemctl status mysql</code> or <code class="bg-stone-100 text-stone-800 px-1 py-0.2 rounded font-mono">docker ps</code>.</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5 animate-pulse"></i>
+                  <span><b>Verify Credentials:</b> Double-check your <code class="bg-stone-100 text-stone-800 px-1 py-0.2 rounded font-mono">.env</code> file usernames, passwords, database name, and port (3306).</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5 animate-pulse"></i>
+                  <span><b>Database Exists?</b> Ensure the database <code class="bg-stone-100 text-[#9B111E] px-1 py-0.2 rounded font-mono">${escapeHtml(process.env.DB_NAME || 'aaplajalgaonwala')}</code> has been created inside MySQL.</span>
+                </li>
+                <li class="flex items-start gap-2.5">
+                  <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5 animate-pulse"></i>
+                  <span><b>Port open & allowed?</b> If connecting to a remote database, verify MySQL allows external connections in <code class="bg-stone-100 text-stone-800 px-1 py-0.2 rounded font-mono">mysqld.cnf</code> (<code class="bg-stone-100 text-stone-800 px-1.5 py-0.2 rounded font-mono">bind-address = 0.0.0.0</code>) and firewalls allow inbound traffic to Port 3306.</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Footer banner */}
+          <div class="bg-stone-50 border-t border-stone-200/80 p-5 text-center flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-stone-500">
+            <span>Aapla Jalgaonwala VPS Deployment Engine</span>
+            <button onclick="window.location.reload()" class="px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl flex items-center gap-2 transition-all shadow-sm cursor-pointer">
+              <i class="fa-solid fa-arrows-rotate"></i> Retry Connection
+            </button>
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+    return;
+  }
+  next();
+});
+
 const PORT = Number(process.env.PORT) || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -397,11 +559,12 @@ app.get(['/auth/callback', '/auth/callback/', '/api/auth/google/callback'], oaut
 initDatabase()
   .then(async () => {
     console.log('[Server] Database initialized successfully.');
+    dbInitError = null;
     await UserRepository.purgeDummyUsers().catch(() => {});
   })
   .catch((err) => {
-    console.warn('[Server] Database connection notice (using JSON fallback):', err?.message || err);
-    UserRepository.purgeDummyUsers().catch(() => {});
+    dbInitError = err;
+    console.error('[Server] Critical Database Connection Failure on Start:', err?.message || err);
   });
 
 // Setup background hourly tracking synchronization
