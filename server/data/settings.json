@@ -100,6 +100,8 @@
       "freeDeliveryAbove": 799
     }
   ],
+  "storageProvider": "telecloud",
+  "teleCloudEndpoint": "https://s3.htknetwork.in/api/v1/upload",
   "cloudinaryCloudName": "db7nvcm4i",
   "cloudinaryApiKey": "146947749955785",
   "cloudinaryApiSecret": "1ekM5mUg2jcm72wsM_W6dQuulcQ",

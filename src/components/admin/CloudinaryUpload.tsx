@@ -165,7 +165,7 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
           <div className="flex flex-col items-center gap-1.5 text-[#9B111E]">
             <Loader2 className="w-6 h-6 animate-spin" />
             <span className="text-[11px] font-bold">
-              Uploading {uploadCount > 1 ? `${uploadCount} files` : 'file'} to Storage Engine...
+              Uploading {uploadCount > 1 ? `${uploadCount} files` : 'file'} to HTK S3 Storage Engine...
             </span>
           </div>
         ) : success ? (
@@ -224,5 +224,6 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
   );
 };
 
+export const S3Upload = CloudinaryUpload;
 export const TeleCloudUpload = CloudinaryUpload;
 export const StorageUpload = CloudinaryUpload;

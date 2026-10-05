@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { OwnerProfile } from '@/types';
 import { Users, Plus, Edit2, Trash2, RefreshCw, Upload, Image as ImageIcon, Save, Quote, Building2, CheckCircle2 } from 'lucide-react';
-import { CloudinaryUpload } from './CloudinaryUpload';
+import { S3Upload } from './CloudinaryUpload';
 
 export const OwnersTab: React.FC<{ showToast: (msg: string) => void }> = ({ showToast }) => {
   const [owners, setOwners] = useState<OwnerProfile[]>([]);
@@ -281,8 +281,8 @@ export const OwnersTab: React.FC<{ showToast: (msg: string) => void }> = ({ show
               </div>
 
               <div className="sm:col-span-2">
-                <CloudinaryUpload
-                  label="Owner Profile Photo"
+                <S3Upload
+                  label="Owner Profile Photo (HTK S3 Storage)"
                   folder="owners"
                   currentValue={formData.photoUrl}
                   onUploadSuccess={(url) => setFormData({ ...formData, photoUrl: url })}

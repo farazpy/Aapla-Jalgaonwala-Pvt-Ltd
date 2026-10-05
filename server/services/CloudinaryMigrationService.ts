@@ -253,6 +253,31 @@ export class CloudinaryMigrationService {
       console.warn('[MigrationScanner] Error scanning cloudinary_assets.json:', err);
     }
 
+    // 8. Scan Owners & Founders Photos (owners.json)
+    try {
+      const owners = await readJson<any[]>('owners.json', []);
+      for (const o of owners) {
+        const photo = o.photoUrl || o.photo_url;
+        if (isCloudinaryUrl(photo)) {
+          const key = `owners_${o.id}_photoUrl`;
+          if (!itemsMap.has(key)) {
+            itemsMap.set(key, {
+              id: key,
+              type: 'settings' as any,
+              typeLabel: 'Owners & Founders Profile',
+              entityId: String(o.id),
+              entityTitle: o.name || `Owner #${o.id}`,
+              fieldName: 'photoUrl',
+              currentUrl: photo,
+              status: 'pending'
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[MigrationScanner] Error scanning owners.json:', err);
+    }
+
     // Also scan MySQL DB tables if DB pool exists
     const pool = getDbPool();
     if (pool) {
@@ -581,6 +606,28 @@ export class CloudinaryMigrationService {
       }
     } catch (err) {
       console.warn('[MigrationRef] Error updating cloudinary_assets reference:', err);
+    }
+
+    // H. Update Owners Photos
+    try {
+      const owners = await readJson<any[]>('owners.json', []);
+      let updatedOwner = false;
+      for (const o of owners) {
+        if (o.photoUrl === oldUrl || o.photo_url === oldUrl) {
+          o.photoUrl = newUrl;
+          o.photo_url = newUrl;
+          updatedOwner = true;
+        }
+      }
+      if (updatedOwner) {
+        await writeJson('owners.json', owners);
+      }
+
+      if (pool) {
+        await pool.query('UPDATE owners SET photo_url = ? WHERE photo_url = ?', [newUrl, oldUrl]).catch(() => {});
+      }
+    } catch (err) {
+      console.warn('[MigrationRef] Error updating owners reference:', err);
     }
 
     // Invalidate JSON cache
