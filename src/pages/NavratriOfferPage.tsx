@@ -35,13 +35,20 @@ export default function NavratriOfferPage() {
 
   useEffect(() => {
     fetch('/api/navratri-offer')
-      .then(res => res.json())
-      .then(json => {
-        if (json.success && json.data) {
-          setOfferConfig(json.data);
+      .then(async res => {
+        if (res.ok) {
+          const text = await res.text();
+          try {
+            const json = JSON.parse(text);
+            if (json.success && json.data) {
+              setOfferConfig(json.data);
+            }
+          } catch {
+            // Use defaults
+          }
         }
       })
-      .catch(err => console.error('Failed to load Navratri offer configuration:', err))
+      .catch(() => {})
       .finally(() => setIsLoading(false));
   }, []);
 

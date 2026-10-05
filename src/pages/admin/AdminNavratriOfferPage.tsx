@@ -34,8 +34,57 @@ interface NavratriOfferConfig {
   products: ComboItem[];
 }
 
+const DEFAULT_CONFIG: NavratriOfferConfig = {
+  featuredImage: 'https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=1200&q=80',
+  price: 599,
+  description: 'Special Navratri Festivity Pack containing 500g Salted Banana Chips, 500g Spicy Masala Banana Chips, 500g Sweet Potato Chivda, 500g Spicy Potato Chivda, and a FREE pack of nutritious Rajgira Ladoos! Made 100% Satvik with Sendha Namak (Rock Salt) in separate dedicated frying lines.',
+  products: [
+    {
+      id: 'item_1',
+      name: 'Sendha Namak Rock Salt Banana Chips (५०० ग्रॅम)',
+      weight: '500g Pack',
+      desc: 'Melt-in-your-mouth wafer thin raw banana wafers salted with pure Himalayan Sendha Namak (Rock Salt).',
+      img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=400&q=80',
+      badge: 'Fasting Approved'
+    },
+    {
+      id: 'item_2',
+      name: 'Spicy Masala Fasting Banana Chips (५०० ग्रॅम)',
+      weight: '500g Pack',
+      desc: 'Crispy raw banana wafers tossed with fast-compliant spicy red chilli powder and rock salt.',
+      img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=400&q=80',
+      badge: 'Spicy Delight'
+    },
+    {
+      id: 'item_3',
+      name: 'Meetha Farali Potato Batata Chivda (५०० ग्रॅम)',
+      weight: '500g Pack',
+      desc: 'Crisp hand-grated Jalgaon potato salli blended with premium cashew nuts, sweet raisins, and roasted peanuts.',
+      img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=400&q=80',
+      badge: 'Sweet & Crunchy'
+    },
+    {
+      id: 'item_4',
+      name: 'Teekha Farali Potato Batata Chivda (५०० ग्रॅम)',
+      weight: '500g Pack',
+      desc: 'Thin golden matchstick potato salli seasoned with a spicy Navratri spice mix and crunchy rock salt.',
+      img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=400&q=80',
+      badge: 'Spicy & Savoury'
+    },
+    {
+      id: 'item_5',
+      name: 'Poushtik Rajgira Ladoo Pack (मोफत भेट)',
+      weight: 'FREE GIFT (250g)',
+      desc: 'Pure handcrafted Amaranth (Rajgira) ladoos rolled in wholesome organic jaggery.',
+      img: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?auto=format&fit=crop&w=400&q=80',
+      badge: 'Free Fasting Gift',
+      isGift: true
+    }
+  ]
+};
+
 export default function AdminNavratriOfferPage() {
-  const [config, setConfig] = useState<NavratriOfferConfig | null>(null);
+  const [config, setConfig] = useState<NavratriOfferConfig>(DEFAULT_CONFIG);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -52,13 +101,19 @@ export default function AdminNavratriOfferPage() {
     setIsLoading(true);
     try {
       const res = await fetch('/api/navratri-offer');
-      const json = await res.json();
-      if (json.success && json.data) {
-        setConfig(json.data);
+      if (res.ok) {
+        const text = await res.text();
+        try {
+          const json = JSON.parse(text);
+          if (json.success && json.data && Array.isArray(json.data.products)) {
+            setConfig(json.data);
+          }
+        } catch {
+          // Keep DEFAULT_CONFIG on non-JSON response
+        }
       }
-    } catch (err) {
-      console.error('Failed to fetch Navratri offer config:', err);
-      setErrorMessage('Failed to load configuration.');
+    } catch {
+      // Keep DEFAULT_CONFIG
     } finally {
       setIsLoading(false);
     }

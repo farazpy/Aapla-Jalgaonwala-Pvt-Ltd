@@ -110,28 +110,36 @@ export const OwnersTab: React.FC<{ showToast: (msg: string) => void }> = ({ show
     setIsSubmitting(true);
 
     try {
+      const url = editingOwner ? `/api/owners/${editingOwner.id}` : '/api/owners';
       const method = editingOwner ? 'PUT' : 'POST';
       const payload = editingOwner
         ? { id: editingOwner.id, ...formData }
         : formData;
 
-      const res = await fetch('/api/owners', {
+      const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
-      const json = await res.json();
-      if (json.success) {
+      const text = await res.text();
+      let json: any = {};
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = { success: res.ok };
+      }
+
+      if (json.success || res.ok) {
         showToast(editingOwner ? 'Owner profile updated live!' : 'New owner profile added!');
         setIsModalOpen(false);
         fetchOwners();
       } else {
-        alert(json.error || 'Failed to save owner profile');
+        alert(json.error || json.message || 'Failed to save owner profile');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error saving owner:', err);
-      alert('Error saving owner profile');
+      alert(err.message || 'Error saving owner profile');
     } finally {
       setIsSubmitting(false);
     }
@@ -141,13 +149,20 @@ export const OwnersTab: React.FC<{ showToast: (msg: string) => void }> = ({ show
     if (!confirm('Are you sure you want to delete this owner profile?')) return;
 
     try {
-      const res = await fetch(`/api/owners?id=${id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (json.success) {
+      const res = await fetch(`/api/owners/${id}`, { method: 'DELETE' });
+      const text = await res.text();
+      let json: any = {};
+      try {
+        json = JSON.parse(text);
+      } catch {
+        json = { success: res.ok };
+      }
+
+      if (json.success || res.ok) {
         showToast('Owner profile deleted');
         fetchOwners();
       } else {
-        alert('Failed to delete owner profile');
+        alert(json.error || 'Failed to delete owner profile');
       }
     } catch (err) {
       console.error('Error deleting owner:', err);

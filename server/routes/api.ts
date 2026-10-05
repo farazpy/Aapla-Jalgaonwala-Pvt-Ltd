@@ -2183,8 +2183,14 @@ apiRouter.put('/admin/favicons/manifest', async (req: Request, res: Response) =>
 // 6. OWNERS
 // ----------------------------------------------------
 
-apiRouter.get('/owners', async (_req: Request, res: Response) => {
+apiRouter.get(['/owners', '/owners/:id'], async (req: Request, res: Response) => {
   try {
+    const id = req.params.id || (req.query.id as string);
+    if (id) {
+      const owner = await OwnersRepository.getById(id);
+      if (!owner) return res.status(404).json(createErrorResponse('Owner not found'));
+      return res.json(createSuccessResponse(owner));
+    }
     const owners = await OwnersRepository.getAll();
     return res.json(createSuccessResponse(owners));
   } catch (error: any) {
@@ -2195,27 +2201,33 @@ apiRouter.get('/owners', async (_req: Request, res: Response) => {
 apiRouter.post('/owners', async (req: Request, res: Response) => {
   try {
     const created = await OwnersRepository.create(req.body);
-    return res.status(201).json(createSuccessResponse(created));
+    return res.status(201).json(createSuccessResponse(created, 'Owner profile created successfully.'));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to create owner'));
   }
 });
 
-apiRouter.put('/owners/:id', async (req: Request, res: Response) => {
+apiRouter.put(['/owners', '/owners/:id'], async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id || req.body?.id || (req.query.id as string);
+    if (!id) {
+      return res.status(400).json(createErrorResponse('Owner ID is required for update.'));
+    }
     const updated = await OwnersRepository.update(id, req.body);
-    return res.json(createSuccessResponse(updated));
+    return res.json(createSuccessResponse(updated, 'Owner profile updated successfully.'));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to update owner'));
   }
 });
 
-apiRouter.delete('/owners/:id', async (req: Request, res: Response) => {
+apiRouter.delete(['/owners', '/owners/:id'], async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id || (req.query.id as string) || req.body?.id;
+    if (!id) {
+      return res.status(400).json(createErrorResponse('Owner ID is required for deletion.'));
+    }
     await OwnersRepository.delete(id);
-    return res.json(createSuccessResponse({ id, deleted: true }));
+    return res.json(createSuccessResponse({ id, deleted: true }, 'Owner profile deleted successfully.'));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to delete owner'));
   }
