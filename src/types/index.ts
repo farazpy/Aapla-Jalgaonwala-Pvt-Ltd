@@ -339,6 +339,27 @@ export interface SiteSettings {
   googleClientSecret?: string;
   enableGoogleAuth?: boolean;
 
+  // Navratri Offer Custom Page Settings
+  navratriHeroImageUrl?: string;
+  navratriPrice?: number;
+  navratriMrp?: number;
+  navratriDescription?: string;
+  navratriProduct1Name?: string;
+  navratriProduct1Desc?: string;
+  navratriProduct1Image?: string;
+  navratriProduct2Name?: string;
+  navratriProduct2Desc?: string;
+  navratriProduct2Image?: string;
+  navratriProduct3Name?: string;
+  navratriProduct3Desc?: string;
+  navratriProduct3Image?: string;
+  navratriProduct4Name?: string;
+  navratriProduct4Desc?: string;
+  navratriProduct4Image?: string;
+  navratriProduct5Name?: string;
+  navratriProduct5Desc?: string;
+  navratriProduct5Image?: string;
+
   // Product Reviews & Moderation Settings
   reviewsEnabled?: boolean;
   reviewSubmissionPermission?: 'all' | 'customers_only' | 'verified_buyers_only' | 'disabled';

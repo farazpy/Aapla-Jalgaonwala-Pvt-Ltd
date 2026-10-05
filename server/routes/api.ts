@@ -1858,6 +1858,100 @@ apiRouter.put('/admin/settings', async (req: Request, res: Response) => {
   }
 });
 
+// ----------------------------------------------------
+// Navratri Offer Settings Endpoints
+// ----------------------------------------------------
+
+const defaultNavratriOffer = {
+  featuredImage: 'https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=1200&q=80',
+  price: 599,
+  description: 'Special Navratri Festivity Pack containing 500g Salted Banana Chips, 500g Spicy Masala Banana Chips, 500g Sweet Potato Chivda, 500g Spicy Potato Chivda, and a FREE pack of nutritious Rajgira Ladoos! Made 100% Satvik with Sendha Namak (Rock Salt) in separate dedicated frying lines.',
+  products: [
+    {
+      id: 'item-1',
+      name: 'Sendha Namak Rock Salt Banana Chips (५०० ग्रॅम)',
+      weight: '500g Pack',
+      desc: 'Melt-in-your-mouth wafer thin raw banana wafers salted with pure Himalayan Sendha Namak (Rock Salt).',
+      img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=400&q=80',
+      badge: 'Fasting Approved'
+    },
+    {
+      id: 'item-2',
+      name: 'Spicy Masala Fasting Banana Chips (५०० ग्रॅम)',
+      weight: '500g Pack',
+      desc: 'Crispy raw banana wafers tossed with fast-compliant spicy red chilli powder and rock salt.',
+      img: 'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=400&q=80',
+      badge: 'Spicy Delight'
+    },
+    {
+      id: 'item-3',
+      name: 'Meetha Farali Potato Batata Chivda (५०० ग्रॅम)',
+      weight: '500g Pack',
+      desc: 'Crisp hand-grated Jalgaon potato salli blended with premium cashew nuts, sweet raisins, and roasted peanuts.',
+      img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=400&q=80',
+      badge: 'Sweet & Crunchy'
+    },
+    {
+      id: 'item-4',
+      name: 'Teekha Farali Potato Batata Chivda (५०० ग्रॅम)',
+      weight: '500g Pack',
+      desc: 'Thin golden matchstick potato salli seasoned with a spicy Navratri spice mix and crunchy rock salt.',
+      img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=400&q=80',
+      badge: 'Spicy & Savoury'
+    },
+    {
+      id: 'item-5',
+      name: 'Rajgira Amaranth Sweet Ladoo (राजगिरा लाडू)',
+      weight: 'Full Pack (FREE GIFT)',
+      desc: 'Mouthwatering, soft, nutrient-packed amaranth puffed seeds balls sweetened with jaggery/pure sugar.',
+      img: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?auto=format&fit=crop&w=400&q=80',
+      badge: 'Free Gift 🎁',
+      isGift: true
+    }
+  ]
+};
+
+apiRouter.get('/navratri-offer', async (_req: Request, res: Response) => {
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      const [rows]: any = await pool.query(
+        'SELECT setting_value FROM site_settings WHERE setting_key = "navratri_offer_config"'
+      );
+      if (Array.isArray(rows) && rows.length > 0) {
+        const value = typeof rows[0].setting_value === 'string'
+          ? JSON.parse(rows[0].setting_value)
+          : rows[0].setting_value;
+        return res.json(createSuccessResponse(value));
+      }
+    }
+    const jsonFallback = await readJson<any>('navratri_offer.json', defaultNavratriOffer);
+    return res.json(createSuccessResponse(jsonFallback));
+  } catch (error: any) {
+    return res.json(createSuccessResponse(defaultNavratriOffer));
+  }
+});
+
+apiRouter.put('/admin/navratri-offer', async (req: Request, res: Response) => {
+  try {
+    const config = req.body;
+    await writeJson('navratri_offer.json', config);
+
+    const pool = getDbPool();
+    if (pool) {
+      await pool.query(
+        `INSERT INTO site_settings (setting_key, setting_value)
+         VALUES ('navratri_offer_config', ?)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+        [JSON.stringify(config)]
+      );
+    }
+    return res.json(createSuccessResponse(config, 'Navratri offer updated successfully.'));
+  } catch (error: any) {
+    return res.status(500).json(createErrorResponse(error.message || 'Failed to update Navratri offer config'));
+  }
+});
+
 apiRouter.post('/settings', async (req: Request, res: Response) => {
   try {
     const newSettings = req.body;

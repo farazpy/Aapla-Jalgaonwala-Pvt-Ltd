@@ -421,6 +421,15 @@ export function AdminLayout({
               permission: 'shravan'
             },
             {
+              id: 'navratri-offer',
+              label: 'Navratri Offer Mgr',
+              href: '/admin/navratri-offer',
+              icon: Gift,
+              count: null,
+              isHighlight: true,
+              permission: 'shravan'
+            },
+            {
               id: 'add-product',
               label: 'Add New Product',
               href: '/admin/products/add',

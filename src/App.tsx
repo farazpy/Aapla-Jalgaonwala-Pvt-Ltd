@@ -52,6 +52,7 @@ const AdminSeoPage = lazy(() => import('../app/admin/seo/page'));
 const AdminCouponsPage = lazy(() => import('@/pages/admin/AdminCouponsPage').then(m => ({ default: m.AdminCouponsPage })));
 const AdminCodSettingsPage = lazy(() => import('@/pages/admin/AdminCodSettingsPage'));
 const AdminShravanPage = lazy(() => import('@/pages/admin/AdminShravanPage'));
+const AdminNavratriOfferPage = lazy(() => import('@/pages/admin/AdminNavratriOfferPage'));
 const AdminSchemaPage = lazy(() => import('@/pages/admin/AdminSchemaPage'));
 const AdminCachePage = lazy(() => import('@/pages/admin/AdminCachePage'));
 const AdminConfigsPage = lazy(() => import('@/pages/admin/AdminConfigsPage'));
@@ -142,6 +143,7 @@ export function App() {
                   <Route path="/admin/coupons" element={<AdminCouponsPage />} />
                   <Route path="/admin/cod-settings" element={<AdminCodSettingsPage />} />
                   <Route path="/admin/shravan" element={<AdminShravanPage />} />
+                  <Route path="/admin/navratri-offer" element={<AdminNavratriOfferPage />} />
                   <Route path="/admin/schema" element={<AdminSchemaPage />} />
                   <Route path="/admin/seo" element={<AdminSeoPage />} />
                   <Route path="/admin/cache" element={<AdminCachePage />} />

@@ -73,7 +73,7 @@ export function Navbar() {
   const { settings } = useSettings();
   const { t, isMarathi } = useLanguage();
 
-  const phoneDisplay = settings.contactPhone || '+91 70574 46409';
+  const phoneDisplay = String(settings.contactPhone || '+91 70574 46409');
   const phoneHref = phoneDisplay.replace(/[^\d+]/g, '');
   const emailDisplay = settings.contactEmail || 'info@aaplajalgaonwala.com';
   const storeName = isMarathi ? t('store.name', 'आपला जळगाववाला') : (settings.storeName || 'Aapla Jalgaonwala');
@@ -109,7 +109,7 @@ export function Navbar() {
     fetch('/api/categories')
       .then(res => res.json())
       .then(data => {
-        const list = data.data || (Array.isArray(data) ? data : []);
+        const list = data && (data.data || (Array.isArray(data) ? data : [])) || [];
         if (isMounted && Array.isArray(list) && list.length > 0) {
           setCategories(list);
         } else if (isMounted) {
@@ -688,7 +688,7 @@ export function Navbar() {
                         }}
                       />
                       <span className="hidden sm:inline text-xs font-bold text-stone-800 max-w-[100px] truncate whitespace-nowrap">
-                        {user.name.split(' ')[0]}
+                        {(user.name || '').split(' ')[0]}
                       </span>
                       <ChevronDown className="hidden sm:inline w-3.5 h-3.5 text-stone-500 shrink-0" />
                     </button>

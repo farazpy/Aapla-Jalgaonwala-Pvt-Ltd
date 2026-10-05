@@ -29,8 +29,28 @@ export default function NavratriOfferPage() {
   const [isAdded, setIsAdded] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
-  // High-fidelity details of each item in the Navratri Festive Combo Pack
-  const comboItems = [
+  // Dynamic configuration loaded from MySQL database
+  const [offerConfig, setOfferConfig] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/navratri-offer')
+      .then(res => res.json())
+      .then(json => {
+        if (json.success && json.data) {
+          setOfferConfig(json.data);
+        }
+      })
+      .catch(err => console.error('Failed to load Navratri offer configuration:', err))
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  // Standard high-fidelity fallbacks if API is loading or unavailable
+  const featuredImage = offerConfig?.featuredImage || 'https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=1200&q=80';
+  const price = Number(offerConfig?.price || 599);
+  const mrp = Math.round(price * 1.5);
+  const description = offerConfig?.description || 'Special Navratri Festivity Pack containing 500g Salted Banana Chips, 500g Spicy Masala Banana Chips, 500g Sweet Potato Chivda, 500g Spicy Potato Chivda, and a FREE pack of nutritious Rajgira Ladoos! Made 100% Satvik with Sendha Namak (Rock Salt) in separate dedicated frying lines.';
+  const comboItems = offerConfig?.products || [
     {
       name: 'Sendha Namak Rock Salt Banana Chips (५०० ग्रॅम)',
       weight: '500g Pack',
@@ -76,13 +96,13 @@ export default function NavratriOfferPage() {
     category: 'combo-packs',
     categoryId: 'combo-packs',
     categoryName: 'Combo Packs & Gifting',
-    description: 'Special Navratri Festivity Pack containing 500g Salted Banana Chips, 500g Spicy Masala Banana Chips, 500g Sweet Potato Chivda, 500g Spicy Potato Chivda, and a FREE pack of nutritious Rajgira Ladoos! Made 100% Satvik with Sendha Namak (Rock Salt) in separate dedicated frying lines.',
-    price: 599,
-    mrp: 899,
+    description: description,
+    price: price,
+    mrp: mrp,
     stock: 2000,
     images: [{
       id: 'img-navratri-combo-1',
-      url: 'https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=800&q=80',
+      url: featuredImage,
       alt: 'Navratri Special Festive Combo Pack with Free Ladoo',
       isPrimary: true
     }]
@@ -91,8 +111,8 @@ export default function NavratriOfferPage() {
   const selectedVariant = {
     id: 'var-navratri-combo-full',
     weight: '2.2kg Complete Festivity Pack',
-    price: 599,
-    mrp: 899,
+    price: price,
+    mrp: mrp,
     stock: 2000
   };
 
@@ -104,6 +124,15 @@ export default function NavratriOfferPage() {
       navigate('/cart');
     }, 800);
   };
+
+  if (isLoading) {
+    return (
+      <div className="py-20 bg-stone-50 min-h-[60vh] flex flex-col items-center justify-center gap-3">
+        <div className="w-10 h-10 border-4 border-[#9B111E] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs font-black text-stone-500 uppercase tracking-widest animate-pulse">Loading Festivity Offer...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="py-8 md:py-16 bg-[#FDFBF7] min-h-screen text-stone-900">
@@ -128,7 +157,7 @@ export default function NavratriOfferPage() {
           <div className="lg:col-span-7 space-y-6">
             <div className="relative rounded-3xl overflow-hidden border border-orange-200 shadow-xl bg-stone-900">
               <img 
-                src="https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=1200&q=80"
+                src={featuredImage}
                 alt="Navratri Special Fasting Festivity Combo Box"
                 className="w-full h-auto aspect-video md:aspect-[4/3] object-cover hover:scale-105 transition-transform duration-700 opacity-95"
               />
@@ -197,41 +226,39 @@ export default function NavratriOfferPage() {
                 <div>
                   <span className="block text-[10px] text-stone-500 font-bold uppercase tracking-wider">Festival Special Price</span>
                   <div className="flex items-baseline gap-2.5">
-                    <span className="text-2xl md:text-3xl font-black text-[#9B111E]">₹599</span>
-                    <span className="text-sm text-stone-400 line-through font-semibold">₹899</span>
+                    <span className="text-2xl md:text-3xl font-black text-[#9B111E]">₹{price}</span>
+                    <span className="text-sm text-stone-400 line-through font-semibold">₹{mrp}</span>
                   </div>
                 </div>
                 <div className="text-right">
                   <span className="inline-block px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg shadow-sm">
-                    Save ₹300!
+                    Save ₹{mrp - price}!
                   </span>
                 </div>
+              </div>
+
+              {/* Description Panel */}
+              <div className="space-y-1">
+                <span className="block text-xs font-black uppercase tracking-wider text-stone-800">Combo Overview:</span>
+                <p className="text-xs text-stone-600 leading-relaxed font-semibold">{description}</p>
               </div>
 
               {/* Items included summary */}
               <div className="space-y-3">
                 <span className="block text-xs font-black uppercase tracking-wider text-stone-800">What is inside this pack:</span>
                 <ul className="space-y-2 text-xs font-bold text-stone-600">
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>500g Salted Banana Chips (Sendha Namak)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>500g Spicy Masala Banana Chips (Sendha Namak)</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>500g Sweet Potato/Farali Batata Chivda</span>
-                  </li>
-                  <li className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>500g Spicy Potato/Teekha Farali Chivda</span>
-                  </li>
-                  <li className="flex items-center gap-2 text-amber-600 font-black">
-                    <Gift className="w-4 h-4 text-amber-500 shrink-0" />
-                    <span>🎁 FREE Rajgeera Ladoo Box Included!</span>
-                  </li>
+                  {comboItems.map((item: any, idx: number) => (
+                    <li key={idx} className="flex items-center gap-2">
+                      {item.isGift ? (
+                        <Gift className="w-4 h-4 text-amber-500 shrink-0" />
+                      ) : (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      )}
+                      <span className={item.isGift ? 'text-amber-600 font-black' : ''}>
+                        {item.isGift ? '🎁 FREE ' : ''}{item.name} ({item.weight})
+                      </span>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
@@ -272,7 +299,7 @@ export default function NavratriOfferPage() {
                 ) : (
                   <>
                     <ShoppingBag className="w-4 h-4" />
-                    <span>Order Special Combo Pack (₹599)</span>
+                    <span>Order Special Combo Pack (₹{price})</span>
                   </>
                 )}
               </button>
@@ -296,7 +323,7 @@ export default function NavratriOfferPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {comboItems.map((item, idx) => (
+            {comboItems.map((item: any, idx: number) => (
               <div 
                 key={idx} 
                 className={`bg-white rounded-2xl border overflow-hidden shadow-xs hover:shadow-md transition-all flex flex-col justify-between ${
@@ -304,7 +331,7 @@ export default function NavratriOfferPage() {
                 }`}
               >
                 <div>
-                  <div className="relative aspect-video">
+                  <div className="relative aspect-video bg-stone-100">
                     <img 
                       src={item.img} 
                       alt={item.name} 
@@ -313,7 +340,7 @@ export default function NavratriOfferPage() {
                     <span className={`absolute top-3 left-3 text-[9px] font-black uppercase px-2.5 py-1 rounded-md shadow-sm ${
                       item.isGift ? 'bg-amber-400 text-stone-950' : 'bg-black/60 text-white'
                     }`}>
-                      {item.badge}
+                      {item.badge || 'Fasting Snack'}
                     </span>
                   </div>
                   <div className="p-4.5 space-y-1.5">
