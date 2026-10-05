@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import sharp from 'sharp';
+import { getSharp } from './safeSharp';
 import { uploadToCloudinary, isCloudinaryConfiguredAsync } from './cloudinary';
 import { uploadToTeleCloud, isTeleCloudConfiguredAsync } from './telecloud';
 import { SettingsRepository } from '../repositories/SettingsRepository';
@@ -317,6 +317,11 @@ export async function generateAllFaviconsFromMaster(
   const backgroundColor = options?.backgroundColor || '#FAF6ED';
 
   const generatedFiles: string[] = [];
+
+  const sharp = await getSharp();
+  if (!sharp) {
+    throw new Error('Sharp native library is not available on this VPS. Run "npm install --os=linux --cpu=x64 sharp" on your VPS to enable favicon generation.');
+  }
 
   // 1. Generate 96x96 PNG
   const png96Buffer = await sharp(imageBuffer)

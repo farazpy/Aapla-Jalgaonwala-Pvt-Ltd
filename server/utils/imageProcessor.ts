@@ -1,5 +1,5 @@
 import multer from 'multer';
-import sharp from 'sharp';
+import { getSharp } from './safeSharp';
 import path from 'path';
 import fs from 'fs/promises';
 import { Request, Response, NextFunction } from 'express';
@@ -83,6 +83,22 @@ export async function processAndSaveImage(
   const maxHeight = options?.maxHeight || 1600;
   const uniqueName = `${Date.now()}-${baseName}.${targetFormat}`;
   const targetPath = path.join(uploadDir, uniqueName);
+
+  const sharp = await getSharp();
+  if (!sharp) {
+    const rawExt = ext || 'png';
+    const rawName = `${Date.now()}-${baseName}.${rawExt}`;
+    const rawPath = path.join(uploadDir, rawName);
+    await fs.writeFile(rawPath, buffer);
+    return {
+      filename: rawName,
+      url: `/uploads/${rawName}`,
+      width: 0,
+      height: 0,
+      format: rawExt,
+      size: buffer.length
+    };
+  }
 
   try {
     let sharpInstance = sharp(buffer)

@@ -1,6 +1,6 @@
 import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
 import path from 'path';
-import sharp from 'sharp';
+import { getSharp } from './safeSharp';
 import { CloudinaryAssetRepository } from '../repositories/CloudinaryAssetRepository';
 import { MediaRepository } from '../repositories/MediaRepository';
 import { SettingsRepository } from '../repositories/SettingsRepository';
@@ -146,24 +146,27 @@ export async function uploadToCloudinary(
   // Speed Optimization: Pre-compress image buffer in memory if > 150KB
   if (resourceType === 'image' && !['svg', 'pdf', 'ico', 'webmanifest'].includes(ext) && buffer.length > 150 * 1024) {
     try {
-      let sharpPipeline = sharp(buffer).resize({
-        width: 2400,
-        height: 2400,
-        fit: 'inside',
-        withoutEnlargement: true
-      });
+      const sharp = await getSharp();
+      if (sharp) {
+        let sharpPipeline = sharp(buffer).resize({
+          width: 2400,
+          height: 2400,
+          fit: 'inside',
+          withoutEnlargement: true
+        });
 
-      if (ext === 'png') {
-        sharpPipeline = sharpPipeline.png({ compressionLevel: 6, quality: 88, palette: true });
-      } else if (ext === 'webp') {
-        sharpPipeline = sharpPipeline.webp({ quality: 85, effort: 3 });
-      } else {
-        sharpPipeline = sharpPipeline.jpeg({ quality: 85, mozjpeg: true });
-      }
+        if (ext === 'png') {
+          sharpPipeline = sharpPipeline.png({ compressionLevel: 6, quality: 88, palette: true });
+        } else if (ext === 'webp') {
+          sharpPipeline = sharpPipeline.webp({ quality: 85, effort: 3 });
+        } else {
+          sharpPipeline = sharpPipeline.jpeg({ quality: 85, mozjpeg: true });
+        }
 
-      const compressedBuffer = await sharpPipeline.toBuffer();
-      if (compressedBuffer && compressedBuffer.length < buffer.length) {
-        buffer = compressedBuffer;
+        const compressedBuffer = await sharpPipeline.toBuffer();
+        if (compressedBuffer && compressedBuffer.length < buffer.length) {
+          buffer = compressedBuffer;
+        }
       }
     } catch (sharpErr) {
       console.warn('[Cloudinary Fast Pre-Compression Warning]', sharpErr);
