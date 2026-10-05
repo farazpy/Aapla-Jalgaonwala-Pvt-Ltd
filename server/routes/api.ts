@@ -5427,8 +5427,17 @@ async function enrichUserForAuth(user: any) {
   const addresses = await UserRepository.getAddresses(user.id);
   const { passwordHash: _, ...safeUser } = user;
 
+  let resolvedPhone = safeUser.phone;
+  if (!resolvedPhone && addresses && addresses.length > 0) {
+    const addrWithPhone = addresses.find((a: any) => a.phone);
+    if (addrWithPhone?.phone) {
+      resolvedPhone = addrWithPhone.phone;
+    }
+  }
+
   return {
     ...safeUser,
+    phone: resolvedPhone || undefined,
     role: effectiveRole,
     isStaff: isStaffMember,
     permissions: effectivePermissions,

@@ -52,39 +52,34 @@ export class SettingsRepository {
           }
 
           if (rowMap['general_settings']) {
-            const general = rowMap['general_settings'];
-            if (general.heroSecondaryCtaText === 'Our Story') {
-              general.heroSecondaryCtaText = 'Woman Partner Registration';
-              general.heroSecondaryCtaLink = '/partner-program';
-            }
-            result = { ...result, ...general };
+            result = { ...result, ...rowMap['general_settings'] };
           }
 
           if (rowMap['google_auth_config']) {
             const googleConf = rowMap['google_auth_config'];
-            if (googleConf.googleClientId) result.googleClientId = String(googleConf.googleClientId).trim();
-            if (googleConf.googleClientSecret) result.googleClientSecret = String(googleConf.googleClientSecret).trim();
+            if (googleConf.googleClientId !== undefined) result.googleClientId = String(googleConf.googleClientId || '').trim();
+            if (googleConf.googleClientSecret !== undefined) result.googleClientSecret = String(googleConf.googleClientSecret || '').trim();
             if (typeof googleConf.enableGoogleAuth === 'boolean') result.enableGoogleAuth = googleConf.enableGoogleAuth;
           }
 
           if (rowMap['razorpay_config']) {
             const rzpConf = rowMap['razorpay_config'];
-            if (rzpConf.razorpayKeyId) result.razorpayKeyId = String(rzpConf.razorpayKeyId).trim();
-            if (rzpConf.razorpayKeySecret) result.razorpayKeySecret = String(rzpConf.razorpayKeySecret).trim();
+            if (rzpConf.razorpayKeyId !== undefined) result.razorpayKeyId = String(rzpConf.razorpayKeyId || '').trim();
+            if (rzpConf.razorpayKeySecret !== undefined) result.razorpayKeySecret = String(rzpConf.razorpayKeySecret || '').trim();
             if (typeof rzpConf.enableRazorpay === 'boolean') result.enableRazorpay = rzpConf.enableRazorpay;
           }
 
           if (rowMap['google_client_id'] !== undefined && rowMap['google_client_id'] !== null) {
-            result.googleClientId = String(rowMap['google_client_id']).trim();
+            result.googleClientId = String(rowMap['google_client_id'] || '').trim();
           }
           if (rowMap['google_client_secret'] !== undefined && rowMap['google_client_secret'] !== null) {
-            result.googleClientSecret = String(rowMap['google_client_secret']).trim();
+            result.googleClientSecret = String(rowMap['google_client_secret'] || '').trim();
           }
           if (rowMap['razorpay_key_id'] !== undefined && rowMap['razorpay_key_id'] !== null) {
-            result.razorpayKeyId = String(rowMap['razorpay_key_id']).trim();
+            result.razorpayKeyId = String(rowMap['razorpay_key_id'] || '').trim();
           }
           if (rowMap['razorpay_key_secret'] !== undefined && rowMap['razorpay_key_secret'] !== null) {
-            result.razorpayKeySecret = String(rowMap['razorpay_key_secret']).trim();
+            result.razorpayKeySecret = String(rowMap['razorpay_key_secret'] || '').trim();
           }
         }
       } catch (err: any) {

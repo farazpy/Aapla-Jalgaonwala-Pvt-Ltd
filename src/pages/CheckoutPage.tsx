@@ -154,25 +154,30 @@ export default function CheckoutPage() {
 
   // Auto-fill from user account on load / auth change
   useEffect(() => {
-    // Only prefill personal details if user is logged in AND not a new referral customer session
-    if (user && !referralPartnerCode) {
+    if (user) {
       if (!fullName && user.name) setFullName(user.name);
       if (!email && user.email) setEmail(user.email);
-      if (!phone && user.phone) setPhone(user.phone.replace(/\D/g, '').slice(-10));
+      if (!phone) {
+        if (user.phone) {
+          setPhone(user.phone.replace(/\D/g, '').slice(-10));
+        } else if (addresses && addresses.length > 0) {
+          const addrWithPhone = addresses.find(a => a.phone) || addresses[0];
+          if (addrWithPhone?.phone) {
+            setPhone(addrWithPhone.phone.replace(/\D/g, '').slice(-10));
+          }
+        }
+      }
     }
-  }, [user, referralPartnerCode]);
+  }, [user, addresses]);
 
-  // If user has saved addresses, ONLY prefill if NOT arriving via a woman referral code
+  // If user has saved addresses, prefill default or first address
   useEffect(() => {
-    if (referralPartnerCode) {
-      return; // Do not auto-apply address when coming via woman referral
-    }
     if (addresses && addresses.length > 0 && !addressLine1) {
       const def = addresses.find(a => a.isDefault) || addresses[0];
       if (def) {
         setSelectedAddressId(def.id);
-        setFullName(def.name || (user?.name || ''));
-        if (def.phone) setPhone(def.phone.replace(/\D/g, '').slice(-10));
+        if (!fullName) setFullName(def.name || (user?.name || ''));
+        if (!phone && def.phone) setPhone(def.phone.replace(/\D/g, '').slice(-10));
         setAddressLine1(def.addressLine1);
         setAddressLine2(def.addressLine2 || '');
         setLandmark(def.landmark || '');
@@ -181,7 +186,7 @@ export default function CheckoutPage() {
         setPincode(def.pincode);
       }
     }
-  }, [addresses, referralPartnerCode]);
+  }, [addresses, user]);
 
   const handleSelectSavedAddress = (addrId: string) => {
     setSelectedAddressId(addrId);
