@@ -32,6 +32,7 @@ const WomenBusinessPartnerPage = lazy(() => import('@/pages/WomenBusinessPartner
 const PartnerAnalyticsPage = lazy(() => import('@/pages/PartnerAnalyticsPage'));
 const ReferralLandingPage = lazy(() => import('@/pages/ReferralLandingPage'));
 const DiwaliComboPage = lazy(() => import('@/pages/DiwaliComboPage'));
+const NavratriOfferPage = lazy(() => import('@/pages/NavratriOfferPage'));
 const IframeOrderTrackingPage = lazy(() => import('@/pages/IframeOrderTrackingPage'));
 const PrivacyPolicyPage = lazy(() => import('@/pages/PrivacyPolicyPage'));
 
@@ -94,6 +95,7 @@ export function App() {
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/order/:id" element={<OrderSuccessPage />} />
                   <Route path="/upwas-special" element={<UpwasSpecialPage />} />
+                  <Route path="/navratri-offer" element={<NavratriOfferPage />} />
                   <Route path="/diwali-special" element={<DiwaliComboPage />} />
                   <Route path="/diwali-combo" element={<DiwaliComboPage />} />
                   <Route path="/our-story" element={<OurStoryPage />} />

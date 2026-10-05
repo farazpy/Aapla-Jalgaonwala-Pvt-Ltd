@@ -33,7 +33,8 @@ import {
   BookOpen,
   Building2,
   TrendingUp,
-  Layers
+  Layers,
+  Gift
 } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -194,6 +195,14 @@ export function Navbar() {
       icon: BookOpen,
       iconColor: 'text-[#9B111E]',
       bgColor: 'bg-[#9B111E]/10'
+    },
+    {
+      title: 'Upwas Special (उपवास)',
+      desc: '100% Satvik Fasting Snacks & Farali Batata Mixture',
+      href: '/upwas-special',
+      icon: Flame,
+      iconColor: 'text-[#D9531E]',
+      bgColor: 'bg-[#D9531E]/10'
     },
     {
       title: 'FAQs & Support',
@@ -481,18 +490,18 @@ export function Navbar() {
                 </AnimatePresence>
               </div>
 
-              {/* Upwas Special Link */}
+              {/* Navratri Offer Link */}
               <Link
-                to="/upwas-special"
+                to="/navratri-offer"
                 className={`px-3 py-2 rounded-xl text-xs font-bold transition-all relative ${
-                  pathname === '/upwas-special'
+                  pathname === '/navratri-offer'
                     ? 'text-[#9B111E] bg-[#9B111E]/5 font-extrabold'
                     : 'text-stone-700 hover:text-[#9B111E] hover:bg-stone-50'
                 }`}
               >
                 <span className="flex items-center gap-1.5">
-                  <Flame className="w-3.5 h-3.5 text-[#D9531E] animate-bounce" />
-                  <span>{t('nav.upwas', 'Upwas Special')}</span>
+                  <Gift className="w-3.5 h-3.5 text-[#D9531E] animate-bounce" />
+                  <span>{t('nav.navratri', 'Navratri Offer 🎁')}</span>
                 </span>
               </Link>
 
@@ -945,17 +954,17 @@ export function Navbar() {
                   </Link>
 
                   <Link
-                    to="/upwas-special"
+                    to="/navratri-offer"
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                      pathname === '/upwas-special'
-                        ? 'bg-[#9B111E] text-white shadow-xs'
+                      pathname === '/navratri-offer'
+                        ? 'bg-[#9B111E] text-white shadow-xs font-extrabold'
                         : 'bg-amber-50/70 text-[#D9531E] border border-amber-200/60'
                     }`}
                   >
                     <span className="flex items-center gap-2 truncate whitespace-nowrap">
-                      <Flame className="w-4 h-4 text-[#D9531E] shrink-0" />
-                      <span className="truncate">{t('nav.upwas', 'Upwas Special (Fasting)')}</span>
+                      <Gift className="w-4 h-4 text-[#D9531E] shrink-0" />
+                      <span className="truncate">{t('nav.navratri', 'Navratri Offer 🎁')}</span>
                     </span>
                   </Link>
 
