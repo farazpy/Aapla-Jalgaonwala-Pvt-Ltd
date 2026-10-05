@@ -34,13 +34,13 @@ export default function NavratriOfferPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/navratri-offer')
+    fetch(`/api/navratri-offer?_t=${Date.now()}`, { cache: 'no-store' })
       .then(async res => {
         if (res.ok) {
           const text = await res.text();
           try {
             const json = JSON.parse(text);
-            if (json.success && json.data) {
+            if (json.success && json.data && typeof json.data === 'object') {
               setOfferConfig(json.data);
             }
           } catch {

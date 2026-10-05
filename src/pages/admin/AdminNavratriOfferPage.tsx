@@ -100,7 +100,7 @@ export default function AdminNavratriOfferPage() {
   const fetchConfig = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/navratri-offer');
+      const res = await fetch(`/api/navratri-offer?_t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const text = await res.text();
         try {

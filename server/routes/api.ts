@@ -1912,21 +1912,31 @@ const defaultNavratriOffer = {
 };
 
 apiRouter.get(['/navratri-offer', '/admin/navratri-offer'], async (_req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   try {
     const pool = getDbPool();
     if (pool) {
-      const [rows]: any = await pool.query(
-        'SELECT setting_value FROM site_settings WHERE setting_key = "navratri_offer_config"'
-      );
-      if (Array.isArray(rows) && rows.length > 0) {
-        const value = typeof rows[0].setting_value === 'string'
-          ? JSON.parse(rows[0].setting_value)
-          : rows[0].setting_value;
-        return res.json(createSuccessResponse(value));
+      try {
+        const [rows]: any = await pool.query(
+          'SELECT setting_value FROM site_settings WHERE setting_key = "navratri_offer_config"'
+        );
+        if (Array.isArray(rows) && rows.length > 0) {
+          const value = typeof rows[0].setting_value === 'string'
+            ? JSON.parse(rows[0].setting_value)
+            : rows[0].setting_value;
+          if (value && typeof value === 'object') {
+            return res.json(createSuccessResponse(value));
+          }
+        }
+      } catch (dbErr) {
+        console.warn('[NavratriOffer] Error reading site_settings:', dbErr);
       }
     }
     const jsonFallback = await readJson<any>('navratri_offer.json', defaultNavratriOffer);
-    return res.json(createSuccessResponse(jsonFallback));
+    return res.json(createSuccessResponse(jsonFallback || defaultNavratriOffer));
   } catch (error: any) {
     return res.json(createSuccessResponse(defaultNavratriOffer));
   }
@@ -1935,18 +1945,39 @@ apiRouter.get(['/navratri-offer', '/admin/navratri-offer'], async (_req: Request
 apiRouter.put(['/navratri-offer', '/admin/navratri-offer'], async (req: Request, res: Response) => {
   try {
     const config = req.body;
-    await writeJson('navratri_offer.json', config);
+    if (!config || typeof config !== 'object') {
+      return res.status(400).json(createErrorResponse('Invalid configuration data provided.'));
+    }
 
+    // Persist to JSON files
+    await writeJson('navratri_offer.json', config);
+    try {
+      const settings = await readJson<any>('settings.json', {});
+      settings.navratri_offer_config = config;
+      await writeJson('settings.json', settings);
+    } catch {
+      // Ignore
+    }
+
+    // Persist to MySQL site_settings table
     const pool = getDbPool();
     if (pool) {
-      await pool.query(
-        `INSERT INTO site_settings (setting_key, setting_value)
-         VALUES ('navratri_offer_config', ?)
-         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-        [JSON.stringify(config)]
-      );
+      try {
+        await pool.query(
+          `INSERT INTO site_settings (setting_key, setting_value)
+           VALUES ('navratri_offer_config', ?)
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()`,
+          [JSON.stringify(config)]
+        );
+      } catch (dbErr) {
+        console.warn('[NavratriOffer] MySQL saving notice:', dbErr);
+      }
     }
-    return res.json(createSuccessResponse(config, 'Navratri offer updated successfully.'));
+
+    systemCache.flush();
+    SettingsRepository.clearCache();
+
+    return res.json(createSuccessResponse(config, 'Navratri offer updated and persisted live in database.'));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to update Navratri offer config'));
   }
@@ -1955,18 +1986,37 @@ apiRouter.put(['/navratri-offer', '/admin/navratri-offer'], async (req: Request,
 apiRouter.post(['/navratri-offer', '/admin/navratri-offer'], async (req: Request, res: Response) => {
   try {
     const config = req.body;
+    if (!config || typeof config !== 'object') {
+      return res.status(400).json(createErrorResponse('Invalid configuration data provided.'));
+    }
+
     await writeJson('navratri_offer.json', config);
+    try {
+      const settings = await readJson<any>('settings.json', {});
+      settings.navratri_offer_config = config;
+      await writeJson('settings.json', settings);
+    } catch {
+      // Ignore
+    }
 
     const pool = getDbPool();
     if (pool) {
-      await pool.query(
-        `INSERT INTO site_settings (setting_key, setting_value)
-         VALUES ('navratri_offer_config', ?)
-         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
-        [JSON.stringify(config)]
-      );
+      try {
+        await pool.query(
+          `INSERT INTO site_settings (setting_key, setting_value)
+           VALUES ('navratri_offer_config', ?)
+           ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()`,
+          [JSON.stringify(config)]
+        );
+      } catch (dbErr) {
+        console.warn('[NavratriOffer] MySQL saving notice:', dbErr);
+      }
     }
-    return res.json(createSuccessResponse(config, 'Navratri offer updated successfully.'));
+
+    systemCache.flush();
+    SettingsRepository.clearCache();
+
+    return res.json(createSuccessResponse(config, 'Navratri offer updated and persisted live in database.'));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to update Navratri offer config'));
   }
