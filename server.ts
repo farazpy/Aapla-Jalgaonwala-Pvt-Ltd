@@ -52,6 +52,20 @@ const app = express();
 // Critical Middleware: Intercept and display an elegant full-screen database connection failure error page
 // if there is a startup or persistent connection block to the MySQL Database (except for the /database diagnostics page)
 app.use((req: Request, res: Response, next) => {
+  // CRITICAL: Never intercept static asset chunks, modules, images, favicons, or dev vite routes with HTML!
+  // If an asset/script request receives HTML, the browser throws:
+  // "Failed to load module script: Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of text/html"
+  if (
+    req.path.startsWith('/assets') ||
+    req.path.startsWith('/uploads') ||
+    req.path.startsWith('/favicons') ||
+    req.path.startsWith('/@') ||
+    req.path.startsWith('/src/') ||
+    req.path.match(/\.(js|mjs|cjs|ts|tsx|css|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|map|webmanifest|json)$/i)
+  ) {
+    return next();
+  }
+
   const currentDbError = dbInitError || getLastDbError();
   const pool = getDbPool();
 
@@ -1022,6 +1036,23 @@ async function startServer() {
         }
       }
     }));
+
+    // 3. Strict 404 for missing static assets & chunks
+    // When a Vite chunk is missing (e.g., outdated chunk hash from browser cache after new build),
+    // it MUST NOT fall through to the SPA catch-all index.html.
+    // Serving index.html for a missing .js file causes the browser to reject it with:
+    // "Failed to load module script: Expected a JavaScript-or-Wasm module script but the server responded with a MIME type of text/html"
+    app.use((req: Request, res: Response, next) => {
+      if (
+        req.path.startsWith('/assets/') ||
+        req.path.startsWith('/uploads/') ||
+        req.path.startsWith('/favicons/') ||
+        req.path.match(/\.(js|mjs|cjs|css|map|png|jpg|jpeg|gif|webp|svg|ico|woff|woff2|ttf|eot|webmanifest|json)$/i)
+      ) {
+        return res.status(404).type('text/plain').send('Asset not found');
+      }
+      next();
+    });
 
     app.get(/.*/, (_req: Request, res: Response) => {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');

@@ -71,6 +71,43 @@ export default function CheckoutPage() {
   // Site settings for COD Advance Fee
   const [siteSettings, setSiteSettings] = useState<any>(null);
 
+  // Cities dynamic dropdown selection
+  const [customCities, setCustomCities] = useState<string[]>([]);
+  const activeStateCities = INDIAN_STATES_AND_CITIES[state] || [];
+  const finalCityList = Array.from(new Set([...activeStateCities, ...customCities])).sort();
+
+  // UI status
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  // Partner Referral Code & 4% Discount State
+  const [referralPartnerCode, setReferralPartnerCode] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const cookieRef = getReferralCookie();
+      return cookieRef?.code || localStorage.getItem('ajw_referral_partner') || '';
+    }
+    return '';
+  });
+  const [partnerDiscountInfo, setPartnerDiscountInfo] = useState<{ partnerName?: string; valid?: boolean } | null>(() => {
+    if (typeof window !== 'undefined') {
+      const cookieRef = getReferralCookie();
+      if (cookieRef?.partnerName) {
+        return { partnerName: cookieRef.partnerName, valid: true };
+      }
+    }
+    return null;
+  });
+  const [manualCodeInput, setManualCodeInput] = useState('');
+  const [codeCheckLoading, setCodeCheckLoading] = useState(false);
+  const [codeMessage, setCodeMessage] = useState<string | null>(null);
+  const [randomAssignLoading, setRandomAssignLoading] = useState(false);
+  const [userRemovedCoupon, setUserRemovedCoupon] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('ajw_coupon_removed') === 'true';
+    }
+    return false;
+  });
+
   useEffect(() => {
     if (finalTotal > 0 || totalItems > 0) {
       Analytics.trackInitiateCheckout(finalTotal, totalItems);
@@ -142,43 +179,6 @@ export default function CheckoutPage() {
       setPincode(selected.pincode);
     }
   };
-
-  // Cities dynamic dropdown selection
-  const [customCities, setCustomCities] = useState<string[]>([]);
-  const activeStateCities = INDIAN_STATES_AND_CITIES[state] || [];
-  const finalCityList = Array.from(new Set([...activeStateCities, ...customCities])).sort();
-
-  // UI status
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState<string | null>(null);
-
-  // Partner Referral Code & 4% Discount State
-  const [referralPartnerCode, setReferralPartnerCode] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
-      const cookieRef = getReferralCookie();
-      return cookieRef?.code || localStorage.getItem('ajw_referral_partner') || '';
-    }
-    return '';
-  });
-  const [partnerDiscountInfo, setPartnerDiscountInfo] = useState<{ partnerName?: string; valid?: boolean } | null>(() => {
-    if (typeof window !== 'undefined') {
-      const cookieRef = getReferralCookie();
-      if (cookieRef?.partnerName) {
-        return { partnerName: cookieRef.partnerName, valid: true };
-      }
-    }
-    return null;
-  });
-  const [manualCodeInput, setManualCodeInput] = useState('');
-  const [codeCheckLoading, setCodeCheckLoading] = useState(false);
-  const [codeMessage, setCodeMessage] = useState<string | null>(null);
-  const [randomAssignLoading, setRandomAssignLoading] = useState(false);
-  const [userRemovedCoupon, setUserRemovedCoupon] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return sessionStorage.getItem('ajw_coupon_removed') === 'true';
-    }
-    return false;
-  });
 
   // Automatically assign a random woman partner coupon without button click!
   useEffect(() => {
