@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { apiRouter } from './server/routes/api';
-import { initDatabase } from './server/database/connection';
+import { initDatabase, getDbPool, getDbConfig } from './server/database/connection';
 import { UserRepository } from './server/repositories/UserRepository';
 import { SettingsRepository } from './server/repositories/SettingsRepository';
 import { initOrderCleanupJob } from './server/utils/orderCleanup';
@@ -177,7 +177,12 @@ app.use((req: Request, res: Response, next) => {
 });
 
 const PORT = Number(process.env.PORT) || 3000;
-const isProduction = process.env.NODE_ENV === 'production';
+
+// Extremely robust process.env.NODE_ENV evaluation with case-insensitive check and whitespace trimming
+const rawNodeEnv = String(process.env.NODE_ENV || '').trim().toLowerCase();
+const isProduction = rawNodeEnv === 'production' || rawNodeEnv === 'prod';
+
+console.log(`[RuntimeInfo] Detected NODE_ENV: "${process.env.NODE_ENV || 'undefined'}" | Evaluated Mode: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -554,6 +559,250 @@ const oauthCallbackHandler = async (req: Request, res: Response) => {
 };
 
 app.get(['/auth/callback', '/auth/callback/', '/api/auth/google/callback'], oauthCallbackHandler);
+
+// Database Architecture Inspector Endpoint (/database)
+// Shows full schema, tables, accurate row counts, columns, and properties.
+// Prevent Search Engines from Indexing this sensitive page (noindex, nofollow)
+app.get('/database', async (req: Request, res: Response) => {
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  
+  const pool = getDbPool();
+  if (!pool) {
+    return res.status(503).send(`
+      <div style="font-family: system-ui, sans-serif; padding: 40px; background: #FFF5F5; border: 1px solid #FEB2B2; color: #9B111E; border-radius: 12px; max-w: 600px; margin: 40px auto;">
+        <h2>Database Connection Offline</h2>
+        <p>Your database pool is currently offline or failed to initialize on VPS start. Please check your credentials in .env and make sure MySQL is running.</p>
+        <button onclick="window.location.reload()" style="background: #9B111E; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold;">Retry Connection</button>
+      </div>
+    `);
+  }
+
+  try {
+    // 1. Get database tables list from current schema catalog
+    const [tables]: any = await pool.query(
+      'SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = DATABASE()'
+    );
+
+    const tableMetadata: any[] = [];
+
+    // 2. Perform schema queries for each table
+    for (const t of tables) {
+      const tableName = t.TABLE_NAME;
+      
+      // Live exact record count (SELECT COUNT(*))
+      let rowCount = 0;
+      try {
+        const [countResult]: any = await pool.query('SELECT COUNT(*) AS total FROM `' + tableName + '`');
+        rowCount = countResult[0]?.total || 0;
+      } catch (err) {
+        rowCount = -1;
+      }
+
+      // Column attributes list
+      const [columns]: any = await pool.query(
+        'SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_KEY, COLUMN_DEFAULT ' +
+        'FROM information_schema.columns ' +
+        'WHERE table_schema = DATABASE() AND table_name = ? ' +
+        'ORDER BY ORDINAL_POSITION',
+        [tableName]
+      );
+
+      tableMetadata.push({
+        name: tableName,
+        rowCount,
+        columns: columns.map((c: any) => ({
+          name: c.COLUMN_NAME,
+          type: c.COLUMN_TYPE,
+          nullable: c.IS_NULLABLE,
+          key: c.COLUMN_KEY,
+          default: c.COLUMN_DEFAULT
+        }))
+      });
+    }
+
+    const { host, port, user, database } = getDbConfig();
+
+    // 1. Build Tables Cards Overview HTML programmatically without nested backtick conflicts
+    let tableOverviewCardsHtml = '';
+    for (const table of tableMetadata) {
+      tableOverviewCardsHtml += `
+        <div class="bg-white rounded-3xl p-5 border border-stone-200 shadow-xs flex items-center justify-between gap-4">
+          <div class="space-y-1">
+            <p class="text-xs text-stone-400 font-extrabold uppercase">Table Name</p>
+            <a href="#table-${table.name}" class="text-sm font-black text-stone-900 hover:text-[#9B111E] transition-colors font-mono">
+              ${table.name}
+            </a>
+          </div>
+          <div class="text-right shrink-0">
+            <span class="px-3 py-1 bg-stone-100 border border-stone-200 text-stone-800 rounded-full font-mono text-xs font-bold">
+              ${table.rowCount === -1 ? 'Error' : `${table.rowCount.toLocaleString()} rows`}
+            </span>
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. Build Table Schema manifests programmatically
+    let tableSchemasHtml = '';
+    for (const table of tableMetadata) {
+      let columnRowsHtml = '';
+      for (const col of table.columns) {
+        let keyBadge = '';
+        if (col.key) {
+          keyBadge = `
+            <span class="px-2 py-0.5 rounded-md font-black text-[10px] uppercase font-mono ${col.key === 'PRI' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-sky-50 text-sky-800 border border-sky-200'}">
+              ${col.key === 'PRI' ? '🔑 Primary Key' : col.key}
+            </span>
+          `;
+        } else {
+          keyBadge = '<span class="text-stone-300 font-bold">-</span>';
+        }
+
+        columnRowsHtml += `
+          <tr class="hover:bg-stone-50/50 transition-colors">
+            <td class="p-3 pl-5 font-bold font-mono text-stone-900 text-[12px]">${col.name}</td>
+            <td class="p-3 font-mono text-stone-600">${col.type}</td>
+            <td class="p-3">
+              <span class="px-2 py-0.5 rounded-md font-bold text-[10px] ${col.nullable === 'YES' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/50' : 'bg-stone-100 text-stone-400'}">
+                ${col.nullable}
+              </span>
+            </td>
+            <td class="p-3">
+              ${keyBadge}
+            </td>
+            <td class="p-3 pr-5 font-mono text-stone-400">
+              ${col.default !== null && col.default !== undefined ? escapeHtml(String(col.default)) : '<span class="text-stone-300 font-bold">NULL</span>'}
+            </td>
+          </tr>
+        `;
+      }
+
+      tableSchemasHtml += `
+        <div id="table-${table.name}" class="bg-white rounded-3xl border border-stone-200/80 shadow-md overflow-hidden scroll-mt-6">
+          <div class="p-5 border-b border-stone-200 bg-stone-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5">
+              <span class="w-8 h-8 rounded-xl bg-[#9B111E]/10 border border-[#9B111E]/20 text-[#9B111E] flex items-center justify-center shrink-0">
+                <i class="fa-solid fa-table text-xs"></i>
+              </span>
+              <h3 class="text-base font-black text-stone-900 font-mono tracking-tight">${table.name}</h3>
+            </div>
+            <span class="px-3 py-1 bg-[#9B111E] text-white text-[11px] font-black uppercase tracking-wider rounded-full self-start sm:self-auto shadow-2xs">
+              ${table.rowCount} Total Records
+            </span>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-stone-200 text-stone-400 uppercase font-black text-[10px] bg-stone-50/30">
+                  <th class="p-3 pl-5">Column Name</th>
+                  <th class="p-3">Data Type</th>
+                  <th class="p-3">Nullable</th>
+                  <th class="p-3">Key / Constraint</th>
+                  <th class="p-3 pr-5">Default Value</th>
+                </tr>
+              </thead>
+              <tbody class="font-medium text-stone-700 divide-y divide-stone-100">
+                ${columnRowsHtml}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    res.send(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="robots" content="noindex, nofollow">
+        <title>Database Architecture Inspector - Aapla Jalgaonwala</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700;800;900&display=swap');
+          body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+          }
+          h1 {
+            font-family: 'Playfair Display', serif;
+          }
+        </style>
+      </head>
+      <body class="bg-stone-50 text-stone-900 min-h-screen p-4 sm:p-8">
+        <div class="max-w-6xl mx-auto space-y-8">
+          <!-- Header Banner -->
+          <div class="bg-gradient-to-r from-[#9B111E] to-[#D9531E] rounded-3xl p-6 sm:p-8 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center border border-white/20 shrink-0">
+                <i class="fa-solid fa-server text-2xl text-amber-200"></i>
+              </div>
+              <div>
+                <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Database Inspector</h1>
+                <p class="text-xs text-stone-100/90 mt-1 font-medium flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                  Active connection to VPS MySQL database schema catalog
+                </p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 bg-black/25 text-[10px] font-extrabold uppercase tracking-wider rounded-full border border-white/15">
+                SEO Blocked (No-Index)
+              </span>
+              <button onclick="window.location.reload()" class="p-2.5 bg-white/10 hover:bg-white/25 rounded-xl border border-white/20 text-white transition-all shadow-sm cursor-pointer">
+                <i class="fa-solid fa-arrows-rotate"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Connection parameters -->
+          <div class="bg-white rounded-3xl p-6 border border-stone-200/80 shadow-xs space-y-4">
+            <h2 class="text-xs font-black uppercase tracking-wider text-[#9B111E] flex items-center gap-2">
+              <i class="fa-solid fa-circle-nodes"></i> Active Database Settings
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-semibold">
+              <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
+                <p class="text-[10px] text-stone-400 uppercase font-black">Host Server</p>
+                <p class="font-mono text-stone-800 font-bold mt-1">${escapeHtml(host || '127.0.0.1')}:${escapeHtml(String(port || '3306'))}</p>
+              </div>
+              <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
+                <p class="text-[10px] text-stone-400 uppercase font-black">Database Schema</p>
+                <p class="font-mono text-stone-800 font-bold mt-1">${escapeHtml(database || 'Not Selected')}</p>
+              </div>
+              <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
+                <p class="text-[10px] text-stone-400 uppercase font-black">Username</p>
+                <p class="font-mono text-stone-800 font-bold mt-1">${escapeHtml(user || 'Anonymous')}</p>
+              </div>
+              <div class="p-3 bg-stone-50 border border-stone-200/60 rounded-2xl">
+                <p class="text-[10px] text-stone-400 uppercase font-black">Total Schema Tables</p>
+                <p class="font-mono text-stone-800 font-bold mt-1 text-[#9B111E]">${tableMetadata.length} Tables</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tables Overview Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            ${tableOverviewCardsHtml}
+          </div>
+
+          <!-- Detailed Schema Sections -->
+          <div class="space-y-6">
+            <h2 class="text-xs font-black uppercase tracking-wider text-[#9B111E] flex items-center gap-2">
+              <i class="fa-solid fa-table-list"></i> Table Schema Manifest & Structure
+            </h2>
+            ${tableSchemasHtml}
+          </div>
+        </div>
+      </body>
+      </html>
+    `);
+  } catch (err: any) {
+    console.error('[Database Inspector] Schema query failed:', err);
+    return res.status(500).send(`Critical Error querying database metadata schema: ${err.message}`);
+  }
+});
 
 // Database initialization
 initDatabase()
