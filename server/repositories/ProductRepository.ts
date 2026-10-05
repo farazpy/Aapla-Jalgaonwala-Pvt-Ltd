@@ -138,8 +138,9 @@ export class ProductRepository {
       ingredients,
       seoTitle: row.seo_title || row.seoTitle,
       seoDescription: row.seo_description || row.seoDescription,
-      comboImages
-    };
+      comboImages,
+      _is_fake: (row._is_fake === 1 || row._is_fake === true) ? 1 : 0
+    } as any;
   }
 
   private static async mapRowToProduct(row: any, pool?: any): Promise<Product> {
@@ -182,8 +183,8 @@ export class ProductRepository {
     return this.mapSingleRowToProduct(row, imageMap, variantMap);
   }
 
-  static async getAll(includeUnavailable = false): Promise<Product[]> {
-    if (productMemoryCache && (Date.now() - productMemoryCache.timestamp < CACHE_TTL_MS)) {
+  static async getAll(includeUnavailable = false, forceFresh = false): Promise<Product[]> {
+    if (!forceFresh && productMemoryCache && (Date.now() - productMemoryCache.timestamp < CACHE_TTL_MS)) {
       return includeUnavailable
         ? productMemoryCache.data
         : productMemoryCache.data.filter(p => p.isAvailable);
@@ -432,6 +433,8 @@ export class ProductRepository {
     // Resolve category id and slug
     const resolvedCat = await this.resolveCategoryInfo(data.category, data.categoryId);
 
+    const isFakeVal = (data as any)._is_fake || (data as any).is_fake ? 1 : 0;
+
     const newProduct: Product = {
       id,
       slug,
@@ -459,20 +462,27 @@ export class ProductRepository {
       seoTitle: data.seoTitle || `${data.name} | Aapla Jalgaonwala`,
       seoDescription: data.seoDescription || data.shortDescription
     };
+    (newProduct as any)._is_fake = isFakeVal;
 
     // 1. Try MySQL Database insert
     const pool = getDbPool();
     if (pool) {
       try {
-        await pool.query(
+        // First check if slug is already taken to return clean validation
+        const [existingSlugs] = await pool.query(
+          'SELECT id FROM products WHERE slug = ?',
+          [newProduct.slug]
+        );
+        if (Array.isArray(existingSlugs) && existingSlugs.length > 0) {
+          throw new Error(`A product with the slug "${newProduct.slug}" already exists. Please choose a different slug or unique name.`);
+        }
+
+        const [insertRes] = await pool.query(
           `INSERT INTO products (
             id, slug, name, category_id, description, short_description, price, mrp, profit, discount,
             net_quantity, flavour, tags, is_featured, is_best_seller, is_new, is_available, stock,
-            seo_title, seo_description
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE
-            name = VALUES(name), category_id = VALUES(category_id), description = VALUES(description),
-            price = VALUES(price), mrp = VALUES(mrp), profit = VALUES(profit), stock = VALUES(stock), is_available = VALUES(is_available)`,
+            seo_title, seo_description, _is_fake
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             newProduct.id,
             newProduct.slug,
@@ -493,32 +503,41 @@ export class ProductRepository {
             newProduct.isAvailable ? 1 : 0,
             newProduct.stock,
             newProduct.seoTitle,
-            newProduct.seoDescription
+            newProduct.seoDescription,
+            isFakeVal
           ]
         );
+
+        const realId = (insertRes as any).insertId;
+        if (realId) {
+          newProduct.id = realId;
+        }
+        const insertIdStr = String(newProduct.id);
 
         // Save Primary Image in MySQL
         if (images[0]?.url) {
           await pool.query(
             `INSERT INTO product_images (id, product_id, url, alt, is_primary) VALUES (?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE url = VALUES(url)`,
-            [`img-${id}-0`, id, images[0].url, newProduct.name, 1]
+            [`img-${insertIdStr}-0`, insertIdStr, images[0].url, newProduct.name, 1]
           );
         }
 
         // Save Variants in MySQL
         if (cleanVariants.length > 0) {
           for (const v of cleanVariants) {
+            const variantId = `var-${insertIdStr}-${v.weight}-${Date.now()}`;
             await pool.query(
               `INSERT INTO product_variants (id, product_id, weight, price, mrp, stock)
                VALUES (?, ?, ?, ?, ?, ?)
                ON DUPLICATE KEY UPDATE weight = VALUES(weight), price = VALUES(price), mrp = VALUES(mrp), stock = VALUES(stock)`,
-              [v.id, id, v.weight, v.price, v.mrp, v.stock ?? 100]
+              [variantId, insertIdStr, v.weight, v.price, v.mrp, v.stock ?? 100]
             );
           }
         }
-      } catch (err) {
-        console.warn('[ProductRepo] MySQL insert failed, saving to JSON storage fallback:', err);
+      } catch (err: any) {
+        console.warn('[ProductRepo] MySQL insert failed:', err);
+        throw err;
       }
     }
 
@@ -849,6 +868,12 @@ export class ProductRepository {
     }
     await writeJson(FILE_NAME, products);
     return product;
+  }
+
+  static async saveAll(products: Product[]): Promise<boolean> {
+    this.clearCache();
+    await writeJson(FILE_NAME, products);
+    return true;
   }
 }
 

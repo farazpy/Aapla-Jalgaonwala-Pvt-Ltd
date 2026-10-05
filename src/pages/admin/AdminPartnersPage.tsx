@@ -117,7 +117,11 @@ export default function AdminPartnersPage() {
   const [selectedPartner, setSelectedPartner] = useState<BusinessPartner | null>(null);
   const [partnerReferrals, setPartnerReferrals] = useState<PartnerOrderReferral[]>([]);
   const [partnerSettlements, setPartnerSettlements] = useState<PartnerSettlement[]>([]);
+  const [partnerInvitedWomen, setPartnerInvitedWomen] = useState<any[]>([]);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isNetworkModalOpen, setIsNetworkModalOpen] = useState(false);
+  const [referralNetworkFilter, setReferralNetworkFilter] = useState<'all' | 'referrers' | 'referred' | 'direct'>('all');
+  const [networkSearchTerm, setNetworkSearchTerm] = useState('');
 
   // Image Zoom Lightbox Modal
   const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
@@ -788,12 +792,17 @@ export default function AdminPartnersPage() {
   const openPartnerDetails = async (partner: BusinessPartner) => {
     setSelectedPartner(partner);
     setIsDetailsOpen(true);
+    setPartnerInvitedWomen(partner.invitedPartnersList || []);
     try {
       const res = await fetch(`/api/partner-program/partners/${partner.partnerCode}`);
       const json = await res.json();
       if (json.success && json.data) {
         setPartnerReferrals(json.data.referrals || []);
         setPartnerSettlements(json.data.settlements || []);
+        setPartnerInvitedWomen(json.data.invitedPartners || (partner as any).invitedPartnersList || []);
+        if (json.data.partner) {
+          setSelectedPartner(json.data.partner);
+        }
       }
     } catch (err) {
       console.warn('Error fetching partner details:', err);
@@ -1056,6 +1065,9 @@ export default function AdminPartnersPage() {
           (p.email && p.email.toLowerCase().includes(q)) ||
           (p.city && p.city.toLowerCase().includes(q)) ||
           (p.state && p.state.toLowerCase().includes(q)) ||
+          (p.referredByPartnerCode && p.referredByPartnerCode.toLowerCase().includes(q)) ||
+          (p.referredByPartnerName && p.referredByPartnerName.toLowerCase().includes(q)) ||
+          (p.notes && p.notes.toLowerCase().includes(q)) ||
           (p.bankName && p.bankName.toLowerCase().includes(q)) ||
           (p.bankAccountNumber && p.bankAccountNumber.toLowerCase().includes(q)) ||
           (p.ifscCode && p.ifscCode.toLowerCase().includes(q)) ||
@@ -1085,7 +1097,16 @@ export default function AdminPartnersPage() {
         // City filter
         const matchesCity = cityFilter === 'all' || (p.city && p.city.trim().toLowerCase() === cityFilter.toLowerCase());
 
-        return matchesSearch && matchesStatus && matchesDoc && matchesPayout && matchesOrders && matchesCity;
+        // Referral Network Filter (Request 2)
+        const hasReferred = (p.invitedPartnersCount || (p.invitedPartnersList && p.invitedPartnersList.length) || 0) > 0;
+        const isReferred = !!p.referredByPartnerCode;
+        const matchesReferral =
+          referralNetworkFilter === 'all' ||
+          (referralNetworkFilter === 'referrers' && hasReferred) ||
+          (referralNetworkFilter === 'referred' && isReferred) ||
+          (referralNetworkFilter === 'direct' && !isReferred);
+
+        return matchesSearch && matchesStatus && matchesDoc && matchesPayout && matchesOrders && matchesCity && matchesReferral;
       })
       .sort((a, b) => {
         let valA: any = a[sortField];
@@ -1106,7 +1127,7 @@ export default function AdminPartnersPage() {
         if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [partners, searchTerm, statusFilter, documentFilter, payoutFilter, ordersFilter, cityFilter, sortField, sortOrder]);
+  }, [partners, searchTerm, statusFilter, documentFilter, payoutFilter, ordersFilter, cityFilter, referralNetworkFilter, sortField, sortOrder]);
 
   const hasActiveFilters =
     searchTerm !== '' ||
@@ -1114,6 +1135,7 @@ export default function AdminPartnersPage() {
     documentFilter !== 'all' ||
     payoutFilter !== 'all' ||
     ordersFilter !== 'all' ||
+    referralNetworkFilter !== 'all' ||
     cityFilter !== 'all';
 
   const resetAllFilters = () => {
@@ -1123,6 +1145,7 @@ export default function AdminPartnersPage() {
     setPayoutFilter('all');
     setOrdersFilter('all');
     setCityFilter('all');
+    setReferralNetworkFilter('all');
     setSortField('createdAt');
     setSortOrder('desc');
   };
@@ -1195,6 +1218,17 @@ export default function AdminPartnersPage() {
                 Joining Fee: <strong className="text-stone-900">{feeForm === 0 ? 'Free (₹0)' : `₹${feeForm}`}</strong>
               </span>
               <Sliders className="w-3 h-3 text-amber-700 ml-0.5" />
+            </button>
+
+            {/* Woman Referral Network Map Button (Request 2) */}
+            <button
+              type="button"
+              onClick={() => setIsNetworkModalOpen(true)}
+              className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-300 text-purple-900 font-bold text-xs flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+              title="View Complete Woman-to-Woman Referral Tree (Which woman referred which women)"
+            >
+              <Users className="w-3.5 h-3.5 text-purple-700" />
+              <span>Woman Referral Tree</span>
             </button>
 
             {/* WhatsApp Custom Fund / Commission Action Button */}
@@ -1424,6 +1458,18 @@ export default function AdminPartnersPage() {
                 <option value="no_orders">Zero Orders (0)</option>
               </select>
 
+              {/* Referral Network Filter (Request 2) */}
+              <select
+                value={referralNetworkFilter}
+                onChange={(e: any) => setReferralNetworkFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-stone-300 text-xs font-semibold bg-white text-stone-800 focus:outline-none focus:ring-2 focus:ring-[#9B111E]"
+              >
+                <option value="all">Referrals: All</option>
+                <option value="referrers">Women Who Referred Others</option>
+                <option value="referred">Referred by Another Woman</option>
+                <option value="direct">Direct / Organic Signups</option>
+              </select>
+
               {/* City Filter */}
               {uniqueCities.length > 0 && (
                 <select
@@ -1544,6 +1590,7 @@ export default function AdminPartnersPage() {
                   </th>
                   <th className="p-3.5 text-center">Passbook</th>
                   <th className="p-3.5 text-center">Payment</th>
+                  <th className="p-3.5">Referral Network</th>
                   <th
                     onClick={() => handleSort('totalOrdersCount')}
                     className="p-3.5 text-right cursor-pointer hover:bg-stone-100 select-none transition-colors"
@@ -1615,7 +1662,7 @@ export default function AdminPartnersPage() {
               <tbody className="divide-y divide-stone-100">
                 {filteredPartners.length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="p-8 text-center text-stone-500">
+                    <td colSpan={13} className="p-8 text-center text-stone-500">
                       No business partners found matching your filters.
                     </td>
                   </tr>
@@ -1730,6 +1777,40 @@ export default function AdminPartnersPage() {
                               Paid (₹{partner.paymentAmount ?? 699})
                             </span>
                           )}
+                        </td>
+                        <td className="p-3.5">
+                          <div className="flex flex-col gap-1 min-w-[140px] max-w-[200px]">
+                            {partner.referredByPartnerCode ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const referrer = partners.find(p => p.partnerCode === partner.referredByPartnerCode);
+                                  if (referrer) openPartnerDetails(referrer);
+                                }}
+                                className="text-left inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-900 text-[10px] font-bold border border-purple-200 hover:bg-purple-100 transition-colors cursor-pointer truncate"
+                                title={`Joined using referral from ${partner.referredByPartnerName || partner.referredByPartnerCode}. Click to view referrer.`}
+                              >
+                                <Users className="w-3 h-3 text-purple-600 shrink-0" />
+                                <span className="truncate">Ref by: <strong>{partner.referredByPartnerName || partner.referredByPartnerCode}</strong></span>
+                              </button>
+                            ) : null}
+
+                            {(partner.invitedPartnersCount || (partner.invitedPartnersList && partner.invitedPartnersList.length) || 0) > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => openPartnerDetails(partner)}
+                                className="text-left inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-50 text-rose-900 text-[10px] font-bold border border-rose-200 hover:bg-rose-100 transition-colors cursor-pointer truncate"
+                                title={`Referred ${partner.invitedPartnersCount || partner.invitedPartnersList?.length} women. Click to view.`}
+                              >
+                                <Sparkles className="w-3 h-3 text-rose-600 shrink-0" />
+                                <span>Referred <strong>{partner.invitedPartnersCount || partner.invitedPartnersList?.length}</strong> {(partner.invitedPartnersCount || partner.invitedPartnersList?.length) === 1 ? 'Woman' : 'Women'}</span>
+                              </button>
+                            ) : null}
+
+                            {!partner.referredByPartnerCode && !(partner.invitedPartnersCount || (partner.invitedPartnersList && partner.invitedPartnersList.length)) && (
+                              <span className="text-[10px] text-stone-400">Direct Signup</span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-3.5 text-right font-semibold">{partner.totalOrdersCount || 0}</td>
                         <td className="p-3.5 text-right text-stone-800">
@@ -2106,6 +2187,39 @@ export default function AdminPartnersPage() {
                 </button>
               </div>
 
+              {/* Referred by Woman Partner Banner (Request 2) */}
+              {selectedPartner.referredByPartnerCode && (
+                <div className="bg-purple-50/90 p-4 rounded-2xl border border-purple-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-purple-100 text-purple-800 flex items-center justify-center shrink-0 border border-purple-200">
+                      <Users className="w-5 h-5 text-purple-700" />
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-purple-800 uppercase font-black tracking-wider">
+                        Referred By Woman Partner
+                      </span>
+                      <p className="text-xs sm:text-sm font-bold text-stone-900 mt-0.5">
+                        {selectedPartner.referredByPartnerName || 'Registered Woman Partner'} ({selectedPartner.referredByPartnerCode})
+                      </p>
+                      <p className="text-[11px] text-stone-500">
+                        This partner joined Aapla Jalgaonwala via {selectedPartner.referredByPartnerName || 'her'}'s invite link
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const refPartner = partners.find(p => p.partnerCode === selectedPartner.referredByPartnerCode);
+                      if (refPartner) openPartnerDetails(refPartner);
+                    }}
+                    className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 shadow-xs"
+                  >
+                    <span>View Referrer Profile</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
               {/* Referral Link Quick Copy Box */}
               <div className="bg-amber-50/90 p-4 rounded-2xl border border-amber-200/90 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
                 <div>
@@ -2467,6 +2581,106 @@ export default function AdminPartnersPage() {
                 </div>
               </div>
 
+              {/* Women Who Joined Through Her Link (Request 2) */}
+              <div className="bg-rose-50/40 rounded-2xl border border-rose-200/80 p-4 sm:p-5 space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-rose-200/60 pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-800 flex items-center justify-center shrink-0 border border-rose-200">
+                      <Users className="w-4 h-4 text-rose-700" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs sm:text-sm font-black text-stone-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Women Who Joined Through Her Link ({partnerInvitedWomen.length})</span>
+                      </h3>
+                      <p className="text-[11px] text-stone-500">
+                        Registered partner accounts attributed to {selectedPartner.fullName} (earned ₹200 bonus each).
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black bg-rose-100 text-rose-800 border border-rose-200 shrink-0 self-start sm:self-auto">
+                    Total Referral Bonus: ₹{(selectedPartner.referralBonusEarned || (partnerInvitedWomen.length * 200)).toLocaleString('en-IN')}
+                  </span>
+                </div>
+
+                {partnerInvitedWomen.length === 0 ? (
+                  <div className="p-4 bg-white rounded-xl border border-rose-100 text-center text-xs text-stone-500">
+                    No women have registered through {selectedPartner.fullName}'s referral link yet.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto bg-white rounded-xl border border-rose-200/70">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="border-b border-stone-200 bg-stone-50 text-stone-500 uppercase tracking-wider text-[10px]">
+                          <th className="p-3">Woman Name</th>
+                          <th className="p-3">Partner Code</th>
+                          <th className="p-3">Contact</th>
+                          <th className="p-3">City / State</th>
+                          <th className="p-3">Joined Date</th>
+                          <th className="p-3 text-center">Registration Fee</th>
+                          <th className="p-3 text-center">Status</th>
+                          <th className="p-3 text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-stone-100">
+                        {partnerInvitedWomen.map((woman) => (
+                          <tr key={woman.id || woman.partnerCode} className="hover:bg-rose-50/30 transition-colors">
+                            <td className="p-3 font-bold text-stone-900">
+                              {woman.fullName}
+                            </td>
+                            <td className="p-3 font-mono font-bold text-[#9B111E]">
+                              {woman.partnerCode}
+                            </td>
+                            <td className="p-3 text-stone-600">
+                              <div>{woman.phone || 'N/A'}</div>
+                              {woman.email && <div className="text-[10px] text-stone-400 truncate max-w-[120px]">{woman.email}</div>}
+                            </td>
+                            <td className="p-3 text-stone-600">
+                              {woman.city}{woman.state ? `, ${woman.state}` : ''}
+                            </td>
+                            <td className="p-3 text-stone-600 whitespace-nowrap">
+                              {new Date(woman.createdAt).toLocaleDateString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric'
+                              })}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold border border-emerald-200">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span>₹{woman.paymentAmount || 699} Paid</span>
+                              </span>
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                                woman.status === 'active' || woman.status === 'approved'
+                                  ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                  : 'bg-amber-50 text-amber-800 border-amber-200'
+                              }`}>
+                                {woman.status || 'Active'}
+                              </span>
+                            </td>
+                            <td className="p-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const targetWoman = partners.find(p => p.partnerCode === woman.partnerCode);
+                                  if (targetWoman) openPartnerDetails(targetWoman);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 text-[11px] font-bold transition-colors cursor-pointer inline-flex items-center gap-1"
+                              >
+                                <Eye className="w-3 h-3" />
+                                <span>View</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
               {/* Referrals List */}
               <div className="space-y-2.5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -2577,21 +2791,89 @@ export default function AdminPartnersPage() {
                                 <div className="text-[10px] text-stone-400">{r.customerCity || 'Maharashtra'}</div>
                               </td>
                               <td className="p-2.5 text-right font-medium text-stone-800">₹{r.orderTotal}</td>
-                              <td className="p-2.5 text-right font-bold text-emerald-600">
-                                +₹{r.partnerCommission}
+                              <td className="p-2.5 text-right font-bold">
+                                {(() => {
+                                  const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+                                  const refSt = String(r.status || '').toLowerCase().trim();
+                                  const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+                                  const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+                                  const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
+                                  const isDelivered = !isCancelled && !isFailed && !isOnHold && (Boolean(r.isDelivered) || orderSt === 'delivered' || refSt === 'settled');
+
+                                  if (isCancelled) {
+                                    return (
+                                      <div>
+                                        <span className="text-stone-400 line-through text-xs font-semibold">₹{r.partnerCommission}</span>
+                                        <span className="block text-[9px] text-rose-600 font-bold">Cancelled (₹0)</span>
+                                      </div>
+                                    );
+                                  }
+                                  if (isFailed) {
+                                    return (
+                                      <div>
+                                        <span className="text-stone-400 line-through text-xs font-semibold">₹{r.partnerCommission}</span>
+                                        <span className="block text-[9px] text-rose-600 font-bold">Failed (₹0)</span>
+                                      </div>
+                                    );
+                                  }
+                                  if (!isDelivered) {
+                                    return (
+                                      <div>
+                                        <span className="text-amber-800/80 text-xs font-semibold line-through">₹{r.partnerCommission}</span>
+                                        <span className="block text-[9px] text-amber-700 font-bold">On Hold (Not Counted)</span>
+                                      </div>
+                                    );
+                                  }
+                                  return (
+                                    <div>
+                                      <span className="text-emerald-600 font-bold text-sm">+₹{r.partnerCommission}</span>
+                                      <span className="block text-[9px] text-emerald-700 font-bold">Delivered (Counted)</span>
+                                    </div>
+                                  );
+                                })()}
                               </td>
                               <td className="p-2.5 text-center whitespace-nowrap">
-                                <span
-                                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                    r.status === 'settled'
-                                      ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                      : r.status === 'eligible' || r.isDelivered
-                                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                      : 'bg-stone-100 text-stone-700'
-                                  }`}
-                                >
-                                  {r.status === 'eligible' || r.isDelivered ? 'Delivered / Eligible' : r.status}
-                                </span>
+                                {(() => {
+                                  const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+                                  const refSt = String(r.status || '').toLowerCase().trim();
+                                  const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+                                  const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+                                  const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
+                                  const isDelivered = !isCancelled && !isFailed && !isOnHold && (Boolean(r.isDelivered) || orderSt === 'delivered' || refSt === 'settled');
+
+                                  if (isCancelled) {
+                                    return (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                        Cancelled
+                                      </span>
+                                    );
+                                  }
+                                  if (isFailed) {
+                                    return (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                        Failed
+                                      </span>
+                                    );
+                                  }
+                                  if (!isDelivered) {
+                                    return (
+                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                        On Hold (Pending Delivery)
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                        r.status === 'settled'
+                                          ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      }`}
+                                    >
+                                      {r.status === 'settled' ? 'Settled' : 'Delivered / Eligible'}
+                                    </span>
+                                  );
+                                })()}
                               </td>
                               <td className="p-2.5 text-center">
                                 <button

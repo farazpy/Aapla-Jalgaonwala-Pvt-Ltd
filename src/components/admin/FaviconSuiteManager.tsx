@@ -16,7 +16,10 @@ import {
   ExternalLink,
   Code2,
   Layers,
-  Edit3
+  Edit3,
+  Cloud,
+  UploadCloud,
+  ShieldCheck
 } from 'lucide-react';
 
 export interface FaviconItemData {
@@ -65,6 +68,19 @@ export const FaviconSuiteManager: React.FC<Props> = ({
   const [cacheBuster, setCacheBuster] = useState(Date.now());
   const [showManifestEditor, setShowManifestEditor] = useState(false);
   const [manifestJsonText, setManifestJsonText] = useState('');
+  const [isSyncingS3, setIsSyncingS3] = useState(false);
+  const [s3SyncResult, setS3SyncResult] = useState<{
+    success: boolean;
+    message: string;
+    items: Array<{
+      filename: string;
+      key: string;
+      size: number;
+      success: boolean;
+      s3Url?: string;
+      error?: string;
+    }>;
+  } | null>(null);
 
   const masterFileRef = useRef<HTMLInputElement>(null);
   const singleFileRefs = useRef<{ [key: string]: HTMLInputElement | null }>({});
@@ -221,6 +237,34 @@ export const FaviconSuiteManager: React.FC<Props> = ({
     }
   };
 
+  const handleSyncAllIconsToS3 = async () => {
+    setIsSyncingS3(true);
+    setS3SyncResult(null);
+    try {
+      const res = await fetch('/api/admin/favicons/sync-s3', {
+        method: 'POST'
+      });
+      const json = await res.json();
+      if (json.success) {
+        setS3SyncResult(json.data);
+        showToast('All icons stored & synced to TeleCloud S3!');
+        if (json.data?.suiteStatus) {
+          setSuiteData(json.data.suiteStatus);
+        } else {
+          fetchStatus();
+        }
+        setCacheBuster(Date.now());
+      } else {
+        alert(json.error || 'Failed to sync icons to S3');
+      }
+    } catch (err: any) {
+      console.error('Error syncing icons to S3:', err);
+      alert(err.message || 'Network error syncing icons to S3');
+    } finally {
+      setIsSyncingS3(false);
+    }
+  };
+
   const faviconCards = [
     {
       key: 'favicon96',
@@ -354,6 +398,108 @@ export const FaviconSuiteManager: React.FC<Props> = ({
               )}
             </label>
           </div>
+        </div>
+
+        {/* 2.5. Store All Icons in TeleCloud S3 Action */}
+        <div className="bg-white rounded-2xl p-5 border border-sky-200 bg-gradient-to-r from-sky-50/50 via-white to-amber-50/30 shadow-2xs space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-600 to-indigo-700 text-white flex items-center justify-center shadow-sm shrink-0">
+                <UploadCloud className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black text-stone-900">Store All Icons in TeleCloud S3</h3>
+                  <span className="px-2 py-0.5 rounded-full text-[9.5px] font-black uppercase tracking-wider bg-sky-100 text-sky-800 border border-sky-200">
+                    S3 CDN Storage
+                  </span>
+                </div>
+                <p className="text-xs text-stone-600">
+                  Upload and sync all favicon resolutions (96x96, SVG, ICO, Apple Touch Icon, and Web Manifest) directly to TeleCloud S3 and get permanent CDN direct stream links.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSyncAllIconsToS3}
+              disabled={isSyncingS3}
+              className="w-full md:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-700 to-indigo-800 hover:from-sky-800 hover:to-indigo-900 text-white text-xs font-black rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer shrink-0 disabled:opacity-60"
+            >
+              {isSyncingS3 ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Uploading to S3...
+                </>
+              ) : (
+                <>
+                  <Cloud className="w-4 h-4" />
+                  Store All Icons in S3
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* S3 Sync Result List */}
+          {s3SyncResult && (
+            <div className="mt-4 pt-4 border-t border-sky-100/80 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  {s3SyncResult.message}
+                </p>
+                <span className="text-[11px] font-semibold text-stone-500">
+                  {s3SyncResult.items?.filter(i => i.success).length} of {s3SyncResult.items?.length} items stored
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2">
+                {s3SyncResult.items?.map((item) => (
+                  <div
+                    key={item.filename}
+                    className="p-3 bg-white/90 rounded-xl border border-stone-200/80 shadow-2xs flex flex-col justify-between gap-2 text-xs"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-stone-900 truncate font-mono text-[11px]" title={item.filename}>
+                        {item.filename}
+                      </span>
+                      {item.success ? (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-0.5 shrink-0">
+                          <Check className="w-2.5 h-2.5" /> S3 Saved
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
+                          Failed
+                        </span>
+                      )}
+                    </div>
+                    {item.s3Url && (
+                      <div className="flex items-center justify-between gap-1 pt-1 border-t border-stone-100">
+                        <a
+                          href={item.s3Url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[10.5px] font-mono text-sky-700 hover:underline truncate max-w-[190px] flex items-center gap-1"
+                          title={item.s3Url}
+                        >
+                          <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+                          {item.s3Url}
+                        </a>
+                        <span className="text-[10px] text-stone-400 shrink-0">
+                          {(item.size / 1024).toFixed(1)} KB
+                        </span>
+                      </div>
+                    )}
+                    {item.error && (
+                      <p className="text-[10px] text-rose-600 truncate" title={item.error}>
+                        {item.error}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 3. Apple Mobile Web App Title Configuration */}
@@ -508,7 +654,7 @@ export const FaviconSuiteManager: React.FC<Props> = ({
                     <>
                       {fileExists && (
                         <a
-                          href={`/favicons/${item.filename}`}
+                          href={rawPath.startsWith('http') ? rawPath : `/favicons/${item.filename}`}
                           target="_blank"
                           rel="noreferrer"
                           className="px-2.5 py-1.5 text-stone-500 hover:text-stone-800 font-semibold text-xs flex items-center gap-1 transition-colors"

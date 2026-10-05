@@ -7,6 +7,7 @@ import dotenv from 'dotenv';
 import { apiRouter } from './server/routes/api';
 import { initDatabase } from './server/database/connection';
 import { UserRepository } from './server/repositories/UserRepository';
+import { SettingsRepository } from './server/repositories/SettingsRepository';
 import { initOrderCleanupJob } from './server/utils/orderCleanup';
 
 // Load environment variables
@@ -35,10 +36,13 @@ app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
 app.use(express.text({ limit: '20mb', type: ['text/*', 'application/x-ndjson', 'application/octet-stream'] }));
 
-// Static uploads & favicons serving
-app.use('/uploads', express.static(uploadsDir));
+// Static uploads & favicons serving with browser caching
+app.use('/uploads', express.static(uploadsDir, {
+  maxAge: '7d',
+  etag: true
+}));
 app.use('/favicons', express.static(faviconsDir, {
-  maxAge: '1h',
+  maxAge: '7d',
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.webmanifest') || filePath.endsWith('.json')) {
       res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
@@ -186,8 +190,9 @@ const oauthCallbackHandler = async (req: Request, res: Response) => {
       `);
     }
 
-    const clientId = process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID || '';
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET || '';
+    const settings = await SettingsRepository.get().catch(() => ({} as any));
+    const clientId = (process.env.GOOGLE_CLIENT_ID || process.env.CLIENT_ID || settings.googleClientId || '').trim();
+    const clientSecret = (process.env.GOOGLE_CLIENT_SECRET || process.env.CLIENT_SECRET || settings.googleClientSecret || '').trim();
     
     // Extract state if passed from auth URL
     let stateRedirectUri = '';
@@ -209,67 +214,88 @@ const oauthCallbackHandler = async (req: Request, res: Response) => {
     const redirectUri = stateRedirectUri || `${baseUrl.replace(/\/$/, '')}/auth/callback`;
 
     let googleUser: any = null;
+    let authErrorDetail = '';
 
     if (clientId && clientSecret) {
-      // Exchange code for token with Google
-      const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          code,
-          client_id: clientId,
-          client_secret: clientSecret,
-          redirect_uri: redirectUri,
-          grant_type: 'authorization_code'
-        })
-      });
-
-      const tokenData = await tokenRes.json();
-
-      if (tokenData.access_token) {
-        // Fetch user profile from Google UserInfo endpoint
-        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-          headers: { Authorization: `Bearer ${tokenData.access_token}` }
+      try {
+        // Exchange code for token with Google
+        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            code,
+            client_id: clientId,
+            client_secret: clientSecret,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code'
+          })
         });
-        if (userInfoRes.ok) {
-          googleUser = await userInfoRes.json();
-        }
-      }
 
-      // Fallback: decode id_token JWT if userinfo request failed
-      if ((!googleUser || !googleUser.email) && tokenData.id_token) {
-        try {
-          const payloadBase64 = tokenData.id_token.split('.')[1];
-          if (payloadBase64) {
-            const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
-            if (decodedPayload && decodedPayload.email) {
-              googleUser = {
-                id: decodedPayload.sub,
-                email: decodedPayload.email,
-                name: decodedPayload.name,
-                picture: decodedPayload.picture
-              };
-            }
+        const tokenData = await tokenRes.json();
+
+        if (tokenData.access_token) {
+          // Fetch user profile from Google UserInfo endpoint
+          const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` }
+          });
+          if (userInfoRes.ok) {
+            googleUser = await userInfoRes.json();
+          } else {
+            const errText = await userInfoRes.text();
+            authErrorDetail = `Failed to get userinfo from Google: ${errText}`;
           }
-        } catch (err) {
-          console.warn('[Google OAuth Callback] Error decoding id_token JWT:', err);
+        } else if (tokenData.error) {
+          authErrorDetail = `Google returned error: ${tokenData.error} - ${tokenData.error_description || 'unknown'}`;
+          console.error('[Google OAuth Token Error]', tokenData);
         }
+
+        // Fallback: decode id_token JWT if userinfo request failed
+        if ((!googleUser || !googleUser.email) && tokenData.id_token) {
+          try {
+            const payloadBase64 = tokenData.id_token.split('.')[1];
+            if (payloadBase64) {
+              const decodedPayload = JSON.parse(Buffer.from(payloadBase64, 'base64').toString('utf-8'));
+              if (decodedPayload && decodedPayload.email) {
+                googleUser = {
+                  id: decodedPayload.sub,
+                  email: decodedPayload.email,
+                  name: decodedPayload.name,
+                  picture: decodedPayload.picture
+                };
+              }
+            }
+          } catch (err) {
+            console.warn('[Google OAuth Callback] Error decoding id_token JWT:', err);
+          }
+        }
+      } catch (err: any) {
+        authErrorDetail = `Network error exchanging token with Google: ${err.message || err}`;
+        console.error('[Google OAuth Token Exchange Exception]', err);
       }
+    } else {
+      authErrorDetail = 'GOOGLE_CLIENT_SECRET or GOOGLE_CLIENT_ID is not configured in your .env file on the VPS.';
     }
 
     if (!googleUser || !googleUser.email) {
       return res.send(`
         <!DOCTYPE html>
         <html>
-          <body style="font-family: system-ui, sans-serif; text-align: center; padding: 40px; background: #FAF6ED;">
-            <h3 style="color: #9B111E;">Could not fetch Google profile</h3>
-            <p>Please ensure Google OAuth credentials are provided and authorization succeeded.</p>
+          <body style="font-family: system-ui, sans-serif; text-align: center; padding: 40px; background: #FAF6ED; color: #1c1917;">
+            <h3 style="color: #9B111E; margin-bottom: 8px;">Could not fetch Google profile</h3>
+            <p style="max-width: 480px; margin: 0 auto 16px auto; font-size: 14px; color: #57534e;">
+              ${authErrorDetail || 'Please ensure Google OAuth credentials are provided in .env and authorization succeeded.'}
+            </p>
+            <div style="font-size: 12px; color: #78716c; background: #f5f5f4; border: 1px solid #e7e5e4; border-radius: 8px; padding: 10px; max-width: 480px; margin: 0 auto 20px auto; text-align: left; word-break: break-all;">
+              <strong>Redirect URI Used:</strong> <code>${redirectUri}</code><br/>
+              <strong>Client ID Configured:</strong> ${clientId ? 'Yes' : 'No'}<br/>
+              <strong>Client Secret Configured:</strong> ${clientSecret ? 'Yes' : 'No'}
+            </div>
             <script>
               if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_ERROR', error: 'Could not fetch Google profile' }, '*');
-                setTimeout(() => window.close(), 2000);
+                window.opener.postMessage({ type: 'OAUTH_AUTH_ERROR', error: ${JSON.stringify(authErrorDetail || 'Could not fetch Google profile')} }, '*');
+                setTimeout(() => window.close(), 6000);
               } else {
-                setTimeout(() => { window.location.href = '/'; }, 2000);
+                setTimeout(() => { window.location.href = '/'; }, 6000);
               }
             </script>
           </body>
@@ -408,6 +434,7 @@ async function startServer() {
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
+        allowedHosts: true,
         watch: {
           ignored: [
             '**/server/data/**',
@@ -424,7 +451,20 @@ async function startServer() {
   } else {
     // Production mode: serve built Vite assets
     const distPath = path.join(process.cwd(), 'dist');
+    const assetsPath = path.join(distPath, 'assets');
+
+    // 1. Long-term immutable caching for Vite hashed production bundles (/assets/*)
+    if (fs.existsSync(assetsPath)) {
+      app.use('/assets', express.static(assetsPath, {
+        maxAge: '1y',
+        immutable: true,
+        etag: true
+      }));
+    }
+
+    // 2. Root static files (favicons, manifests, robots.txt, etc.)
     app.use(express.static(distPath, {
+      maxAge: '1d',
       setHeaders: (res, filePath) => {
         if (filePath.endsWith('.html')) {
           res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');

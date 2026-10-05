@@ -176,13 +176,19 @@ export function AdminLayout({
     // Fetch live summary counts
     const fetchSummary = async () => {
       try {
+        const authToken = localStorage.getItem('ajw_auth_token') || localStorage.getItem('token') || '';
+        const authHeaders: Record<string, string> = {};
+        if (authToken) {
+          authHeaders['Authorization'] = `Bearer ${authToken}`;
+        }
+
         const [prodRes, catRes, ordRes, userRes, coupRes, revRes, settRes] = await Promise.allSettled([
-          fetch('/api/products').then((r) => r.json()),
+          fetch('/api/admin/products').then((r) => r.json()),
           fetch('/api/categories').then((r) => r.json()),
           fetch('/api/orders').then((r) => r.json()),
-          fetch('/api/admin/users').then((r) => r.json()),
+          authToken ? fetch('/api/admin/users', { headers: authHeaders }).then((r) => r.json()) : Promise.resolve({ success: false }),
           fetch('/api/coupons').then((r) => r.json()),
-          fetch('/api/admin/reviews').then((r) => r.json()),
+          authToken ? fetch('/api/admin/reviews', { headers: authHeaders }).then((r) => r.json()) : fetch('/api/reviews').then((r) => r.json()),
           fetch('/api/settings').then((r) => r.json())
         ]);
 
@@ -896,7 +902,7 @@ export function AdminLayout({
                 <Link href="/admin" className="text-stone-400 hover:text-stone-800 transition-colors shrink-0 flex items-center gap-1.5">
                   <span>Store Admin</span>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-600 border border-stone-200/80 leading-none shrink-0" title="Admin Version">
-                    v1.4.3
+                    v1.7.4
                   </span>
                 </Link>
                 <span className="text-stone-300 shrink-0">/</span>

@@ -188,7 +188,7 @@ export default function AllProductsPage() {
   const fetchProducts = useCallback(async (showLoadingState = false) => {
     if (showLoadingState) setIsLoading(true);
     try {
-      const res = await fetch('/api/products');
+      const res = await fetch('/api/admin/products');
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setProducts(json.data);
@@ -217,7 +217,7 @@ export default function AllProductsPage() {
     const load = async () => {
       try {
         const [pRes, cRes] = await Promise.all([
-          fetch('/api/products').then((r) => r.json()),
+          fetch('/api/admin/products').then((r) => r.json()),
           fetch('/api/categories').then((r) => r.json())
         ]);
         if (!ignore) {

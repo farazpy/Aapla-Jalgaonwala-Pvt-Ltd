@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 import { uploadToCloudinary, isCloudinaryConfiguredAsync } from './cloudinary';
+import { uploadToTeleCloud, isTeleCloudConfiguredAsync } from './telecloud';
 import { SettingsRepository } from '../repositories/SettingsRepository';
 
 export interface FaviconFileInfo {
@@ -245,9 +246,26 @@ export async function saveSingleFaviconFile(targetFilename: string, buffer: Buff
   const stat = fs.statSync(filePath);
   let returnPath = `/favicons/${targetFilename}`;
 
-  // If Cloudinary is configured, upload and save to DB
-  const hasCloudinary = await isCloudinaryConfiguredAsync();
-  if (hasCloudinary) {
+  // If TeleCloud or Cloudinary is configured, upload and save to DB
+  const hasTeleCloud = await isTeleCloudConfiguredAsync();
+  const hasCloudinary = !hasTeleCloud && await isCloudinaryConfiguredAsync();
+
+  if (hasTeleCloud) {
+    try {
+      const tResult = await uploadToTeleCloud(fileBuf, targetFilename, {
+        caption: `Favicon: ${targetFilename}`
+      });
+      if (tResult && tResult.url) {
+        returnPath = tResult.url;
+        const dbField = getSettingsFieldForFavicon(targetFilename);
+        if (dbField) {
+          await SettingsRepository.update({ [dbField]: tResult.url });
+        }
+      }
+    } catch (err) {
+      console.error(`[FaviconManager] TeleCloud upload failed for ${targetFilename}:`, err);
+    }
+  } else if (hasCloudinary) {
     try {
       const ext = path.extname(targetFilename).toLowerCase();
       const resourceType = (ext === '.webmanifest' || ext === '.json') ? 'raw' : 'image';
@@ -341,11 +359,30 @@ export async function generateAllFaviconsFromMaster(
   syncToDist('favicon.svg', svgContent);
   generatedFiles.push('favicon.svg');
 
-  // Cloudinary check
-  const hasCloudinary = await isCloudinaryConfiguredAsync();
+  // Remote storage upload check (TeleCloud or Cloudinary)
+  const hasTeleCloud = await isTeleCloudConfiguredAsync();
+  const hasCloudinary = !hasTeleCloud && await isCloudinaryConfiguredAsync();
   const cldUrls: Record<string, string> = {};
 
-  if (hasCloudinary) {
+  if (hasTeleCloud) {
+    try {
+      console.log('[FaviconManager] TeleCloud is configured, uploading generated assets...');
+      const upload96 = await uploadToTeleCloud(png96Buffer, 'favicon-96x96.png', { caption: 'App Favicon 96x96' });
+      cldUrls['favicon-96x96.png'] = upload96.url;
+
+      const uploadApple = await uploadToTeleCloud(apple180Buffer, 'apple-touch-icon.png', { caption: 'Apple Touch Icon 180x180' });
+      cldUrls['apple-touch-icon.png'] = uploadApple.url;
+
+      const uploadIco = await uploadToTeleCloud(icoBuffer, 'favicon.ico', { caption: 'Favicon ICO' });
+      cldUrls['favicon.ico'] = uploadIco.url;
+
+      const svgBuffer = Buffer.from(svgContent, 'utf-8');
+      const uploadSvg = await uploadToTeleCloud(svgBuffer, 'favicon.svg', { caption: 'Favicon SVG' });
+      cldUrls['favicon.svg'] = uploadSvg.url;
+    } catch (err) {
+      console.error('[FaviconManager] TeleCloud uploads failed during multi-generation:', err);
+    }
+  } else if (hasCloudinary) {
     try {
       console.log('[FaviconManager] Cloudinary is configured, uploading generated assets...');
       const upload96 = await uploadToCloudinary(png96Buffer, 'favicon-96x96.png', { folder: 'favicons' });
@@ -407,7 +444,18 @@ export async function generateAllFaviconsFromMaster(
   } catch {}
   generatedFiles.push('site.webmanifest');
 
-  if (hasCloudinary) {
+  if (hasTeleCloud) {
+    try {
+      const manifestBuffer = Buffer.from(manifestJson, 'utf-8');
+      const uploadManifest = await uploadToTeleCloud(manifestBuffer, 'site.webmanifest', {
+        caption: 'App Web Manifest',
+        mimeType: 'application/manifest+json'
+      });
+      cldUrls['site.webmanifest'] = uploadManifest.url;
+    } catch (err) {
+      console.error('[FaviconManager] TeleCloud manifest upload failed during generation:', err);
+    }
+  } else if (hasCloudinary) {
     try {
       const manifestBuffer = Buffer.from(manifestJson, 'utf-8');
       const uploadManifest = await uploadToCloudinary(manifestBuffer, 'site.webmanifest', {
@@ -447,8 +495,23 @@ export async function updateWebManifestJson(manifestContent: any): Promise<{ suc
     fs.writeFileSync(path.join(process.cwd(), 'public', 'manifest.json'), manifestJson, 'utf-8');
   } catch {}
 
-  const hasCloudinary = await isCloudinaryConfiguredAsync();
-  if (hasCloudinary) {
+  const hasTeleCloud = await isTeleCloudConfiguredAsync();
+  const hasCloudinary = !hasTeleCloud && await isCloudinaryConfiguredAsync();
+
+  if (hasTeleCloud) {
+    try {
+      const manifestBuffer = Buffer.from(manifestJson, 'utf-8');
+      const uploadManifest = await uploadToTeleCloud(manifestBuffer, 'site.webmanifest', {
+        caption: 'App Web Manifest',
+        mimeType: 'application/manifest+json'
+      });
+      if (uploadManifest && uploadManifest.url) {
+        await SettingsRepository.update({ siteWebmanifestUrl: uploadManifest.url });
+      }
+    } catch (err) {
+      console.error('[FaviconManager] TeleCloud custom manifest upload failed:', err);
+    }
+  } else if (hasCloudinary) {
     try {
       const manifestBuffer = Buffer.from(manifestJson, 'utf-8');
       const uploadManifest = await uploadToCloudinary(manifestBuffer, 'site.webmanifest', {
@@ -470,3 +533,105 @@ export async function updateWebManifestJson(manifestContent: any): Promise<{ suc
     content: typeof manifestContent === 'string' ? JSON.parse(manifestContent) : manifestContent
   };
 }
+
+export interface IconSyncResultItem {
+  filename: string;
+  key: string;
+  size: number;
+  success: boolean;
+  s3Url?: string;
+  error?: string;
+}
+
+export async function syncAllIconsToS3(): Promise<{
+  success: boolean;
+  message: string;
+  items: IconSyncResultItem[];
+  settingsUpdated: Record<string, string>;
+}> {
+  ensureFaviconsDirectory();
+
+  const iconFiles = [
+    { filename: 'favicon-96x96.png', key: 'favicon96', dbField: 'faviconUrl', mimeType: 'image/png' },
+    { filename: 'favicon.svg', key: 'faviconSvg', dbField: 'faviconSvgUrl', mimeType: 'image/svg+xml' },
+    { filename: 'favicon.ico', key: 'faviconIco', dbField: 'faviconIcoUrl', mimeType: 'image/x-icon' },
+    { filename: 'apple-touch-icon.png', key: 'appleTouchIcon', dbField: 'appleTouchIconUrl', mimeType: 'image/png' },
+    { filename: 'site.webmanifest', key: 'siteWebmanifest', dbField: 'siteWebmanifestUrl', mimeType: 'application/manifest+json' }
+  ];
+
+  const results: IconSyncResultItem[] = [];
+  const settingsToUpdate: Record<string, string> = {};
+
+  for (const item of iconFiles) {
+    const localPath = path.join(FAVICONS_PUBLIC_DIR, item.filename);
+    
+    if (!fs.existsSync(localPath)) {
+      results.push({
+        filename: item.filename,
+        key: item.key,
+        size: 0,
+        success: false,
+        error: `Local icon file ${item.filename} not found on server`
+      });
+      continue;
+    }
+
+    try {
+      const fileBuffer = fs.readFileSync(localPath);
+      const stat = fs.statSync(localPath);
+
+      const uploadRes = await uploadToTeleCloud(fileBuffer, item.filename, {
+        caption: `Favicon Asset: ${item.filename}`,
+        mimeType: item.mimeType
+      });
+
+      if (uploadRes && uploadRes.url) {
+        settingsToUpdate[item.dbField] = uploadRes.url;
+        results.push({
+          filename: item.filename,
+          key: item.key,
+          size: stat.size,
+          success: true,
+          s3Url: uploadRes.url
+        });
+      } else {
+        results.push({
+          filename: item.filename,
+          key: item.key,
+          size: stat.size,
+          success: false,
+          error: 'S3 returned an empty URL response'
+        });
+      }
+    } catch (err: any) {
+      console.error(`[FaviconManager] Failed to sync ${item.filename} to S3:`, err);
+      results.push({
+        filename: item.filename,
+        key: item.key,
+        size: 0,
+        success: false,
+        error: err?.message || 'Failed to upload to S3'
+      });
+    }
+  }
+
+  if (Object.keys(settingsToUpdate).length > 0) {
+    try {
+      await SettingsRepository.update(settingsToUpdate);
+    } catch (err) {
+      console.error('[FaviconManager] Failed to update settings with S3 URLs:', err);
+    }
+  }
+
+  const allSuccess = results.length > 0 && results.every(r => r.success);
+
+  return {
+    success: allSuccess || results.some(r => r.success),
+    message: allSuccess
+      ? 'All admin panel & site icons successfully uploaded and synced to S3'
+      : 'Synced available icons to S3 with some notices',
+    items: results,
+    settingsUpdated: settingsToUpdate
+  };
+}
+

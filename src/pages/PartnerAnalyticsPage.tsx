@@ -56,9 +56,9 @@ import {
 } from 'lucide-react';
 import { Container } from '@/components/ui/Container';
 import { SEO } from '@/components/seo/SEO';
-import { BusinessPartner, PartnerOrderReferral, PartnerSettlement } from '@/types';
+import { BusinessPartner, PartnerOrderReferral, PartnerSettlement, InvitedPartner } from '@/types';
 
-type PartnerTab = 'overview' | 'analytics' | 'commissions' | 'orders' | 'toolkit' | 'settings';
+type PartnerTab = 'overview' | 'analytics' | 'commissions' | 'orders' | 'network' | 'toolkit' | 'settings';
 
 export default function PartnerAnalyticsPage() {
   const navigate = useNavigate();
@@ -70,6 +70,7 @@ export default function PartnerAnalyticsPage() {
   const [partner, setPartner] = useState<BusinessPartner | null>(null);
   const [referrals, setReferrals] = useState<PartnerOrderReferral[]>([]);
   const [settlements, setSettlements] = useState<PartnerSettlement[]>([]);
+  const [invitedPartners, setInvitedPartners] = useState<InvitedPartner[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -119,26 +120,36 @@ export default function PartnerAnalyticsPage() {
   }, [settlements]);
 
   const deliveredReferrals = useMemo(() => {
-    return referrals.filter(r => r.isDelivered || r.status === 'eligible' || r.status === 'settled');
+    return referrals.filter(r => {
+      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+      const refSt = String(r.status || '').toLowerCase().trim();
+      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+      const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
+      if (isCancelled || isFailed || isOnHold) return false;
+      return r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
+    });
   }, [referrals]);
 
   const onHoldReferrals = useMemo(() => {
-    return referrals.filter(r => !r.isDelivered && r.status !== 'eligible' && r.status !== 'settled' && r.orderStatus?.toLowerCase() !== 'cancelled');
+    return referrals.filter(r => {
+      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+      const refSt = String(r.status || '').toLowerCase().trim();
+      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+      if (isCancelled || isFailed) return false;
+      const isDelivered = r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
+      return !isDelivered;
+    });
   }, [referrals]);
 
   const deliveredCommission = useMemo(() => {
-    if (partner?.totalCommissionEarned !== undefined && partner?.totalCommissionEarned !== null) {
-      return partner.totalCommissionEarned;
-    }
     return deliveredReferrals.reduce((sum, r) => sum + (Number(r.partnerCommission) || 0), 0);
-  }, [partner, deliveredReferrals]);
+  }, [deliveredReferrals]);
 
   const onHoldCommission = useMemo(() => {
-    if (partner?.onHoldCommission !== undefined && partner?.onHoldCommission !== null) {
-      return partner.onHoldCommission;
-    }
     return onHoldReferrals.reduce((sum, r) => sum + (Number(r.partnerCommission) || 0), 0);
-  }, [partner, onHoldReferrals]);
+  }, [onHoldReferrals]);
 
   const averageOrderValue = useMemo(() => {
     const count = partner?.totalOrdersCount || referrals.length || 0;
@@ -159,16 +170,16 @@ export default function PartnerAnalyticsPage() {
     else setIsRefreshing(true);
     setLoginError(null);
 
-    const cleanCode = code.trim().toUpperCase();
+    const cleanCode = code.trim();
 
     try {
-      const res = await fetch(`/api/partner-program/partners/${encodeURIComponent(cleanCode)}?codeOnly=true`);
+      const res = await fetch(`/api/partner-program/partners/${encodeURIComponent(cleanCode)}`);
       const json = await res.json();
 
       if (!res.ok || !json.success || !json.data?.partner) {
         throw new Error(
           json.error?.message ||
-          'Invalid Partner Code. Please enter your exact assigned Partner Referral Code (e.g., AJW-289822).'
+          'Invalid Account. Please enter your valid Partner Referral Code, Registered Mobile Number, or Email.'
         );
       }
 
@@ -176,13 +187,17 @@ export default function PartnerAnalyticsPage() {
       setPartner(p);
       setReferrals(json.data.referrals || []);
       setSettlements(json.data.settlements || []);
+      setInvitedPartners(json.data.invitedPartners || []);
 
       // Store in localStorage for persistent session
       localStorage.setItem('ajw_active_partner_code', p.partnerCode);
     } catch (err: any) {
-      setLoginError(err.message || 'Failed to verify Partner Code. Please check and try again.');
+      setLoginError(err.message || 'Failed to verify partner credentials. Please check and try again.');
       localStorage.removeItem('ajw_active_partner_code');
       setPartner(null);
+      setReferrals([]);
+      setSettlements([]);
+      setInvitedPartners([]);
     } finally {
       if (isInitialLoad) setLoading(false);
       else setIsRefreshing(false);
@@ -199,19 +214,13 @@ export default function PartnerAnalyticsPage() {
     }
   }, [fetchPartnerData]);
 
-  // Handle Login Submission strictly with referral code
+  // Handle Login Submission strictly with referral code, phone, or email
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanCode = partnerCodeInput.trim().toUpperCase();
+    const cleanCode = partnerCodeInput.trim();
 
     if (!cleanCode) {
-      setLoginError('Please enter your assigned Partner Referral Code (e.g., AJW-129822).');
-      return;
-    }
-
-    // Reject pure numbers (phones) to enforce user requirement: login only using referral code
-    if (/^\d{10}$/.test(cleanCode)) {
-      setLoginError('Login with mobile number is not supported. Please enter your unique Partner Referral Code (e.g., AJW-129822).');
+      setLoginError('Please enter your Partner Code, Registered Mobile, or Email.');
       return;
     }
 
@@ -225,6 +234,7 @@ export default function PartnerAnalyticsPage() {
     setPartner(null);
     setReferrals([]);
     setSettlements([]);
+    setInvitedPartners([]);
     setPartnerCodeInput('');
   };
 
@@ -402,23 +412,23 @@ export default function PartnerAnalyticsPage() {
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div className="space-y-1.5">
                   <label htmlFor="partner-code-input" className="text-xs font-bold text-stone-700 flex items-center justify-between">
-                    <span>Partner Referral Code *</span>
-                    <span className="text-[10px] text-stone-400 font-normal">e.g. AJW-289822</span>
+                    <span>Partner Code, Mobile, or Email *</span>
+                    <span className="text-[10px] text-stone-400 font-normal">e.g. AJW-289822 or 9822XXXXXX</span>
                   </label>
                   <div className="relative">
                     <input
                       id="partner-code-input"
                       type="text"
                       required
-                      placeholder="AJW-XXXXXX"
+                      placeholder="e.g. AJW-129822 or Mobile Number"
                       value={partnerCodeInput}
-                      onChange={(e) => setPartnerCodeInput(e.target.value.toUpperCase())}
-                      className="w-full px-4 py-3 rounded-xl border border-stone-300 text-sm uppercase font-mono font-bold tracking-wider focus:ring-2 focus:ring-[#9B111E] focus:outline-none placeholder:text-stone-300"
+                      onChange={(e) => setPartnerCodeInput(e.target.value)}
+                      className="w-full px-4 py-3 rounded-xl border border-stone-300 text-sm font-semibold focus:ring-2 focus:ring-[#9B111E] focus:outline-none placeholder:text-stone-300"
                     />
                     <Sparkles className="w-4 h-4 text-amber-500 absolute right-3.5 top-3.5" />
                   </div>
                   <p className="text-[11px] text-stone-400 leading-tight">
-                    Enter the code you received after registration. Mobile number login is disabled.
+                    Enter the Partner Code, registered mobile number, or email you used during registration.
                   </p>
                 </div>
 
@@ -717,9 +727,9 @@ export default function PartnerAnalyticsPage() {
                     </span>
                   </div>
                   <span className="text-stone-900 font-extrabold font-mono text-sm">
-                    ₹{(partner.totalSalesAmount || 0).toLocaleString('en-IN')}{' '}
+                    ₹{(partner.totalSalesAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
                     <span className="text-stone-300 font-normal">/</span>{' '}
-                    ₹{partnerTier.nextMilestone.toLocaleString('en-IN')}{' '}
+                    ₹{partnerTier.nextMilestone.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
                     <span className="text-[10px] font-bold text-stone-400 uppercase ml-1">Goal</span>
                   </span>
                 </div>
@@ -806,6 +816,24 @@ export default function PartnerAnalyticsPage() {
 
               <button
                 type="button"
+                onClick={() => setActiveTab('network')}
+                className={`flex items-center gap-2 px-5 py-3.5 text-xs font-black transition-all border-b-2 shrink-0 cursor-pointer ${
+                  activeTab === 'network'
+                    ? 'border-[#9B111E] text-[#9B111E] bg-[#9B111E]/5 rounded-t-2xl'
+                    : 'border-transparent text-stone-600 hover:text-stone-900 hover:bg-stone-50 rounded-t-2xl'
+                }`}
+              >
+                <Users className="w-4 h-4 text-rose-600" />
+                <span>Invited Women</span>
+                <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  invitedPartners.length > 0 ? 'bg-rose-100 text-rose-800' : 'bg-stone-200 text-stone-700'
+                }`}>
+                  {invitedPartners.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setActiveTab('toolkit')}
                 className={`flex items-center gap-2 px-5 py-3.5 text-xs font-black transition-all border-b-2 shrink-0 cursor-pointer ${
                   activeTab === 'toolkit'
@@ -859,7 +887,7 @@ export default function PartnerAnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-2xl sm:text-3xl font-black text-stone-900">
-                      ₹{(partner.totalSalesAmount || 0).toLocaleString('en-IN')}
+                      ₹{(partner.totalSalesAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <p className="text-[10px] text-stone-400">Total customer transaction volume</p>
                   </div>
@@ -873,7 +901,7 @@ export default function PartnerAnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-2xl sm:text-3xl font-black text-emerald-600">
-                      ₹{deliveredCommission.toLocaleString('en-IN')}
+                      ₹{deliveredCommission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <p className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
@@ -890,24 +918,31 @@ export default function PartnerAnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-2xl sm:text-3xl font-black text-amber-900">
-                      ₹{onHoldCommission.toLocaleString('en-IN')}
+                      ₹{onHoldCommission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <p className="text-[10px] text-amber-800 font-bold">
                       Order yet to be delivered
                     </p>
                   </div>
 
-                  <div className="bg-rose-50 p-4.5 sm:p-5 rounded-3xl border border-rose-200 shadow-xs space-y-2 hover:border-rose-300 transition-all">
+                  <div
+                    onClick={() => setActiveTab('network')}
+                    className="bg-rose-50 p-4.5 sm:p-5 rounded-3xl border border-rose-200 shadow-xs space-y-2 hover:border-rose-300 transition-all cursor-pointer group"
+                    title="Click to view invited woman partners"
+                  >
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-bold text-rose-900 uppercase tracking-wider">Referral Bonus</span>
-                      <div className="p-1.5 sm:p-2 rounded-xl bg-rose-100 text-rose-800 shrink-0">
+                      <div className="p-1.5 sm:p-2 rounded-xl bg-rose-100 text-rose-800 shrink-0 group-hover:scale-105 transition-transform">
                         <Users className="w-4 h-4" />
                       </div>
                     </div>
                     <div className="text-2xl sm:text-3xl font-black text-rose-700">
-                      ₹{(partner.referralBonusEarned || 0).toLocaleString('en-IN')}
+                      ₹{(partner.referralBonusEarned || (invitedPartners.length * 200)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <p className="text-[10px] text-rose-800 font-bold">Invited woman partners</p>
+                    <p className="text-[10px] text-rose-800 font-bold flex items-center justify-between">
+                      <span>{invitedPartners.length} {invitedPartners.length === 1 ? 'Woman' : 'Women'} Joined</span>
+                      <span className="text-[9px] underline">View &rarr;</span>
+                    </p>
                   </div>
 
                   <div className="bg-white p-4.5 sm:p-5 rounded-3xl border border-stone-200 shadow-xs space-y-2 hover:border-[#D9531E]/20 transition-all">
@@ -918,7 +953,7 @@ export default function PartnerAnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-2xl sm:text-3xl font-black text-[#9B111E]">
-                      ₹{(partner.pendingCommission || 0).toLocaleString('en-IN')}
+                      ₹{(partner.pendingCommission || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <p className="text-[10px] text-amber-800 font-bold">Payable on {nextSundayFormatted.split(',')[0]}</p>
                   </div>
@@ -1186,6 +1221,123 @@ export default function PartnerAnalyticsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Women Who Joined Using Your Link Section (Request 2) */}
+                <div className="bg-white rounded-3xl border border-stone-200/90 shadow-sm p-6 sm:p-7 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-800 flex items-center justify-center shrink-0 border border-rose-200">
+                        <Users className="w-5 h-5 text-rose-700" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-base sm:text-lg font-black font-serif text-stone-900">
+                            Women Who Joined Using Your Link
+                          </h3>
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-100 text-rose-800 border border-rose-200">
+                            {invitedPartners.length} {invitedPartners.length === 1 ? 'Woman' : 'Women'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-500">
+                          When a woman joins via your personal link and pays the ₹699 fee, you receive a flat ₹200 bonus added to your earnings.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('network')}
+                      className="px-3.5 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1.5 self-start sm:self-auto"
+                    >
+                      <span>View Full Team Details</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {invitedPartners.length === 0 ? (
+                    <div className="p-6 rounded-2xl bg-stone-50 border border-stone-200 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center mx-auto border border-amber-200">
+                        <Sparkles className="w-6 h-6 text-amber-700" />
+                      </div>
+                      <div className="max-w-md mx-auto space-y-1">
+                        <p className="text-sm font-bold text-stone-900">No women have joined through your link yet</p>
+                        <p className="text-xs text-stone-500">
+                          Invite women friends, family, and neighbors to start their own snack business. When they join and pay ₹699, you earn ₹200 automatically!
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => copyInviteLink(inviteLink)}
+                          className="px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>{copiedInviteLink ? 'Link Copied!' : 'Copy Invite Link'}</span>
+                        </button>
+                        <a
+                          href={`https://api.whatsapp.com/send?text=${encodeURIComponent(womanInviteMessage)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Invite on WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-stone-200 bg-stone-50 text-stone-500 uppercase tracking-wider text-[10px]">
+                            <th className="p-3">Partner Name</th>
+                            <th className="p-3">Partner Code</th>
+                            <th className="p-3">Location</th>
+                            <th className="p-3">Joined Date</th>
+                            <th className="p-3 text-center">Registration Fee</th>
+                            <th className="p-3 text-right">Your Reward</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                          {invitedPartners.map((woman) => (
+                            <tr key={woman.id || woman.partnerCode} className="hover:bg-rose-50/30 transition-colors">
+                              <td className="p-3 font-bold text-stone-900">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center text-xs font-black shrink-0 border border-rose-200">
+                                    {woman.fullName.charAt(0).toUpperCase()}
+                                  </div>
+                                  <span>{woman.fullName}</span>
+                                </div>
+                              </td>
+                              <td className="p-3 font-mono font-bold text-[#9B111E]">
+                                {woman.partnerCode}
+                              </td>
+                              <td className="p-3 text-stone-600">
+                                {woman.city}{woman.state ? `, ${woman.state}` : ''}
+                              </td>
+                              <td className="p-3 text-stone-600 whitespace-nowrap">
+                                {new Date(woman.createdAt).toLocaleDateString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric'
+                                })}
+                              </td>
+                              <td className="p-3 text-center">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold border border-emerald-200">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>₹{woman.paymentAmount || 699} Paid</span>
+                                </span>
+                              </td>
+                              <td className="p-3 text-right font-black text-rose-700">
+                                +₹{woman.bonusAmount || 200}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1197,7 +1349,7 @@ export default function PartnerAnalyticsPage() {
                   <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm space-y-1.5">
                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Average Order Value (AOV)</span>
                     <span className="text-2xl sm:text-3xl font-black text-stone-900 block">
-                      ₹{averageOrderValue.toLocaleString('en-IN')}
+                      ₹{averageOrderValue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     <p className="text-[11px] text-stone-500">Average customer cart size</p>
                   </div>
@@ -1205,7 +1357,7 @@ export default function PartnerAnalyticsPage() {
                   <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm space-y-1.5">
                     <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Avg Commission / Order</span>
                     <span className="text-2xl sm:text-3xl font-black text-emerald-600 block">
-                      ₹{averageCommissionPerOrder.toLocaleString('en-IN')}
+                      ₹{averageCommissionPerOrder.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     <p className="text-[11px] text-emerald-700 font-medium">12% direct margin earned</p>
                   </div>
@@ -1338,7 +1490,7 @@ export default function PartnerAnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-2xl sm:text-3xl font-black text-emerald-600">
-                      ₹{deliveredCommission.toLocaleString('en-IN')}
+                      ₹{deliveredCommission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <p className="text-[10px] text-emerald-700 font-medium">Unlocked across delivered orders</p>
                   </div>
@@ -1351,7 +1503,7 @@ export default function PartnerAnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-2xl sm:text-3xl font-black text-amber-900">
-                      ₹{onHoldCommission.toLocaleString('en-IN')}
+                      ₹{onHoldCommission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <p className="text-[10px] text-amber-800 font-bold">Order yet to be delivered</p>
                   </div>
@@ -1364,7 +1516,7 @@ export default function PartnerAnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-2xl sm:text-3xl font-black text-blue-700">
-                      ₹{totalSettledAmount.toLocaleString('en-IN')}
+                      ₹{totalSettledAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <p className="text-[10px] text-stone-500">Transferred via Sunday bank payouts</p>
                   </div>
@@ -1377,7 +1529,7 @@ export default function PartnerAnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-2xl sm:text-3xl font-black text-[#9B111E]">
-                      ₹{(partner.pendingCommission || 0).toLocaleString('en-IN')}
+                      ₹{(partner.pendingCommission || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
                     <p className="text-[10px] text-amber-800 font-bold">Scheduled for deposit on {nextSundayFormatted}</p>
                   </div>
@@ -1515,8 +1667,12 @@ export default function PartnerAnalyticsPage() {
                       </thead>
                       <tbody className="divide-y divide-stone-100">
                         {filteredReferrals.map((ref) => {
-                          const isDelivered = Boolean(ref.isDelivered || ref.orderStatus?.toLowerCase() === 'delivered' || ref.status === 'eligible' || ref.status === 'settled');
-                          const isCancelled = ref.orderStatus?.toLowerCase() === 'cancelled';
+                          const orderSt = String(ref.orderStatus || '').toLowerCase().trim();
+                          const refSt = String(ref.status || '').toLowerCase().trim();
+                          const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+                          const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+                          const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
+                          const isDelivered = !isCancelled && !isFailed && !isOnHold && (Boolean(ref.isDelivered) || orderSt === 'delivered' || refSt === 'settled');
 
                           return (
                             <tr key={ref.id} className="hover:bg-amber-50/40 transition-colors">
@@ -1530,6 +1686,10 @@ export default function PartnerAnalyticsPage() {
                                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                     Cancelled
                                   </span>
+                                ) : isFailed ? (
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                    Failed
+                                  </span>
                                 ) : isDelivered ? (
                                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
                                     <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
@@ -1538,19 +1698,24 @@ export default function PartnerAnalyticsPage() {
                                 ) : (
                                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
                                     <Clock className="w-3 h-3 text-amber-700 shrink-0" />
-                                    {ref.orderStatus ? ref.orderStatus.charAt(0).toUpperCase() + ref.orderStatus.slice(1) : 'Processing / In Transit'}
+                                    {isOnHold ? 'On Hold' : ref.orderStatus ? ref.orderStatus.charAt(0).toUpperCase() + ref.orderStatus.slice(1) : 'Processing / In Transit'}
                                   </span>
                                 )}
                               </td>
 
                               <td className="p-3.5 text-right font-semibold text-stone-900">₹{ref.orderTotal}</td>
 
-                              {/* Commission Column */}
+                              {/* Commission Column - Strict: Cancelled, Failed, and On Hold orders are NOT counted */}
                               <td className="p-3.5 text-right">
                                 {isCancelled ? (
                                   <div className="text-right">
                                     <span className="text-xs font-semibold text-stone-400 line-through">₹{ref.partnerCommission}</span>
-                                    <span className="block text-[9px] text-rose-700 font-bold">Cancelled</span>
+                                    <span className="block text-[9px] text-rose-700 font-bold">Cancelled (Not Counted)</span>
+                                  </div>
+                                ) : isFailed ? (
+                                  <div className="text-right">
+                                    <span className="text-xs font-semibold text-stone-400 line-through">₹{ref.partnerCommission}</span>
+                                    <span className="block text-[9px] text-rose-700 font-bold">Failed (Not Counted)</span>
                                   </div>
                                 ) : isDelivered ? (
                                   <div className="text-right">
@@ -1559,9 +1724,9 @@ export default function PartnerAnalyticsPage() {
                                   </div>
                                 ) : (
                                   <div className="text-right">
-                                    <span className="text-sm font-bold text-amber-900">₹{ref.partnerCommission}</span>
+                                    <span className="text-xs font-semibold text-amber-900/80 line-through">₹{ref.partnerCommission}</span>
                                     <span className="inline-block text-[9px] font-extrabold uppercase px-1.5 py-0.5 bg-amber-100 text-amber-900 rounded border border-amber-200">
-                                      Amount On Hold
+                                      On Hold (Not Counted)
                                     </span>
                                   </div>
                                 )}
@@ -1571,7 +1736,11 @@ export default function PartnerAnalyticsPage() {
                               <td className="p-3.5 text-center">
                                 {isCancelled ? (
                                   <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-500">
-                                    Order Cancelled
+                                    Order Cancelled (₹0)
+                                  </span>
+                                ) : isFailed ? (
+                                  <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-500">
+                                    Payment Failed (₹0)
                                   </span>
                                 ) : isDelivered ? (
                                   <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
@@ -1585,10 +1754,10 @@ export default function PartnerAnalyticsPage() {
                                   <div className="text-center space-y-0.5">
                                     <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
                                       <Clock className="w-3 h-3 text-amber-700 shrink-0" />
-                                      On Hold
+                                      Held (Pending Delivery)
                                     </span>
                                     <p className="text-[10px] text-amber-800 font-bold whitespace-nowrap">
-                                      Order yet to be delivered
+                                      Unlocks after delivery
                                     </p>
                                   </div>
                                 )}
@@ -1600,6 +1769,256 @@ export default function PartnerAnalyticsPage() {
                     </table>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* TAB: INVITED WOMEN NETWORK (REQUEST 2) */}
+            {activeTab === 'network' && (
+              <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
+                {/* Network Overview Hero Card */}
+                <div className="bg-gradient-to-br from-rose-50/90 via-orange-50/40 to-amber-50/50 rounded-3xl border border-rose-200/80 p-6 sm:p-8 space-y-6 shadow-sm">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-rose-200/60 pb-5">
+                    <div className="flex items-start sm:items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-rose-600/20">
+                        <Users className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-lg sm:text-xl font-black font-serif text-stone-900">
+                            My Invited Women Network
+                          </h3>
+                          <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-rose-600 text-white shadow-2xs">
+                            ₹200 Instant Reward per Woman
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-stone-600 mt-1">
+                          When a woman joins Aapla Jalgaonwala using your personal invite link and pays the ₹699 registration fee, she is permanently attributed to you and you earn ₹200.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
+                      <span className="px-3 py-1.5 rounded-xl bg-white/90 border border-rose-200 text-rose-900 text-xs font-black">
+                        Total Joined: {invitedPartners.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 3 Network Stats Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4">
+                    <div className="bg-white p-5 rounded-2xl border border-rose-200/80 shadow-2xs space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400 block">Total Women Referred</span>
+                      <div className="text-2xl sm:text-3xl font-black text-stone-900">
+                        {invitedPartners.length}
+                      </div>
+                      <p className="text-[11px] text-stone-500">Registered with your code</p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-rose-200/80 shadow-2xs space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 block">Referral Bonus Earned</span>
+                      <div className="text-2xl sm:text-3xl font-black text-rose-700">
+                        ₹{(partner.referralBonusEarned || (invitedPartners.length * 200)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </div>
+                      <p className="text-[11px] text-rose-800/80 font-semibold">Credited to your payout balance</p>
+                    </div>
+
+                    <div className="bg-white p-5 rounded-2xl border border-rose-200/80 shadow-2xs space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 block">Active Verified Partners</span>
+                      <div className="text-2xl sm:text-3xl font-black text-emerald-600">
+                        {invitedPartners.filter(p => p.status === 'active' || p.status === 'approved').length}
+                      </div>
+                      <p className="text-[11px] text-emerald-800/80 font-semibold">Actively promoting snacks</p>
+                    </div>
+                  </div>
+
+                  {/* Quick Share Link Bar */}
+                  <div className="bg-white p-4 rounded-2xl border border-rose-200/80 shadow-2xs space-y-2">
+                    <label className="text-xs font-bold text-stone-700 flex items-center justify-between">
+                      <span>Your Unique Partner Invite Link</span>
+                      <span className="text-[10px] text-rose-700 font-bold">Auto-attributes Woman B & C to you</span>
+                    </label>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <div className="flex-1 px-3 py-2 text-xs font-mono text-stone-900 truncate select-all font-semibold bg-stone-50 rounded-xl border border-stone-200">
+                        {inviteLink}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => copyInviteLink(inviteLink)}
+                          className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>{copiedInviteLink ? 'Link Copied!' : 'Copy Link'}</span>
+                        </button>
+                        <a
+                          href={`https://api.whatsapp.com/send?text=${encodeURIComponent(womanInviteMessage)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Invite on WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* List of Invited Women Table */}
+                <div className="bg-white rounded-3xl border border-stone-200 shadow-sm p-6 sm:p-7 space-y-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 pb-4">
+                    <div>
+                      <h4 className="text-base sm:text-lg font-black font-serif text-stone-900">
+                        Women Who Joined Through Your Link ({invitedPartners.length})
+                      </h4>
+                      <p className="text-xs text-stone-500">
+                        Real-time verified list of women who registered and completed payment using your link.
+                      </p>
+                    </div>
+                  </div>
+
+                  {invitedPartners.length === 0 ? (
+                    <div className="p-10 rounded-2xl bg-stone-50 border border-stone-200 text-center space-y-4">
+                      <div className="w-14 h-14 rounded-2xl bg-rose-100 text-rose-800 flex items-center justify-center mx-auto border border-rose-200">
+                        <Users className="w-7 h-7 text-rose-700" />
+                      </div>
+                      <div className="max-w-md mx-auto space-y-1.5">
+                        <p className="text-base font-bold text-stone-900">No women have joined through your invite link yet</p>
+                        <p className="text-xs text-stone-600 leading-relaxed">
+                          Share your link on WhatsApp with sisters, friends, and neighborhood women who want to earn from home. When they register and pay the ₹699 fee, they will show up right here and ₹200 will be added to your Sunday payout!
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+                        <button
+                          type="button"
+                          onClick={() => copyInviteLink(inviteLink)}
+                          className="px-4 py-2.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs cursor-pointer"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>{copiedInviteLink ? 'Link Copied!' : 'Copy Invite Link'}</span>
+                        </button>
+                        <a
+                          href={`https://api.whatsapp.com/send?text=${encodeURIComponent(womanInviteMessage)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-4 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs cursor-pointer"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Invite on WhatsApp</span>
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead>
+                          <tr className="border-b border-stone-200 bg-stone-50 text-stone-500 uppercase tracking-wider text-[10px]">
+                            <th className="p-3.5">Partner Name</th>
+                            <th className="p-3.5">Partner Code</th>
+                            <th className="p-3.5">Location</th>
+                            <th className="p-3.5">Joined Date</th>
+                            <th className="p-3.5 text-center">Registration Fee</th>
+                            <th className="p-3.5 text-center">Status</th>
+                            <th className="p-3.5 text-right">Your Reward</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-stone-100">
+                          {invitedPartners.map((woman) => (
+                            <tr key={woman.id || woman.partnerCode} className="hover:bg-rose-50/30 transition-colors">
+                              <td className="p-3.5 font-bold text-stone-900">
+                                <div className="flex items-center gap-2.5">
+                                  <div className="w-8 h-8 rounded-full bg-rose-100 text-rose-800 flex items-center justify-center text-xs font-black shrink-0 border border-rose-200">
+                                    {woman.fullName.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-stone-900">{woman.fullName}</div>
+                                    {woman.phone && (
+                                      <div className="text-[10px] text-stone-400 font-normal">
+                                        {woman.phone.slice(0, 3)}••••{woman.phone.slice(-3)}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-3.5 font-mono font-bold text-[#9B111E]">
+                                {woman.partnerCode}
+                              </td>
+                              <td className="p-3.5 text-stone-600">
+                                {woman.city}{woman.state ? `, ${woman.state}` : ''}
+                              </td>
+                              <td className="p-3.5 text-stone-600 whitespace-nowrap">
+                                {new Date(woman.createdAt).toLocaleDateString('en-IN', {
+                                  day: 'numeric',
+                                  month: 'short',
+                                  year: 'numeric'
+                                })}
+                              </td>
+                              <td className="p-3.5 text-center">
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold border border-emerald-200">
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                  <span>₹{woman.paymentAmount || 699} Paid</span>
+                                </span>
+                              </td>
+                              <td className="p-3.5 text-center">
+                                <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                                  woman.status === 'active' || woman.status === 'approved'
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                                }`}>
+                                  {woman.status || 'Active'}
+                                </span>
+                              </td>
+                              <td className="p-3.5 text-right font-black text-rose-700">
+                                <span className="inline-flex items-center gap-1 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                                  <Sparkles className="w-3 h-3 text-rose-600" />
+                                  <span>+₹{woman.bonusAmount || 200}</span>
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3-Step Educational Card */}
+                <div className="bg-stone-50 rounded-3xl border border-stone-200 p-6 sm:p-7 space-y-4">
+                  <h4 className="text-sm font-bold text-stone-900 uppercase tracking-wider text-stone-500">
+                    How Woman-to-Woman Referral Works
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+                    <div className="bg-white p-4 rounded-2xl border border-stone-200 space-y-1.5 shadow-2xs">
+                      <div className="w-7 h-7 rounded-full bg-[#9B111E] text-white font-bold flex items-center justify-center text-xs">
+                        1
+                      </div>
+                      <p className="font-bold text-stone-900 text-sm">Share Your Link</p>
+                      <p className="text-stone-500 leading-relaxed">
+                        Copy your link or send via WhatsApp to another woman who wants to earn.
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-stone-200 space-y-1.5 shadow-2xs">
+                      <div className="w-7 h-7 rounded-full bg-[#9B111E] text-white font-bold flex items-center justify-center text-xs">
+                        2
+                      </div>
+                      <p className="font-bold text-stone-900 text-sm">She Joins & Pays ₹699</p>
+                      <p className="text-stone-500 leading-relaxed">
+                        She registers online and pays the official one-time registration fee securely.
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-4 rounded-2xl border border-stone-200 space-y-1.5 shadow-2xs">
+                      <div className="w-7 h-7 rounded-full bg-[#9B111E] text-white font-bold flex items-center justify-center text-xs">
+                        3
+                      </div>
+                      <p className="font-bold text-stone-900 text-sm">You Get ₹200 Automatically</p>
+                      <p className="text-stone-500 leading-relaxed">
+                        ₹200 is instantly credited to your dashboard and wired to your bank on Sunday!
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

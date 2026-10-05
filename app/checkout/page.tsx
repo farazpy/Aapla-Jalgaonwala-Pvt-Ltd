@@ -36,8 +36,8 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
-  const [city, setCity] = useState('Jalgaon');
-  const [state, setState] = useState('Maharashtra');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
   const [landmark, setLandmark] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'ONLINE'>('COD');
@@ -492,10 +492,13 @@ export default function CheckoutPage() {
                       const list = INDIAN_STATES_AND_CITIES[newState] || [];
                       if (list.length > 0) {
                         setCity(list[0]);
+                      } else {
+                        setCity('');
                       }
                     }}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#D9531E]"
                   >
+                    <option value="">Select State</option>
                     {ALL_STATES.map((st) => (
                       <option key={st} value={st}>{st}</option>
                     ))}
@@ -508,8 +511,9 @@ export default function CheckoutPage() {
                     required
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#D9531E]"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#e1e3e5] text-xs font-semibold text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#D9531E]"
                   >
+                    <option value="">Select City / Town</option>
                     {finalCityList.map((cty) => (
                       <option key={cty} value={cty}>{cty}</option>
                     ))}

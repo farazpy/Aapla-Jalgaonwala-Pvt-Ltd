@@ -16,38 +16,43 @@ export function cn(...inputs: ClassValue[]) {
 export function applyCloudinaryOriginalFlag(url: string): string {
   if (!url || typeof url !== 'string') return url;
   if (!url.includes('res.cloudinary.com')) return url;
+  if (url.includes('/raw/upload/') || url.includes('/video/upload/')) return url;
+
+  let cleaned = url.replace(/\/pl_original\//g, '/fl_original/');
+  if (cleaned.includes('/upload/fl_original/')) {
+    return cleaned;
+  }
 
   const uploadToken = '/image/upload/';
-  const uploadIndex = url.indexOf(uploadToken);
+  const uploadIndex = cleaned.indexOf(uploadToken);
   if (uploadIndex === -1) {
     const altToken = '/upload/';
-    const altIndex = url.indexOf(altToken);
-    if (altIndex === -1) return url;
-    if (url.includes('/raw/upload/') || url.includes('/video/upload/')) return url;
+    const altIndex = cleaned.indexOf(altToken);
+    if (altIndex === -1) return cleaned;
 
-    const prefix = url.substring(0, altIndex + altToken.length);
-    const suffix = url.substring(altIndex + altToken.length);
-    if (suffix.startsWith('fl_original/') || suffix === 'fl_original') return url;
+    const prefix = cleaned.substring(0, altIndex + altToken.length);
+    const suffix = cleaned.substring(altIndex + altToken.length);
+    if (suffix.startsWith('fl_original/') || suffix === 'fl_original') return cleaned;
 
     const parts = suffix.split('/');
     const firstSegment = parts[0];
-    const isTransform = firstSegment.includes(',') || /^(f_|q_|w_|c_|h_|dpr_|b_|e_|o_|fl_)/.test(firstSegment);
+    const isTransform = firstSegment.includes(',') || /^(f_|q_|w_|c_|h_|dpr_|b_|e_|o_|fl_|pl_)/.test(firstSegment);
     if (isTransform) {
       return `${prefix}fl_original/${parts.slice(1).join('/')}`;
     }
     return `${prefix}fl_original/${suffix}`;
   }
 
-  const prefix = url.substring(0, uploadIndex + uploadToken.length);
-  const suffix = url.substring(uploadIndex + uploadToken.length);
+  const prefix = cleaned.substring(0, uploadIndex + uploadToken.length);
+  const suffix = cleaned.substring(uploadIndex + uploadToken.length);
 
   if (suffix.startsWith('fl_original/') || suffix === 'fl_original') {
-    return url;
+    return cleaned;
   }
 
   const parts = suffix.split('/');
   const firstSegment = parts[0];
-  const isTransform = firstSegment.includes(',') || /^(f_|q_|w_|c_|h_|dpr_|b_|e_|o_|fl_)/.test(firstSegment);
+  const isTransform = firstSegment.includes(',') || /^(f_|q_|w_|c_|h_|dpr_|b_|e_|o_|fl_|pl_)/.test(firstSegment);
   if (isTransform) {
     return `${prefix}fl_original/${parts.slice(1).join('/')}`;
   }
@@ -56,16 +61,53 @@ export function applyCloudinaryOriginalFlag(url: string): string {
 }
 
 /**
- * Delivers optimized/original image URLs.
- * For Cloudinary assets, strictly applies `fl_original` to disable automatic format/quality transformations
- * and preserve transformation credits as requested.
+ * Dynamically transforms Cloudinary URLs for fast, high-performance web delivery (LCP optimization).
+ * Automatically delivers modern AVIF/WebP formats, applies auto-quality, and caps dimensions.
+ */
+export function getCloudinaryOptimizedUrl(url: string, width: number = 800, _quality: string | number = 'auto'): string {
+  if (!url || typeof url !== 'string' || !url.includes('res.cloudinary.com')) return url;
+  if (url.includes('/raw/upload/') || url.includes('/video/upload/')) return url;
+
+  // Clean out any existing fl_original, pl_original, or previous transformation params
+  let cleaned = url.replace(/\/fl_original\//g, '/').replace(/\/pl_original\//g, '/');
+
+  const uploadToken = '/image/upload/';
+  let uploadIndex = cleaned.indexOf(uploadToken);
+  let tokenLength = uploadToken.length;
+
+  if (uploadIndex === -1) {
+    const altToken = '/upload/';
+    uploadIndex = cleaned.indexOf(altToken);
+    tokenLength = altToken.length;
+    if (uploadIndex === -1) return cleaned;
+  }
+
+  const prefix = cleaned.substring(0, uploadIndex + tokenLength);
+  let suffix = cleaned.substring(uploadIndex + tokenLength);
+
+  // Strip existing transformation segment if present
+  const parts = suffix.split('/');
+  if (parts.length > 1) {
+    const firstSeg = parts[0];
+    const isTransform = firstSeg.includes(',') || /^(f_|q_|w_|c_|h_|dpr_|b_|e_|o_|fl_|pl_)/.test(firstSeg);
+    if (isTransform) {
+      suffix = parts.slice(1).join('/');
+    }
+  }
+
+  const transformParams = `f_auto,q_auto,w_${width},c_limit`;
+  return `${prefix}${transformParams}/${suffix}`;
+}
+
+/**
+ * Delivers optimized image URLs for Web & LCP rendering.
  */
 export function optimizeImageUrl(url: string, width: number = 600, quality: string | number = 'auto'): string {
   if (!url || typeof url !== 'string') return url;
 
-  // Cloudinary: Disable optimization and deliver original asset using fl_original to save credits
+  // Cloudinary: Fast dynamic WebP/AVIF compression and scaling for web display & LCP
   if (url.includes('res.cloudinary.com')) {
-    return applyCloudinaryOriginalFlag(url);
+    return getCloudinaryOptimizedUrl(url, width, quality);
   }
 
   // Unsplash Optimization

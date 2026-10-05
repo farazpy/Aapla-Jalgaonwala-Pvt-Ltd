@@ -12,7 +12,7 @@ import {
   CheckCircle2,
   Share2,
   Copy,
-  DollarSign,
+  IndianRupee,
   TrendingUp,
   ShieldCheck,
   Building2,
@@ -793,7 +793,7 @@ export default function WomenBusinessPartnerPage() {
                   onClick={() => scrollToSection('income-calculator-section')}
                   className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white/10 hover:bg-white/15 text-amber-300 border border-amber-400/30 font-bold text-sm backdrop-blur-md flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                 >
-                  <DollarSign className="w-4 h-4 text-amber-400" />
+                  <IndianRupee className="w-4 h-4 text-amber-400" />
                   <span>Calculate Monthly Income</span>
                 </button>
 
@@ -1559,7 +1559,7 @@ export default function WomenBusinessPartnerPage() {
               <div id="income-calculator-section" className="bg-white p-6 sm:p-7 rounded-3xl border border-stone-200 shadow-xl space-y-6">
                 <div className="space-y-1">
                   <div className="inline-flex items-center gap-1.5 text-amber-800 text-xs font-black uppercase tracking-wider bg-amber-100 px-3 py-1 rounded-full">
-                    <DollarSign className="w-3.5 h-3.5 text-amber-600" />
+                    <IndianRupee className="w-3.5 h-3.5 text-amber-600" />
                     <span>Live 12% Calculation</span>
                   </div>
                   <h3 className="text-xl font-bold text-stone-900 font-serif">

@@ -13,6 +13,13 @@ let partnerMemoryCache: { data: BusinessPartner[]; timestamp: number } | null = 
 const CACHE_TTL_MS = 3000;
 let isSyncing = false;
 
+function toSqlDateTime(val?: string | Date | null): string {
+  if (!val) return new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const d = typeof val === 'string' ? new Date(val) : val;
+  if (isNaN(d.getTime())) return new Date().toISOString().slice(0, 19).replace('T', ' ');
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 export class PartnerRepository {
   public static clearCache() {
     partnerMemoryCache = null;
@@ -52,6 +59,9 @@ export class PartnerRepository {
       const existingOrderNumbers = new Set(existingReferrals.map(r => r.orderNumber));
 
       for (const order of orders) {
+        if (order.is_fake === 1 || (order as any).is_fake || (order as any)._is_fake) {
+          continue;
+        }
         let code = (
           order.referralPartnerCode ||
           (order as any).partnerCode ||
@@ -84,7 +94,7 @@ export class PartnerRepository {
           orderNumber: order.orderNumber,
           orderTotal: order.totalAmount,
           customerName: order.customer?.name || order.shippingAddress?.fullName || 'Customer',
-          customerCity: order.shippingAddress?.city || partner.city
+          customerCity: order.shippingAddress?.city || ''
         });
 
         existingOrderIds.add(order.id);
@@ -541,8 +551,8 @@ export class PartnerRepository {
             updated.referredByPartnerCode || null,
             updated.referralBonusEarned || 0,
             updated.notes,
-            updated.approvedAt || null,
-            updated.updatedAt,
+            updated.approvedAt ? toSqlDateTime(updated.approvedAt) : null,
+            toSqlDateTime(updated.updatedAt),
             updated.id
           ]
         );
@@ -729,10 +739,10 @@ export class PartnerRepository {
     const pool = getDbPool();
     if (pool) {
       try {
-        let query = 'SELECT * FROM partner_referrals ORDER BY created_at DESC';
+        let query = "SELECT * FROM partner_referrals WHERE id NOT LIKE 'ref_sim_%' AND order_id NOT LIKE 'ord_sim_%' ORDER BY created_at DESC";
         const params: any[] = [];
         if (partnerCode) {
-          query = 'SELECT * FROM partner_referrals WHERE UPPER(partner_code) = ? ORDER BY created_at DESC';
+          query = "SELECT * FROM partner_referrals WHERE UPPER(partner_code) = ? AND id NOT LIKE 'ref_sim_%' AND order_id NOT LIKE 'ord_sim_%' ORDER BY created_at DESC";
           params.push(partnerCode.trim().toUpperCase());
         }
         const [rows] = await pool.query(query, params);
@@ -777,16 +787,42 @@ export class PartnerRepository {
       ]);
       const orderMapById = new Map<string, any>();
       const orderMapByNumber = new Map<string, any>();
+      const fakeOrderIds = new Set<string>();
+      const fakeOrderNumbers = new Set<string>();
+
       for (const ord of allOrders) {
-        if (ord.id) orderMapById.set(String(ord.id), ord);
-        if (ord.orderNumber) orderMapByNumber.set(String(ord.orderNumber), ord);
+        const isFake = ord && (ord.is_fake === 1 || ord.is_fake === true || ord._is_fake === 1 || ord._is_fake === true);
+        if (isFake) {
+          if (ord.id) fakeOrderIds.add(String(ord.id));
+          if (ord.orderNumber) fakeOrderNumbers.add(String(ord.orderNumber));
+        } else {
+          if (ord.id) orderMapById.set(String(ord.id), ord);
+          if (ord.orderNumber) orderMapByNumber.set(String(ord.orderNumber), ord);
+        }
       }
+
       const partnerByCode = new Map<string, BusinessPartner>();
       for (const p of allPartners) {
         if (p.partnerCode) partnerByCode.set(p.partnerCode.trim().toUpperCase(), p);
       }
 
-      return rawReferrals.map((r: any) => {
+      const cleanReferrals = rawReferrals.filter((r: any) => {
+        const oId = String(r.orderId || '');
+        const oNum = String(r.orderNumber || '');
+        const rId = String(r.id || '');
+        if (rId.startsWith('ref_sim_')) return false;
+        if (oId.startsWith('ord_sim_')) return false;
+        if (fakeOrderIds.has(oId) || fakeOrderNumbers.has(oNum)) return false;
+
+        const isWhatsAppOrCustom = oId.toUpperCase().startsWith('WA') || oNum.toUpperCase().startsWith('WA') || rId.startsWith('ref_wa_');
+        if (!isWhatsAppOrCustom && !orderMapById.has(oId) && !orderMapByNumber.has(oNum)) {
+          return false;
+        }
+
+        return true;
+      });
+
+      return cleanReferrals.map((r: any) => {
         let partnerName = r.partnerName;
         if (!partnerName || isCorruptedQuestionMarks(partnerName)) {
           const matchedPartner = partnerByCode.get((r.partnerCode || '').trim().toUpperCase());
@@ -798,29 +834,52 @@ export class PartnerRepository {
         const order = orderMapById.get(String(r.orderId)) || orderMapByNumber.get(String(r.orderNumber));
         const isWhatsAppOrCustom = String(r.orderId || '').toUpperCase().startsWith('WA') || String(r.orderNumber || '').toUpperCase().startsWith('WA') || String(r.id || '').startsWith('ref_wa_');
         const liveOrderStatus = order ? (order.status || 'Pending').trim() : (isWhatsAppOrCustom || r.status === 'eligible' || r.status === 'settled' ? 'Delivered' : (r.orderStatus || 'Pending').trim());
-        const isDelivered = liveOrderStatus.toLowerCase() === 'delivered' || isWhatsAppOrCustom || r.status === 'eligible' || r.status === 'settled';
-        const isCancelled = liveOrderStatus.toLowerCase() === 'cancelled';
-        const isFullyPaid = order ? (String(order.paymentStatus || '').toLowerCase() === 'paid' || order.isPaid === true) : false;
-        const isEligibleForCommission = !isCancelled && (isDelivered || isFullyPaid);
+        const paymentStatus = order ? (order.paymentStatus || '').trim() : '';
 
-        let effectiveStatus = r.status;
+        const orderStatusLower = liveOrderStatus.toLowerCase();
+        const paymentStatusLower = paymentStatus.toLowerCase();
+        const refStatusLower = String(r.status || '').toLowerCase();
+
+        // 1. Cancelled check
+        const isCancelled = orderStatusLower === 'cancelled' || orderStatusLower.includes('cancel') || paymentStatusLower === 'cancelled' || refStatusLower === 'cancelled' || orderStatusLower === 'rto' || orderStatusLower === 'refunded' || paymentStatusLower === 'refunded';
+
+        // 2. Failed check
+        const isFailed = orderStatusLower === 'failed' || orderStatusLower.includes('fail') || paymentStatusLower === 'failed' || refStatusLower === 'failed';
+
+        // 3. On Hold check:
+        // Any order that is explicitly on_hold, hold, or has not reached Delivered status yet
+        const isExplicitOnHold = orderStatusLower === 'on_hold' || orderStatusLower === 'on hold' || orderStatusLower.includes('hold') || refStatusLower === 'on_hold';
+
+        // 4. Delivered check:
+        // Commission is ONLY counted for genuinely delivered or settled orders.
+        // Paid does NOT equal delivered! Cancelled, failed, or on hold orders NEVER count for commission.
+        const isDelivered = !isCancelled && !isFailed && !isExplicitOnHold && (
+          orderStatusLower === 'delivered' || isWhatsAppOrCustom || r.settlementId || refStatusLower === 'settled'
+        );
+
+        let effectiveStatus: 'pending' | 'eligible' | 'settled' | 'cancelled' | 'on_hold' = 'on_hold';
         let commissionStatus: 'delivered' | 'on_hold' | 'settled' | 'cancelled' = 'on_hold';
         let holdReason: string | undefined = undefined;
 
-        if (r.settlementId || r.status === 'settled') {
+        if (r.settlementId || refStatusLower === 'settled') {
           effectiveStatus = 'settled';
           commissionStatus = 'settled';
-        } else if (isEligibleForCommission) {
-          effectiveStatus = 'eligible';
-          commissionStatus = 'delivered';
         } else if (isCancelled) {
           effectiveStatus = 'cancelled';
           commissionStatus = 'cancelled';
-          holdReason = 'Order Cancelled';
+          holdReason = 'Order Cancelled (No Commission)';
+        } else if (isFailed) {
+          effectiveStatus = 'cancelled';
+          commissionStatus = 'cancelled';
+          holdReason = 'Order / Payment Failed (No Commission)';
+        } else if (isDelivered) {
+          effectiveStatus = 'eligible';
+          commissionStatus = 'delivered';
         } else {
+          // On Hold: Order yet to be delivered
           effectiveStatus = 'on_hold';
           commissionStatus = 'on_hold';
-          holdReason = 'Order yet to be delivered or fully paid';
+          holdReason = isExplicitOnHold ? 'Order On Hold' : 'Order yet to be delivered';
         }
 
         return {
@@ -828,7 +887,7 @@ export class PartnerRepository {
           partnerName: partnerName || r.partnerName,
           status: effectiveStatus,
           orderStatus: liveOrderStatus,
-          isDelivered: isEligibleForCommission,
+          isDelivered,
           commissionStatus,
           holdReason
         };
@@ -846,12 +905,39 @@ export class PartnerRepository {
     const allPartnerRefs = await this.getReferrals(partner.partnerCode);
     const partnerSettlements = await this.getSettlements(partner.partnerCode);
 
-    const newTotalOrders = allPartnerRefs.length;
-    const newTotalSales = allPartnerRefs.reduce((sum, r) => sum + (r.orderTotal || 0), 0);
+    // Valid non-cancelled non-failed orders count towards order count & total sales
+    const validRefs = allPartnerRefs.filter(r => {
+      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+      const refSt = String(r.status || '').toLowerCase().trim();
+      return orderSt !== 'cancelled' && !orderSt.includes('cancel') && refSt !== 'cancelled' &&
+             orderSt !== 'failed' && !orderSt.includes('fail') && refSt !== 'failed';
+    });
 
-    // Orders marked DELIVERED or FULLY PAID earn commission!
-    const eligibleRefs = allPartnerRefs.filter(r => (r.status === 'eligible' || r.status === 'settled' || r.isDelivered) && r.orderStatus?.toLowerCase() !== 'cancelled');
-    const onHoldRefs = allPartnerRefs.filter(r => r.status === 'on_hold' && r.orderStatus?.toLowerCase() !== 'cancelled');
+    const newTotalOrders = validRefs.length;
+    const newTotalSales = validRefs.reduce((sum, r) => sum + (r.orderTotal || 0), 0);
+
+    // CRITICAL: Commission is ONLY counted for DELIVERED (or settled) orders!
+    // Cancelled, failed, or on-hold orders DO NOT count towards earned commission!
+    const eligibleRefs = allPartnerRefs.filter(r => {
+      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+      const refSt = String(r.status || '').toLowerCase().trim();
+      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+      const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
+      if (isCancelled || isFailed || isOnHold) return false;
+      return r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
+    });
+
+    // On-hold referrals: Orders awaiting delivery (NOT cancelled, NOT failed, NOT yet delivered)
+    const onHoldRefs = allPartnerRefs.filter(r => {
+      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+      const refSt = String(r.status || '').toLowerCase().trim();
+      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+      if (isCancelled || isFailed) return false;
+      const isDelivered = r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
+      return !isDelivered;
+    });
 
     const deliveredCommissionEarned = eligibleRefs.reduce((sum, r) => sum + (r.partnerCommission || 0), 0);
     const onHoldCommission = onHoldRefs.reduce((sum, r) => sum + (r.partnerCommission || 0), 0);
@@ -907,11 +993,37 @@ export class PartnerRepository {
       for (const p of partners) {
         const code = (p.partnerCode || '').trim().toUpperCase();
         const refs = refsByCode.get(code) || [];
-        const totalOrders = refs.length;
-        const totalSales = refs.reduce((sum, r) => sum + (r.orderTotal || 0), 0);
 
-        const eligibleRefs = refs.filter(r => (r.status === 'eligible' || r.status === 'settled' || r.isDelivered) && r.status !== 'cancelled');
-        const onHoldRefs = refs.filter(r => r.status === 'on_hold' && r.status !== 'cancelled');
+        const validRefs = refs.filter(r => {
+          const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+          const refSt = String(r.status || '').toLowerCase().trim();
+          return orderSt !== 'cancelled' && !orderSt.includes('cancel') && refSt !== 'cancelled' &&
+                 orderSt !== 'failed' && !orderSt.includes('fail') && refSt !== 'failed';
+        });
+
+        const totalOrders = validRefs.length;
+        const totalSales = validRefs.reduce((sum, r) => sum + (r.orderTotal || 0), 0);
+
+        // Commission is ONLY counted for DELIVERED / SETTLED orders!
+        const eligibleRefs = refs.filter(r => {
+          const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+          const refSt = String(r.status || '').toLowerCase().trim();
+          const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+          const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+          const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
+          if (isCancelled || isFailed || isOnHold) return false;
+          return r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
+        });
+
+        const onHoldRefs = refs.filter(r => {
+          const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+          const refSt = String(r.status || '').toLowerCase().trim();
+          const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+          const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+          if (isCancelled || isFailed) return false;
+          const isDelivered = r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
+          return !isDelivered;
+        });
 
         const commissionEarned = eligibleRefs.reduce((sum, r) => sum + (r.partnerCommission || 0), 0);
         const onHoldComm = onHoldRefs.reduce((sum, r) => sum + (r.partnerCommission || 0), 0);
@@ -924,6 +1036,7 @@ export class PartnerRepository {
           p.totalCommissionEarned !== commissionEarned ||
           p.totalCommissionPaid !== commissionPaid ||
           p.pendingCommission !== pendingComm ||
+          p.onHoldCommission !== onHoldComm ||
           p.deliveredOrdersCount !== eligibleRefs.length;
 
         p.totalOrdersCount = totalOrders;
@@ -966,14 +1079,34 @@ export class PartnerRepository {
       const effectiveStatus = (newStatus || order?.status || 'Pending').trim();
       const effectivePayment = (newPaymentStatus || order?.paymentStatus || '').trim();
 
-      const isDelivered = effectiveStatus.toLowerCase() === 'delivered';
-      const isCancelled = effectiveStatus.toLowerCase() === 'cancelled';
-      const isFullyPaid = effectivePayment.toLowerCase() === 'paid' || order?.isPaid === true;
-      const isEligible = !isCancelled && (isDelivered || isFullyPaid);
+      const orderSt = effectiveStatus.toLowerCase();
+      const paySt = effectivePayment.toLowerCase();
+
+      const isDelivered = orderSt === 'delivered';
+      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || paySt === 'cancelled' || orderSt === 'rto' || orderSt === 'refunded' || paySt === 'refunded';
+      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || paySt === 'failed';
+      const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold');
+
+      // Only genuinely delivered orders count as eligible for commission.
+      // Cancelled, failed, or on-hold orders NEVER count for commission.
+      const isEligible = !isCancelled && !isFailed && !isOnHold && isDelivered;
 
       let newReferralStatus = 'on_hold';
-      if (isEligible) newReferralStatus = 'eligible';
-      else if (isCancelled) newReferralStatus = 'cancelled';
+      let holdReason: string | undefined = undefined;
+
+      if (isCancelled) {
+        newReferralStatus = 'cancelled';
+        holdReason = 'Order Cancelled (No Commission)';
+      } else if (isFailed) {
+        newReferralStatus = 'cancelled';
+        holdReason = 'Order / Payment Failed (No Commission)';
+      } else if (isEligible) {
+        newReferralStatus = 'eligible';
+        holdReason = undefined;
+      } else {
+        newReferralStatus = 'on_hold';
+        holdReason = isOnHold ? 'Order On Hold' : 'Order yet to be delivered';
+      }
 
       // Update MySQL if connected
       const pool = getDbPool();
@@ -1002,8 +1135,8 @@ export class PartnerRepository {
             r.status = newReferralStatus as any;
             r.orderStatus = effectiveStatus;
             r.isDelivered = isEligible;
-            r.commissionStatus = isEligible ? 'delivered' : (isCancelled ? 'cancelled' : 'on_hold');
-            r.holdReason = isEligible ? undefined : (isCancelled ? 'Order Cancelled' : 'Order yet to be delivered or fully paid');
+            r.commissionStatus = isCancelled || isFailed ? 'cancelled' : isEligible ? 'delivered' : 'on_hold';
+            r.holdReason = holdReason;
             modified = true;
           }
         }
@@ -1028,7 +1161,7 @@ export class PartnerRepository {
     orderTotal: number;
     customerName: string;
     customerCity?: string;
-  }): Promise<PartnerOrderReferral | null> {
+  }, skipRecalculate: boolean = false): Promise<PartnerOrderReferral | null> {
     const partner = await this.getByCode(params.partnerCode);
     if (!partner) return null;
 
@@ -1046,21 +1179,30 @@ export class PartnerRepository {
     const commissionAmount = Math.round((params.orderTotal * (commissionRate / 100)) * 100) / 100;
     const discountAmount = Math.round((params.orderTotal * (discountRate / 100)) * 100) / 100;
 
-    // Initially check if order is already delivered or fully paid
+    // Initially check if order is already delivered.
+    // By default, a new order is on_hold (commission not counted) until delivered.
     let initialStatus: 'eligible' | 'on_hold' = 'on_hold';
-    let isDeliveredOrPaid = false;
-    let initialHoldReason: string | undefined = 'Order yet to be delivered or fully paid';
+    let isDelivered = false;
+    let initialHoldReason: string | undefined = 'Order yet to be delivered';
 
     try {
       const order = await OrderRepository.getById(params.orderId) || await OrderRepository.getByOrderNumber(params.orderNumber);
       if (order) {
-        const isDelivered = order.status?.toLowerCase() === 'delivered';
-        const isPaid = String(order.paymentStatus || '').toLowerCase() === 'paid' || order.isPaid === true;
-        const isCancelled = order.status?.toLowerCase() === 'cancelled';
-        if (!isCancelled && (isDelivered || isPaid)) {
+        const orderStatus = (order.status || '').toLowerCase();
+        const paymentStatus = (order.paymentStatus || '').toLowerCase();
+        if (orderStatus === 'delivered') {
           initialStatus = 'eligible';
-          isDeliveredOrPaid = true;
+          isDelivered = true;
           initialHoldReason = undefined;
+        } else if (orderStatus === 'cancelled' || paymentStatus === 'cancelled') {
+          initialStatus = 'cancelled' as any;
+          initialHoldReason = 'Order Cancelled (No Commission)';
+        } else if (orderStatus === 'failed' || paymentStatus === 'failed') {
+          initialStatus = 'cancelled' as any;
+          initialHoldReason = 'Payment / Order Failed (No Commission)';
+        } else if (orderStatus === 'on_hold' || orderStatus === 'on hold') {
+          initialStatus = 'on_hold';
+          initialHoldReason = 'Order On Hold';
         }
       }
     } catch {}
@@ -1074,13 +1216,13 @@ export class PartnerRepository {
       orderNumber: params.orderNumber,
       orderDate: new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
       customerName: params.customerName,
-      customerCity: params.customerCity || partner.city,
+      customerCity: params.customerCity || '',
       orderTotal: params.orderTotal,
       customerDiscount: discountAmount,
       partnerCommission: commissionAmount,
       status: initialStatus,
       orderStatus: 'Pending',
-      isDelivered: isDeliveredOrPaid,
+      isDelivered: isDelivered,
       commissionStatus: initialStatus === 'eligible' ? 'delivered' : 'on_hold',
       holdReason: initialHoldReason,
       createdAt: new Date().toISOString()
@@ -1110,7 +1252,7 @@ export class PartnerRepository {
             referral.customerDiscount,
             referral.partnerCommission,
             referral.status,
-            referral.createdAt
+            toSqlDateTime(referral.createdAt)
           ]
         );
       } catch (err) {
@@ -1129,7 +1271,9 @@ export class PartnerRepository {
     await writeJson(REFERRALS_FILE, all);
 
     // Calculate all referrals for this partner (only delivered earns commission)
-    await this.recalculatePartnerMetrics(partner.partnerCode);
+    if (!skipRecalculate) {
+      await this.recalculatePartnerMetrics(partner.partnerCode);
+    }
 
     return referral;
   }
@@ -1181,7 +1325,7 @@ export class PartnerRepository {
       orderNumber: orderRef,
       orderDate: now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
       customerName: (params.customerName || '').trim() || 'WhatsApp Customer',
-      customerCity: (params.customerCity || '').trim() || partner.city,
+      customerCity: (params.customerCity || '').trim() || '',
       orderTotal: orderTotal,
       customerDiscount: 0,
       partnerCommission: commissionAmount,
@@ -1642,8 +1786,11 @@ export class PartnerRepository {
       r => r.orderId === order!.id || r.orderNumber === order!.orderNumber || r.orderId === order!.orderNumber || r.orderNumber === order!.id
     );
 
-    const isDelivered = (order.status || '').toLowerCase() === 'delivered';
-    const isCancelled = (order.status || '').toLowerCase() === 'cancelled';
+    const orderStatusLower = (order.status || '').toLowerCase();
+    const isCancelled = orderStatusLower === 'cancelled' || orderStatusLower.includes('cancel');
+    const isFailed = orderStatusLower === 'failed' || orderStatusLower.includes('fail');
+    const isOnHold = orderStatusLower === 'on_hold' || orderStatusLower === 'on hold' || orderStatusLower.includes('hold');
+    const isDelivered = !isCancelled && !isFailed && !isOnHold && orderStatusLower === 'delivered';
     let referral: PartnerOrderReferral;
 
     if (existingRef) {
@@ -1653,6 +1800,10 @@ export class PartnerRepository {
       existingRef.partnerCommission = finalCommission;
       existingRef.orderTotal = Number(order.totalAmount || existingRef.orderTotal);
       existingRef.customerCity = order.shippingAddress?.city || targetPartner.city;
+      existingRef.status = isDelivered ? 'eligible' : (isCancelled || isFailed ? 'cancelled' : 'on_hold');
+      existingRef.isDelivered = isDelivered;
+      existingRef.commissionStatus = isDelivered ? 'delivered' : (isCancelled || isFailed ? 'cancelled' : 'on_hold');
+      existingRef.holdReason = isDelivered ? undefined : (isCancelled ? 'Order Cancelled (No Commission)' : isFailed ? 'Order / Payment Failed (No Commission)' : isOnHold ? 'Order On Hold' : 'Order yet to be delivered');
       referral = existingRef;
 
       // Update MySQL if connected
@@ -1660,9 +1811,9 @@ export class PartnerRepository {
         try {
           await pool.query(
             `UPDATE partner_referrals 
-             SET partner_id = ?, partner_code = ?, partner_name = ?, partner_commission = ?, order_total = ?
+             SET partner_id = ?, partner_code = ?, partner_name = ?, partner_commission = ?, order_total = ?, status = ?
              WHERE id = ? OR order_id = ? OR order_number = ?`,
-            [targetPartner.id, targetPartner.partnerCode, targetPartner.fullName, finalCommission, referral.orderTotal, existingRef.id, order.id, order.orderNumber]
+            [targetPartner.id, targetPartner.partnerCode, targetPartner.fullName, finalCommission, referral.orderTotal, referral.status, existingRef.id, order.id, order.orderNumber]
           );
         } catch (err) {
           console.warn('[PartnerRepo] MySQL update partner_referrals error:', err);
@@ -1695,11 +1846,11 @@ export class PartnerRepository {
         orderTotal: Number(order.totalAmount || 0),
         customerDiscount: Number(order.discount || 0),
         partnerCommission: finalCommission,
-        status: isDelivered ? 'eligible' : (isCancelled ? 'cancelled' : 'on_hold'),
+        status: isDelivered ? 'eligible' : (isCancelled || isFailed ? 'cancelled' : 'on_hold'),
         orderStatus: order.status || 'Pending',
         isDelivered,
-        commissionStatus: isDelivered ? 'delivered' : (isCancelled ? 'cancelled' : 'on_hold'),
-        holdReason: isDelivered ? undefined : (isCancelled ? 'Order Cancelled' : 'Order yet to be delivered'),
+        commissionStatus: isDelivered ? 'delivered' : (isCancelled || isFailed ? 'cancelled' : 'on_hold'),
+        holdReason: isDelivered ? undefined : (isCancelled ? 'Order Cancelled (No Commission)' : isFailed ? 'Order / Payment Failed (No Commission)' : isOnHold ? 'Order On Hold' : 'Order yet to be delivered'),
         createdAt: new Date().toISOString()
       };
 
@@ -1922,9 +2073,28 @@ export class PartnerRepository {
     const totalReferredOrders = referrals.length;
     const totalReferredSales = referrals.reduce((sum, r) => sum + (r.orderTotal || 0), 0);
 
-    // Orders marked DELIVERED or FULLY PAID earn commission
-    const eligibleReferrals = referrals.filter(r => (r.status === 'eligible' || r.status === 'settled' || r.isDelivered) && r.orderStatus?.toLowerCase() !== 'cancelled');
-    const onHoldReferrals = referrals.filter(r => r.status === 'on_hold' && r.orderStatus?.toLowerCase() !== 'cancelled');
+    // CRITICAL: Commission is ONLY counted for DELIVERED (or settled) orders!
+    // Cancelled, failed, or on hold orders DO NOT count towards earned commission!
+    const eligibleReferrals = referrals.filter(r => {
+      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+      const refSt = String(r.status || '').toLowerCase().trim();
+      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+      const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
+      if (isCancelled || isFailed || isOnHold) return false;
+      return r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
+    });
+
+    // On-hold referrals: Orders awaiting delivery (NOT cancelled, NOT failed, NOT yet delivered)
+    const onHoldReferrals = referrals.filter(r => {
+      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
+      const refSt = String(r.status || '').toLowerCase().trim();
+      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
+      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
+      if (isCancelled || isFailed) return false;
+      const isDelivered = r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
+      return !isDelivered;
+    });
 
     const totalCommissionEarned = eligibleReferrals.reduce((sum, r) => sum + (r.partnerCommission || 0), 0);
     const totalOnHoldCommission = onHoldReferrals.reduce((sum, r) => sum + (r.partnerCommission || 0), 0);
@@ -1954,6 +2124,14 @@ export class PartnerRepository {
   // ----------------------------------------------------
 
   private static mapDbToPartner(r: any): BusinessPartner {
+    let referredByPartnerCode = r.referred_by_partner_code || r.referredByPartnerCode || undefined;
+    if (!referredByPartnerCode && r.notes) {
+      const match = String(r.notes).match(/Referred by(?:\s+Woman\s+Partner)?:\s*([^(]+)\s*\((AJW-[A-Z0-9]+)\)/i);
+      if (match && match[2]) {
+        referredByPartnerCode = match[2].trim().toUpperCase();
+      }
+    }
+
     return {
       id: r.id,
       partnerCode: r.partner_code,
@@ -1988,7 +2166,7 @@ export class PartnerRepository {
       pendingCommission: Number(r.pending_commission || 0),
       onHoldCommission: Number(r.on_hold_commission !== undefined ? r.on_hold_commission : 0),
       deliveredOrdersCount: Number(r.delivered_orders_count !== undefined ? r.delivered_orders_count : 0),
-      referredByPartnerCode: r.referred_by_partner_code || undefined,
+      referredByPartnerCode,
       referralBonusEarned: Number(r.referral_bonus_earned || 0),
       notes: r.notes,
       approvedAt: r.approved_at,
@@ -1997,12 +2175,77 @@ export class PartnerRepository {
     };
   }
 
+  static async getInvitedPartners(partnerCode: string): Promise<any[]> {
+    if (!partnerCode) return [];
+    const cleanCode = partnerCode.trim().toUpperCase();
+    const all = await this.getAll();
+    const invited = all.filter(p => {
+      if (p.partnerCode && p.partnerCode.trim().toUpperCase() === cleanCode) return false;
+      const refBy = (p.referredByPartnerCode || '').trim().toUpperCase();
+      if (refBy === cleanCode) return true;
+      if (p.notes && p.notes.includes(cleanCode) && (p.notes.includes('Referred by') || p.notes.includes('invited'))) return true;
+      return false;
+    });
+
+    return invited.map(p => ({
+      id: p.id,
+      partnerCode: p.partnerCode,
+      fullName: p.fullName,
+      phone: p.phone,
+      email: p.email,
+      city: p.city,
+      state: p.state,
+      status: p.status,
+      paymentStatus: p.paymentStatus || 'paid',
+      paymentAmount: p.paymentAmount ?? 699,
+      paymentDate: p.paymentDate || p.createdAt,
+      createdAt: p.createdAt,
+      bonusAmount: 200
+    }));
+  }
+
   private static getInitialPartners(): BusinessPartner[] {
     return [];
   }
 
   private static getInitialReferrals(): PartnerOrderReferral[] {
     return [];
+  }
+
+  static async deleteFakeReferrals(): Promise<number> {
+    this.clearCache();
+    let count = 0;
+    const pool = getDbPool();
+    if (pool) {
+      try {
+        const [res]: any = await pool.query(
+          "DELETE FROM partner_referrals WHERE id LIKE 'ref_sim_%' OR order_id LIKE 'ord_sim_%' OR (order_id NOT IN (SELECT id FROM orders WHERE id IS NOT NULL) AND id NOT LIKE 'ref_wa_%' AND order_id NOT LIKE 'WA%')"
+        );
+        if (res && res.affectedRows) {
+          count += res.affectedRows;
+        }
+      } catch (err) {
+        console.warn('[PartnerRepo] MySQL deleteFakeReferrals warning:', err);
+      }
+    }
+
+    try {
+      const all = await readJson<PartnerOrderReferral[]>(REFERRALS_FILE, []);
+      const clean = all.filter(r => {
+        const rId = String(r.id || '');
+        const oId = String(r.orderId || '');
+        return !rId.startsWith('ref_sim_') && !oId.startsWith('ord_sim_');
+      });
+      if (clean.length !== all.length) {
+        count += (all.length - clean.length);
+        await writeJson(REFERRALS_FILE, clean);
+      }
+    } catch (err) {
+      console.warn('[PartnerRepo] JSON deleteFakeReferrals warning:', err);
+    }
+
+    await this.recalculateAllPartnerMetrics().catch(() => {});
+    return count;
   }
 
   private static getInitialSettlements(): PartnerSettlement[] {

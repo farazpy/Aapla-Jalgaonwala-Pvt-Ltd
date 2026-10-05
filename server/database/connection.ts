@@ -3,28 +3,51 @@ import mysql from 'mysql2/promise';
 let pool: mysql.Pool | null = null;
 let poolFailed = false;
 
-export function getDbConfig() {
-  let host = process.env.DATABASE_HOST || process.env.MYSQL_HOST || process.env.MYSQLHOST || process.env.DB_HOST || '';
-  let port = process.env.DATABASE_PORT || process.env.MYSQL_PORT || process.env.MYSQLPORT || process.env.DB_PORT || '';
-  let user = process.env.DATABASE_USER || process.env.MYSQL_USER || process.env.MYSQLUSER || process.env.DB_USER || '';
-  let password = process.env.DATABASE_PASSWORD || process.env.MYSQL_PASSWORD || process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '';
-  let database = process.env.DATABASE_NAME || process.env.MYSQL_DATABASE || process.env.MYSQLDATABASE || process.env.DB_NAME || '';
+function getEnvValue(...aliases: string[]): string {
+  // First check exact case
+  for (const alias of aliases) {
+    if (process.env[alias] !== undefined && process.env[alias] !== '') {
+      return process.env[alias]!;
+    }
+  }
+  // Then check case-insensitive match across all process.env keys
+  const envKeys = Object.keys(process.env);
+  for (const alias of aliases) {
+    const target = alias.toLowerCase();
+    for (const key of envKeys) {
+      if (key.toLowerCase() === target && process.env[key] !== undefined && process.env[key] !== '') {
+        return process.env[key]!;
+      }
+    }
+  }
+  return '';
+}
 
-  const dbUrl = process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.JAWSDB_URL || process.env.CLEARDB_DATABASE_URL;
+export function getDbConfig() {
+  let host = getEnvValue('DB_HOST', 'db_host', 'DATABASE_HOST', 'database_host');
+  let port = getEnvValue('DB_PORT', 'db_port', 'DATABASE_PORT', 'database_port');
+  let user = getEnvValue('DB_USER', 'db_user', 'DB_USERNAME', 'db_username', 'DATABASE_USER', 'database_user');
+  let password = getEnvValue('DB_PASSWORD', 'db_password', 'DB_PASS', 'db_pass', 'DATABASE_PASSWORD', 'database_password');
+  let database = getEnvValue('DB_NAME', 'db_name', 'DB_name', 'DB_DATABASE', 'db_database', 'DATABASE_NAME', 'database_name');
+
+  const dbUrl = getEnvValue('DB_URL', 'db_url', 'DATABASE_URL', 'database_url');
 
   // Only parse connection URL for missing fields; explicit individual environment variables take top priority
   if (dbUrl) {
     try {
-      const parsed = new URL(dbUrl);
+      const urlToParse = dbUrl.includes('://') ? dbUrl : `mysql://${dbUrl}`;
+      const parsed = new URL(urlToParse);
       if (!host && parsed.hostname) host = parsed.hostname;
       if (!port && parsed.port) port = parsed.port;
-      if (!user && parsed.username) user = parsed.username;
-      if (!password && parsed.password) password = parsed.password;
+      if (!user && parsed.username) user = decodeURIComponent(parsed.username);
+      if (!password && parsed.password) password = decodeURIComponent(parsed.password);
       if (!database && parsed.pathname && parsed.pathname.length > 1) {
         database = parsed.pathname.substring(1);
       }
-    } catch (e) {
-      console.warn('[MySQL] Failed to parse connection URL:', e);
+    } catch {
+      if (!host && dbUrl.length > 0 && !dbUrl.includes(' ')) {
+        host = dbUrl;
+      }
     }
   }
 
@@ -392,11 +415,13 @@ async function ensureTablesExist(dbPool: mysql.Pool) {
       tracking_url VARCHAR(512),
       payment_details_json JSON,
       notes TEXT,
+      is_fake TINYINT(1) DEFAULT 0,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     )
   `);
 
+  await runQuery(`ALTER TABLE orders ADD COLUMN is_fake TINYINT(1) DEFAULT 0`).catch(() => {});
   await runQuery(`ALTER TABLE orders ADD COLUMN cod_advance_fee_paid DECIMAL(10,2) DEFAULT 0`).catch(() => {});
   await runQuery(`ALTER TABLE orders ADD COLUMN cod_remaining_balance DECIMAL(10,2) DEFAULT 0`).catch(() => {});
   await runQuery(`ALTER TABLE orders ADD COLUMN payment_details_json JSON`).catch(() => {});
@@ -769,7 +794,8 @@ async function ensureTablesExist(dbPool: mysql.Pool) {
     'ALTER TABLE business_partners ADD COLUMN razorpay_payment_id VARCHAR(128) DEFAULT NULL',
     'ALTER TABLE business_partners ADD COLUMN razorpay_order_id VARCHAR(128) DEFAULT NULL',
     'ALTER TABLE business_partners ADD COLUMN payment_amount DECIMAL(10,2) DEFAULT 0.00',
-    'ALTER TABLE business_partners ADD COLUMN payment_date TIMESTAMP NULL'
+    'ALTER TABLE business_partners ADD COLUMN payment_date TIMESTAMP NULL',
+    'ALTER TABLE products ADD COLUMN _is_fake TINYINT(1) DEFAULT 0'
   ];
 
   for (const alterSql of schemaAlters) {
@@ -779,6 +805,11 @@ async function ensureTablesExist(dbPool: mysql.Pool) {
   // Auto-convert existing Cloudinary image URLs in MySQL tables to include fl_original
   const autoConvertCloudinaryQueries = [
     "UPDATE categories SET name = 'Banana Chips' WHERE name LIKE '%Banana Chipss%'",
+    "UPDATE cloudinary_assets SET url = REPLACE(url, '/pl_original/', '/fl_original/') WHERE url LIKE '%/pl_original/%'",
+    "UPDATE product_images SET url = REPLACE(url, '/pl_original/', '/fl_original/') WHERE url LIKE '%/pl_original/%'",
+    "UPDATE categories SET image = REPLACE(image, '/pl_original/', '/fl_original/') WHERE image LIKE '%/pl_original/%'",
+    "UPDATE gallery_media SET img_url = REPLACE(img_url, '/pl_original/', '/fl_original/') WHERE img_url LIKE '%/pl_original/%'",
+    "UPDATE woman_graphics SET image_url = REPLACE(image_url, '/pl_original/', '/fl_original/') WHERE image_url LIKE '%/pl_original/%'",
     "UPDATE cloudinary_assets SET url = REPLACE(url, '/image/upload/v', '/image/upload/fl_original/v') WHERE url LIKE '%/image/upload/v%' AND url NOT LIKE '%/upload/fl_original/%'",
     "UPDATE product_images SET url = REPLACE(url, '/image/upload/v', '/image/upload/fl_original/v') WHERE url LIKE '%/image/upload/v%' AND url NOT LIKE '%/upload/fl_original/%'",
     "UPDATE categories SET image = REPLACE(image, '/image/upload/v', '/image/upload/fl_original/v') WHERE image LIKE '%/image/upload/v%' AND image NOT LIKE '%/upload/fl_original/%'",

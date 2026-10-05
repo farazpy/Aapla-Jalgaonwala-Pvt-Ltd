@@ -22,7 +22,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   TrendingUp,
-  DollarSign,
+  IndianRupee,
   Clock,
   ArrowRight,
   ArrowUpRight,
@@ -556,14 +556,14 @@ export default function AdminDashboardPage() {
               <div>
                 <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-wider">Total Revenue (Orders)</p>
                 <h3 className="text-2xl font-bold text-stone-900 mt-1">
-                  ₹{analytics?.kpis?.totalRevenue?.toLocaleString() || 0}
+                  ₹{Number(analytics?.kpis?.totalRevenue || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </h3>
                 <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold border border-emerald-100 mt-1 inline-block">
                   {analytics?.kpis?.completedCheckoutsCount || 0} completed orders
                 </span>
               </div>
               <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-700">
-                <DollarSign className="w-5 h-5" />
+                <IndianRupee className="w-5 h-5" />
               </div>
             </div>
           </div>
@@ -574,7 +574,7 @@ export default function AdminDashboardPage() {
               <div>
                 <p className="text-[10px] font-extrabold text-emerald-300 uppercase tracking-wider">Total Net Profit</p>
                 <h3 className="text-2xl font-extrabold text-emerald-400 mt-1">
-                  ₹{analytics?.kpis?.totalProfit?.toLocaleString() || 0}
+                  ₹{Number(analytics?.kpis?.totalProfit || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </h3>
                 <span className="text-[10px] text-emerald-200 bg-emerald-900/80 px-2 py-0.5 rounded font-bold border border-emerald-700 mt-1 inline-block">
                   Calculated per product qty

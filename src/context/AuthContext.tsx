@@ -301,11 +301,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           window.addEventListener('message', handleMessage);
 
+          let pollCount = 0;
           const timer = setInterval(() => {
-            if (authWindow.closed) {
+            pollCount++;
+            try {
+              if (authWindow && authWindow.closed) {
+                clearInterval(timer);
+                window.removeEventListener('message', handleMessage);
+                resolve();
+              }
+            } catch {
+              // Silently ignore Cross-Origin-Opener-Policy restriction while the window is on Google's domain
+            }
+
+            // Safety timeout after 5 minutes
+            if (pollCount > 300) {
               clearInterval(timer);
               window.removeEventListener('message', handleMessage);
-              resolve();
             }
           }, 1000);
         });

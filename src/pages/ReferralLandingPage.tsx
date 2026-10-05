@@ -7,7 +7,7 @@ import { Container } from '@/components/ui/Container';
 import { ProductGrid } from '@/components/product/ProductGrid';
 import { Product, Category } from '@/types';
 import { useCart } from '@/context/CartContext';
-import { setReferralCookie } from '@/utils/referralCookie';
+import { setReferralCookie, getReferralCookie } from '@/utils/referralCookie';
 import {
   Gift,
   CheckCircle2,
@@ -47,7 +47,16 @@ export default function ReferralLandingPage() {
     partnerName: string;
     partnerCode: string;
     customerDiscountRate?: number;
-  } | null>(null);
+  } | null>(() => {
+    const saved = getReferralCookie();
+    if (saved && saved.code && saved.partnerName) {
+      return {
+        partnerCode: saved.code,
+        partnerName: saved.partnerName
+      };
+    }
+    return null;
+  });
 
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -284,7 +293,7 @@ export default function ReferralLandingPage() {
             <p className="text-xs sm:text-base text-stone-100 max-w-xl mx-auto leading-relaxed">
               Compliments of our certified Women Business Partner{' '}
               <strong className="text-amber-200 font-bold underline decoration-amber-300">
-                {partnerInfo?.partnerName || 'Saurabh Patil'}
+                {partnerInfo?.partnerName || 'Women Business Partner'}
               </strong>{' '}
               <span className="inline-block bg-black/30 px-2 py-0.5 rounded-md font-mono text-[11px] sm:text-xs ml-1 border border-white/20">
                 Code: {code?.toUpperCase()}

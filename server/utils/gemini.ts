@@ -47,11 +47,28 @@ export interface EnhancedProductOutput {
   seoDescription: string;
 }
 
+// In-memory response cache for product enhancements to prevent burning AI quotas
+const enhanceCache = new Map<string, { output: EnhancedProductOutput; timestamp: number }>();
+
 /**
  * Enhances all text fields of a product in a single, cohesive structured JSON request
- * using the gemini-3.7-flash model based on targeted merchant answers.
+ * using the gemini-3.1-flash-lite model based on targeted merchant answers.
  */
 export async function enhanceProductDetails(input: EnhanceProductInput): Promise<EnhancedProductOutput> {
+  const cacheKey = JSON.stringify({
+    name: input.name,
+    category: input.category,
+    prepStyle: input.prepStyle,
+    flavorNotes: input.flavorNotes,
+    targetAudience: input.targetAudience,
+    dietaryCallouts: input.dietaryCallouts
+  });
+
+  const cached = enhanceCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < 3600000)) {
+    return cached.output;
+  }
+
   const ai = getAiClient();
 
   const prompt = `
@@ -137,7 +154,7 @@ export async function enhanceProductDetails(input: EnhanceProductInput): Promise
 
   try {
     const data = JSON.parse(rawText.trim());
-    return {
+    const output: EnhancedProductOutput = {
       name: data.name || input.name,
       description: data.description || input.currentDescription || '',
       shortDescription: data.shortDescription || input.currentShortDescription || '',
@@ -147,6 +164,14 @@ export async function enhanceProductDetails(input: EnhanceProductInput): Promise
       seoTitle: data.seoTitle || input.currentSeoTitle || '',
       seoDescription: data.seoDescription || input.currentSeoDescription || ''
     };
+
+    enhanceCache.set(cacheKey, { output, timestamp: Date.now() });
+    if (enhanceCache.size > 200) {
+      const oldest = enhanceCache.keys().next().value;
+      if (oldest) enhanceCache.delete(oldest);
+    }
+
+    return output;
   } catch (err) {
     console.error('Failed to parse Gemini JSON output:', rawText, err);
     throw new Error('AI generated content was not in the expected JSON format. Please retry.');
@@ -175,6 +200,9 @@ export interface GeneratedSeoResult {
   improvementNotes: string[];
 }
 
+// In-memory response cache for generated SEO tags
+const seoCache = new Map<string, { result: GeneratedSeoResult; timestamp: number }>();
+
 /**
  * Generates Google-optimized SEO titles and descriptions using Gemini 3.1 Flash Lite model (gemini-3.1-flash-lite).
  * Enforces Google's exact character length best practices:
@@ -182,6 +210,20 @@ export interface GeneratedSeoResult {
  * - Meta Description: Strict 140 to 160 characters
  */
 export async function generateSeoWithGemini(params: GenerateSeoParams): Promise<GeneratedSeoResult> {
+  const cacheKey = JSON.stringify({
+    type: params.type,
+    pageKey: params.pageKey,
+    pageName: params.pageName,
+    productName: params.productName,
+    productCategory: params.productCategory,
+    customInstruction: params.customInstruction
+  });
+
+  const cached = seoCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp < 3600000)) {
+    return cached.result;
+  }
+
   const ai = getAiClient();
 
   const entityName = params.pageName || params.productName || params.pageKey || 'Aapla Jalgaonwala Page';
@@ -276,7 +318,7 @@ export async function generateSeoWithGemini(params: GenerateSeoParams): Promise<
     // Apply strict double-check post-processing helper
     const adjusted = adjustSeoToGoogleLimits(rawTitle, rawDesc);
 
-    return {
+    const result: GeneratedSeoResult = {
       seoTitle: adjusted.title,
       seoDescription: adjusted.desc,
       keywords: data.keywords || 'Jalgaon Banana Chips, Farsan, Jalgaonwala',
@@ -288,6 +330,14 @@ export async function generateSeoWithGemini(params: GenerateSeoParams): Promise<
         'Description optimized to 140-160 characters with high-converting CTA.'
       ]
     };
+
+    seoCache.set(cacheKey, { result, timestamp: Date.now() });
+    if (seoCache.size > 200) {
+      const oldest = seoCache.keys().next().value;
+      if (oldest) seoCache.delete(oldest);
+    }
+
+    return result;
   } catch (err) {
     console.error('Failed to parse Gemini 3.1 Flash Lite response:', rawText, err);
     throw new Error('AI output was not in valid JSON format. Please retry.');

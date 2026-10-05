@@ -38,7 +38,13 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           manifestLink.rel = 'manifest';
           document.head.appendChild(manifestLink);
         }
-        manifestLink.href = json.data?.siteWebmanifestUrl || '/favicons/site.webmanifest';
+        const getSafeFaviconUrl = (url?: string, defaultPath: string = '') => {
+          if (!url || typeof url !== 'string' || !url.trim()) return defaultPath;
+          if (url.includes('res.cloudinary.com/xbtfj9zf')) return defaultPath;
+          return url;
+        };
+
+        manifestLink.href = getSafeFaviconUrl(json.data?.siteWebmanifestUrl, '/favicons/site.webmanifest');
 
         // Ensure 96x96 PNG icon
         let icon96 = document.querySelector<HTMLLinkElement>("link[rel='icon'][sizes='96x96']");
@@ -49,7 +55,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           icon96.sizes = '96x96';
           document.head.appendChild(icon96);
         }
-        icon96.href = json.data?.faviconUrl || '/favicons/favicon-96x96.png';
+        icon96.href = getSafeFaviconUrl(json.data?.faviconUrl, '/favicons/favicon-96x96.png');
 
         // Ensure SVG icon
         let iconSvg = document.querySelector<HTMLLinkElement>("link[rel='icon'][type='image/svg+xml']");
@@ -59,7 +65,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           iconSvg.type = 'image/svg+xml';
           document.head.appendChild(iconSvg);
         }
-        iconSvg.href = json.data?.faviconSvgUrl || '/favicons/favicon.svg';
+        iconSvg.href = getSafeFaviconUrl(json.data?.faviconSvgUrl, '/favicons/favicon.svg');
 
         // Ensure Shortcut icon
         let shortcutIcon = document.querySelector<HTMLLinkElement>("link[rel='shortcut icon']");
@@ -68,7 +74,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           shortcutIcon.rel = 'shortcut icon';
           document.head.appendChild(shortcutIcon);
         }
-        shortcutIcon.href = json.data?.faviconIcoUrl || '/favicons/favicon.ico';
+        shortcutIcon.href = getSafeFaviconUrl(json.data?.faviconIcoUrl, '/favicons/favicon.ico');
 
         // Ensure Apple Touch icon 180x180
         let appleTouch = document.querySelector<HTMLLinkElement>("link[rel='apple-touch-icon']");
@@ -78,7 +84,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           appleTouch.sizes = '180x180';
           document.head.appendChild(appleTouch);
         }
-        appleTouch.href = json.data?.appleTouchIconUrl || '/favicons/apple-touch-icon.png';
+        appleTouch.href = getSafeFaviconUrl(json.data?.appleTouchIconUrl, '/favicons/apple-touch-icon.png');
       } catch (err) {
         console.warn('Notice syncing favicon tags:', err);
       }

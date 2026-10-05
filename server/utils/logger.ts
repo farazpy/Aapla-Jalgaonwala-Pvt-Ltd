@@ -25,7 +25,9 @@ const SENSITIVE_KEYS = new Set([
   'apikey',
   'api_key',
   'database_password',
-  'mysqlpassword'
+  'db_password',
+  'db_pass',
+  'dbpassword'
 ]);
 
 /**

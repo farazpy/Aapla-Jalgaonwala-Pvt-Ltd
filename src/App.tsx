@@ -113,6 +113,10 @@ export function App() {
                   <Route path="/woman-partner-login" element={<PartnerAnalyticsPage />} />
                   <Route path="/women-partner-login" element={<PartnerAnalyticsPage />} />
                   <Route path="/ref/:code" element={<ReferralLandingPage />} />
+                  <Route path="/welcome/:code" element={<ReferralLandingPage />} />
+                  <Route path="/p/:code" element={<ReferralLandingPage />} />
+                  <Route path="/partner/:code" element={<ReferralLandingPage />} />
+                  <Route path="/referral/:code" element={<ReferralLandingPage />} />
                   <Route path="/iframe/tracking/:orderId" element={<IframeOrderTrackingPage />} />
                   <Route path="/iframe/tracking" element={<IframeOrderTrackingPage />} />
                   <Route path="/tracking/:orderId" element={<IframeOrderTrackingPage />} />

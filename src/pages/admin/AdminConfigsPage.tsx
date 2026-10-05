@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import {
@@ -23,11 +24,23 @@ import {
   HelpCircle,
   User as UserIcon,
   Image as ImageIcon,
+  Cloud,
+  Loader2,
   Video,
   Plus,
   Trash2,
   Edit,
-  Play
+  Play,
+  Search,
+  Download,
+  ArrowRight,
+  ExternalLink,
+  Database,
+  Copy,
+  Check,
+  Layers,
+  Zap,
+  Filter
 } from 'lucide-react';
 import { SiteSettings, VideoItem } from '@/types';
 
@@ -51,11 +64,30 @@ export default function AdminConfigsPage() {
     telegramResponse?: any;
   } | null>(null);
 
+  // TeleCloud Storage Test State
+  const [isTestingStorage, setIsTestingStorage] = useState(false);
+  const [storageTestResult, setStorageTestResult] = useState<{
+    success: boolean;
+    message: string;
+    workspaceName?: string;
+    fileUrl?: string;
+    details?: any;
+  } | null>(null);
+
+  // Cloudinary to S3 Migration State
+  const [isDetectingCloudinary, setIsDetectingCloudinary] = useState(false);
+  const [isMigratingCloudinary, setIsMigratingCloudinary] = useState(false);
+  const [migrationItems, setMigrationItems] = useState<any[]>([]);
+  const [migrationSummary, setMigrationSummary] = useState<any | null>(null);
+  const [migrationFilter, setMigrationFilter] = useState<string>('all');
+  const [migrationSearchQuery, setMigrationSearchQuery] = useState<string>('');
+
   // Password visibility states
   const [showSmtpPass, setShowSmtpPass] = useState(false);
   const [showTelegramToken, setShowTelegramToken] = useState(false);
   const [showRazorpaySecret, setShowRazorpaySecret] = useState(false);
   const [showCloudinarySecret, setShowCloudinarySecret] = useState(false);
+  const [showTeleCloudApiKey, setShowTeleCloudApiKey] = useState(false);
 
   // Video Management State
   const [videoList, setVideoList] = useState<VideoItem[]>([]);
@@ -100,8 +132,9 @@ export default function AdminConfigsPage() {
     telegramBotToken: '',
     telegramChatId: '',
 
-    // Razorpay
+    // Razorpay & COD
     enableRazorpay: true,
+    enableCod: true,
     razorpayKeyId: '',
     razorpayKeySecret: '',
 
@@ -327,6 +360,171 @@ export default function AdminConfigsPage() {
     } finally {
       setIsTestingTelegram(false);
     }
+  };
+
+  const formatErrorMessage = (err: any): string => {
+    if (!err) return 'An unknown error occurred';
+    if (typeof err === 'string') return err;
+    if (typeof err === 'object') {
+      if (typeof err.message === 'string') return err.message;
+      if (typeof err.error === 'string') return err.error;
+      try {
+        return JSON.stringify(err);
+      } catch {
+        return String(err);
+      }
+    }
+    return String(err);
+  };
+
+  const getAdminAuthHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (typeof window !== 'undefined') {
+      const authToken = localStorage.getItem('ajw_auth_token') || localStorage.getItem('token') || localStorage.getItem('ajw_admin_pin_token') || '';
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+      const adminUser = localStorage.getItem('ajw_user') || localStorage.getItem('user');
+      if (adminUser) {
+        try {
+          const u = JSON.parse(adminUser);
+          if (u.id) headers['x-user-id'] = u.id;
+        } catch {}
+      }
+    }
+    return headers;
+  };
+
+  const handleTestStorage = async () => {
+    setIsTestingStorage(true);
+    setStorageTestResult(null);
+    try {
+      const res = await fetch('/api/admin/storage/test', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({
+          endpoint: form.teleCloudEndpoint,
+          apiKey: form.teleCloudApiKey,
+          workspaceId: form.teleCloudWorkspaceId
+        })
+      });
+      const json = await res.json().catch(() => ({ success: false, error: 'Failed to parse response from storage server' }));
+      if (json.success && (json.data?.success || json.data)) {
+        const dataObj = json.data || {};
+        setStorageTestResult({
+          success: true,
+          message: formatErrorMessage(dataObj.message || 'TeleCloud S3 Storage Engine connection probe succeeded!'),
+          workspaceName: dataObj.workspaceName,
+          fileUrl: dataObj.fileUrl,
+          details: dataObj.details || dataObj
+        });
+      } else {
+        const rawErr = json.error || json.message || json.data?.message || 'Storage connection test failed.';
+        const errText = formatErrorMessage(rawErr);
+        setStorageTestResult({
+          success: false,
+          message: errText,
+          details: json.error?.details || json.details
+        });
+      }
+    } catch (err: any) {
+      setStorageTestResult({
+        success: false,
+        message: formatErrorMessage(err?.message || 'Connection error while communicating with TeleCloud storage service.')
+      });
+    } finally {
+      setIsTestingStorage(false);
+    }
+  };
+
+  const handleDetectCloudinaryAssets = async () => {
+    setIsDetectingCloudinary(true);
+    try {
+      const res = await fetch('/api/admin/storage/detect-cloudinary', {
+        headers: getAdminAuthHeaders()
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setMigrationItems(json.data.items || []);
+        setMigrationSummary(json.data.summary || null);
+      } else {
+        alert(formatErrorMessage(json.error || 'Failed to detect Cloudinary assets.'));
+      }
+    } catch (err: any) {
+      alert(formatErrorMessage(err?.message || 'Error occurred while detecting Cloudinary assets.'));
+    } finally {
+      setIsDetectingCloudinary(false);
+    }
+  };
+
+  const handleMigrateSingleAsset = async (targetItem: any) => {
+    setMigrationItems(prev => prev.map(i => i.id === targetItem.id ? { ...i, status: 'migrating', error: undefined } : i));
+
+    try {
+      const res = await fetch('/api/admin/storage/migrate-item', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({ item: targetItem })
+      });
+      const json = await res.json();
+      if (json.success && json.data) {
+        setMigrationItems(prev => prev.map(i => i.id === targetItem.id ? json.data : i));
+      } else {
+        const errText = formatErrorMessage(json.error || 'Migration failed for file');
+        setMigrationItems(prev => prev.map(i => i.id === targetItem.id ? { ...i, status: 'failed', error: errText } : i));
+      }
+    } catch (err: any) {
+      setMigrationItems(prev => prev.map(i => i.id === targetItem.id ? { ...i, status: 'failed', error: formatErrorMessage(err?.message || 'Network error') } : i));
+    }
+  };
+
+  const handleMigrateAllCloudinaryAssets = async () => {
+    let currentList = migrationItems;
+    if (currentList.length === 0) {
+      setIsDetectingCloudinary(true);
+      try {
+        const res = await fetch('/api/admin/storage/detect-cloudinary', {
+          headers: getAdminAuthHeaders()
+        });
+        const json = await res.json();
+        if (json.success && json.data?.items) {
+          currentList = json.data.items;
+          setMigrationItems(currentList);
+          setMigrationSummary(json.data.summary || null);
+        }
+      } catch (err) {
+        setIsDetectingCloudinary(false);
+        return;
+      } finally {
+        setIsDetectingCloudinary(false);
+      }
+    }
+
+    setIsMigratingCloudinary(true);
+    const pendingItems = currentList.filter(i => i.status !== 'success');
+
+    for (const item of pendingItems) {
+      setMigrationItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'migrating', error: undefined } : i));
+      try {
+        const res = await fetch('/api/admin/storage/migrate-item', {
+          method: 'POST',
+          headers: getAdminAuthHeaders(),
+          body: JSON.stringify({ item })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          setMigrationItems(prev => prev.map(i => i.id === item.id ? json.data : i));
+        } else {
+          const errText = json.error || 'Migration failed';
+          setMigrationItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'failed', error: errText } : i));
+        }
+      } catch (err: any) {
+        setMigrationItems(prev => prev.map(i => i.id === item.id ? { ...i, status: 'failed', error: err.message || 'Error' } : i));
+      }
+    }
+    setIsMigratingCloudinary(false);
   };
 
   if (isLoading) {
@@ -731,9 +929,9 @@ export default function AdminConfigsPage() {
               )}
             </div>
 
-            {/* SECTION 4: RAZORPAY PAYMENT GATEWAY */}
-            <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-6">
-              <div className="flex items-center justify-between pb-4 mb-6 border-b border-stone-100">
+            {/* SECTION 4: PAYMENT GATEWAYS (RAZORPAY & COD) */}
+            <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-6 space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-stone-100">
                 <div className="flex items-center gap-2.5">
                   <CreditCard className="w-5 h-5 text-[#9B111E]" />
                   <div>
@@ -788,6 +986,46 @@ export default function AdminConfigsPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Cash on Delivery (COD) Payment Gateway Option */}
+              <div className="pt-5 border-t border-stone-100">
+                <div className="flex items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-200">
+                  <div className="space-y-0.5 max-w-lg">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-stone-900">Cash on Delivery (COD) Payment Mode</span>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${
+                        form.enableCod !== false ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                      }`}>
+                        {form.enableCod !== false ? 'Active' : 'Disabled (Razorpay Only)'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-500">
+                      Disable Cash on Delivery to keep only Razorpay gateway active during checkout. All customers will be required to pay online.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Link
+                      to="/admin/cod-settings"
+                      className="hidden sm:inline-flex text-[11px] font-bold text-[#9B111E] hover:underline"
+                    >
+                      Advanced COD Rules →
+                    </Link>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.enableCod !== false}
+                        onChange={(e) => setForm({ ...form, enableCod: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-stone-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                      <span className="ml-2 text-xs font-bold text-stone-700">
+                        {form.enableCod !== false ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* SECTION 5: GOOGLE MAPS API */}
@@ -817,59 +1055,397 @@ export default function AdminConfigsPage() {
               </div>
             </div>
 
-            {/* SECTION 5.5: CLOUDINARY MEDIA CDN SETTINGS */}
+            {/* SECTION 5.5: TELECLOUD STORAGE ENGINE (CUSTOM S3 CDN) */}
             <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-6">
-              <div className="flex items-center gap-2.5 pb-4 mb-6 border-b border-stone-100">
-                <ImageIcon className="w-5 h-5 text-[#9B111E]" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-6 border-b border-stone-100">
+                <div className="flex items-center gap-2.5">
+                  <Cloud className="w-5 h-5 text-[#9B111E]" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-black text-stone-900">TeleCloud S3 Storage Engine</h2>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wide">
+                        Active S3 CDN
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-500">
+                      Primary remote S3 file upload engine piped to Telegram MTProto storage cluster with fast CDN streaming links.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTestStorage}
+                  disabled={isTestingStorage || !form.teleCloudApiKey}
+                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-xs ${
+                    isTestingStorage || !form.teleCloudApiKey
+                      ? 'bg-stone-100 text-stone-400 border border-stone-200 cursor-not-allowed'
+                      : 'bg-stone-900 text-white hover:bg-stone-800 active:scale-95'
+                  }`}
+                  title={!form.teleCloudApiKey ? 'Enter API Key first to test connection' : 'Test remote upload probe'}
+                >
+                  {isTestingStorage ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#9B111E]" />
+                      <span>Testing S3 Probe...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Test Storage Connection</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Test Storage Result Banner */}
+              {storageTestResult && (
+                <div
+                  className={`mb-6 p-4 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+                    storageTestResult.success
+                      ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                      : 'bg-red-50/80 border-red-200 text-red-900'
+                  }`}
+                >
+                  <div className="flex items-start gap-2.5">
+                    {storageTestResult.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+                    )}
+                    <div>
+                      <p className="font-bold">{formatErrorMessage(storageTestResult.message)}</p>
+                      {storageTestResult.workspaceName && (
+                        <p className="text-[11px] text-emerald-700 mt-0.5 font-medium">
+                          Workspace: <strong>{storageTestResult.workspaceName}</strong> (ID: {storageTestResult.details?.workspace_id || form.teleCloudWorkspaceId || 'Active'})
+                        </p>
+                      )}
+                      {storageTestResult.fileUrl && (
+                        <p className="text-[10.5px] text-emerald-800 mt-1 font-mono break-all">
+                          Probe URL: <a href={storageTestResult.fileUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-emerald-950 font-bold">{storageTestResult.fileUrl}</a>
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setStorageTestResult(null)}
+                    className="text-[11px] font-semibold text-stone-500 hover:text-stone-700 underline self-end sm:self-center cursor-pointer"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {/* Upload Endpoint URL */}
+                <div className="md:col-span-2 lg:col-span-1">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Upload Endpoint URL <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.teleCloudEndpoint || ''}
+                    onChange={(e) => setForm({ ...form, teleCloudEndpoint: e.target.value })}
+                    placeholder="https://s3.htknetwork.in/api/v1/upload"
+                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-mono focus:ring-2 focus:ring-[#9B111E]"
+                  />
+                  <p className="mt-1 text-[10.5px] text-stone-500">
+                    Primary: <code className="bg-stone-100 px-1 py-0.5 rounded text-[10px]">https://s3.htknetwork.in/api/v1/upload</code>
+                  </p>
+                </div>
+
+                {/* Secret API Key */}
                 <div>
-                  <h2 className="text-sm font-black text-stone-900">Cloudinary Media CDN Settings</h2>
-                  <p className="text-[11px] text-stone-500">
-                    Configure your Cloudinary credentials used for fast CDN image delivery and media uploads.
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    TeleCloud API Key (<code className="font-mono text-[10px]">x-api-key</code>) <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showTeleCloudApiKey ? 'text' : 'password'}
+                      value={form.teleCloudApiKey || ''}
+                      onChange={(e) => setForm({ ...form, teleCloudApiKey: e.target.value })}
+                      placeholder="Enter TeleCloud secret API Key"
+                      className="w-full px-3.5 py-2 pr-10 rounded-xl border border-stone-200 text-xs font-mono focus:ring-2 focus:ring-[#9B111E]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowTeleCloudApiKey(!showTeleCloudApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      {showTeleCloudApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[10.5px] text-stone-500">
+                    Used for authenticating multipart form-data file uploads.
+                  </p>
+                </div>
+
+                {/* Workspace ID */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Workspace ID <span className="text-stone-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.teleCloudWorkspaceId !== undefined ? String(form.teleCloudWorkspaceId) : ''}
+                    onChange={(e) => setForm({ ...form, teleCloudWorkspaceId: e.target.value })}
+                    placeholder="e.g. 12"
+                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-[#9B111E]"
+                  />
+                  <p className="mt-1 text-[10.5px] text-stone-500">
+                    Target storage workspace cluster ID (defaults to active workspace).
+                  </p>
+                </div>
+
+                {/* Default Upload Caption */}
+                <div className="md:col-span-2 lg:col-span-3">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Default Upload Caption <span className="text-stone-400 font-normal">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.teleCloudCaption || ''}
+                    onChange={(e) => setForm({ ...form, teleCloudCaption: e.target.value })}
+                    placeholder="Uploaded via Aapla Jalgaonwala Admin"
+                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-[#9B111E]"
+                  />
+                  <p className="mt-1 text-[10.5px] text-stone-500">
+                    Optional description text cataloged alongside uploads in TeleCloud storage engine.
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">Cloud Name</label>
-                  <input
-                    type="text"
-                    value={form.cloudinaryCloudName || ''}
-                    onChange={(e) => setForm({ ...form, cloudinaryCloudName: e.target.value })}
-                    placeholder="e.g. xbtfj9zf"
-                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-[#9B111E]"
-                  />
+              {/* Active Storage Provider Notice */}
+              <div className="mt-5 pt-4 border-t border-stone-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-stone-500">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>TeleCloud S3 is configured as the active primary storage engine for all store assets.</span>
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">API Key</label>
-                  <input
-                    type="text"
-                    value={form.cloudinaryApiKey || ''}
-                    onChange={(e) => setForm({ ...form, cloudinaryApiKey: e.target.value })}
-                    placeholder="e.g. 123456789012345"
-                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-[#9B111E]"
-                  />
-                </div>
+              {/* CLOUDINARY TO HTK TELECLOUD S3 MIGRATION TOOL */}
+              <div className="mt-6 pt-6 border-t border-stone-200">
+                <div className="bg-stone-900 text-white rounded-2xl p-5 sm:p-6 shadow-md space-y-5">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-stone-800">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/30">
+                        <Database className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-sm font-black text-white uppercase tracking-wider">Cloudinary to HTK TeleCloud S3 Migration</h3>
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-amber-400 text-stone-950 uppercase tracking-widest">
+                            Automated
+                          </span>
+                        </div>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          Detect all Cloudinary links for products, categories, site branding, woman graphics & partner passbooks, download them temporarily, upload to HTK S3, and update direct links in real-time.
+                        </p>
+                      </div>
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">API Secret</label>
-                  <div className="relative">
-                    <input
-                      type={showCloudinarySecret ? 'text' : 'password'}
-                      value={form.cloudinaryApiSecret || ''}
-                      onChange={(e) => setForm({ ...form, cloudinaryApiSecret: e.target.value })}
-                      placeholder="••••••••••••••••"
-                      className="w-full px-3.5 py-2 pr-10 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-[#9B111E]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowCloudinarySecret(!showCloudinarySecret)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
-                    >
-                      {showCloudinarySecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={handleDetectCloudinaryAssets}
+                        disabled={isDetectingCloudinary || isMigratingCloudinary}
+                        className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 text-xs font-bold rounded-xl border border-stone-700 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        {isDetectingCloudinary ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                            <span>Scanning Catalog...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Search className="w-3.5 h-3.5 text-amber-400" />
+                            <span>Detect Cloudinary Links</span>
+                          </>
+                        )}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleMigrateAllCloudinaryAssets}
+                        disabled={isMigratingCloudinary || isDetectingCloudinary || (migrationItems.length > 0 && migrationItems.every(i => i.status === 'success'))}
+                        className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
+                          isMigratingCloudinary
+                            ? 'bg-amber-500 text-stone-950 border border-amber-400 animate-pulse'
+                            : 'bg-[#9B111E] hover:bg-[#800d18] text-white border border-red-700'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      >
+                        {isMigratingCloudinary ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Migrating Assets to HTK S3...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Zap className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Migrate All to HTK S3</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
                   </div>
+
+                  {/* Live Migration Progress Summary */}
+                  {migrationItems.length > 0 ? (
+                    <div className="space-y-4">
+                      {/* KPI Metrics */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                        <div className="bg-stone-800/80 p-3 rounded-xl border border-stone-700/80 text-center">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Total Detected</span>
+                          <span className="text-lg font-black text-amber-300">{migrationItems.length}</span>
+                        </div>
+                        <div className="bg-stone-800/80 p-3 rounded-xl border border-stone-700/80 text-center">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Migrated S3</span>
+                          <span className="text-lg font-black text-emerald-400">
+                            {migrationItems.filter(i => i.status === 'success').length}
+                          </span>
+                        </div>
+                        <div className="bg-stone-800/80 p-3 rounded-xl border border-stone-700/80 text-center">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Pending</span>
+                          <span className="text-lg font-black text-amber-400">
+                            {migrationItems.filter(i => i.status === 'pending').length}
+                          </span>
+                        </div>
+                        <div className="bg-stone-800/80 p-3 rounded-xl border border-stone-700/80 text-center">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">Failed</span>
+                          <span className="text-lg font-black text-red-400">
+                            {migrationItems.filter(i => i.status === 'failed').length}
+                          </span>
+                        </div>
+                        <div className="bg-stone-800/80 p-3 rounded-xl border border-stone-700/80 text-center col-span-2 sm:col-span-2">
+                          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-wider block">S3 Completion</span>
+                          <div className="flex items-center justify-center gap-2 mt-1">
+                            <div className="w-full bg-stone-700 h-2 rounded-full overflow-hidden">
+                              <div
+                                className="bg-emerald-400 h-full transition-all duration-500"
+                                style={{
+                                  width: `${Math.round((migrationItems.filter(i => i.status === 'success').length / migrationItems.length) * 100)}%`
+                                }}
+                              />
+                            </div>
+                            <span className="text-xs font-mono font-bold text-white shrink-0">
+                              {Math.round((migrationItems.filter(i => i.status === 'success').length / migrationItems.length) * 100)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Filters & Search */}
+                      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-full pb-1">
+                          {['all', 'products', 'categories', 'settings', 'woman_graphics', 'gallery', 'partners'].map(f => (
+                            <button
+                              key={f}
+                              type="button"
+                              onClick={() => setMigrationFilter(f)}
+                              className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider shrink-0 transition-all cursor-pointer ${
+                                migrationFilter === f
+                                  ? 'bg-amber-400 text-stone-950 font-black'
+                                  : 'bg-stone-800 text-stone-400 hover:text-stone-200'
+                              }`}
+                            >
+                              {f === 'all' ? `All (${migrationItems.length})` : f.replace('_', ' ')}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div className="relative w-full sm:w-64">
+                          <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            value={migrationSearchQuery}
+                            onChange={e => setMigrationSearchQuery(e.target.value)}
+                            placeholder="Search file, title or URL..."
+                            className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-stone-800 text-stone-200 text-xs border border-stone-700 focus:outline-none focus:border-amber-400"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Detailed Migration Items List */}
+                      <div className="bg-stone-950/80 rounded-xl border border-stone-800 overflow-hidden divide-y divide-stone-800/80 max-h-96 overflow-y-auto">
+                        {migrationItems
+                          .filter(i => migrationFilter === 'all' || i.type === migrationFilter)
+                          .filter(i => !migrationSearchQuery || i.entityTitle.toLowerCase().includes(migrationSearchQuery.toLowerCase()) || i.currentUrl.toLowerCase().includes(migrationSearchQuery.toLowerCase()))
+                          .map(item => (
+                            <div key={item.id} className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-stone-900/50 transition-colors">
+                              <div className="min-w-0 flex-1 space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="px-2 py-0.5 rounded text-[9.5px] font-black uppercase tracking-wider bg-stone-800 text-amber-300 border border-stone-700">
+                                    {item.typeLabel}
+                                  </span>
+                                  <span className="text-xs font-bold text-stone-100 truncate">
+                                    {item.entityTitle}
+                                  </span>
+                                  <span className="text-[10px] text-stone-400 font-mono">
+                                    ({item.fieldName})
+                                  </span>
+                                </div>
+
+                                {/* Cloudinary Old URL */}
+                                <div className="flex items-center gap-2 text-[10.5px] text-stone-400 font-mono truncate">
+                                  <span className="text-amber-500/80 font-bold shrink-0">Cloudinary:</span>
+                                  <a href={item.currentUrl} target="_blank" rel="noopener noreferrer" className="truncate hover:text-amber-300 underline">
+                                    {item.currentUrl}
+                                  </a>
+                                </div>
+
+                                {/* Migrated S3 URL */}
+                                {item.newUrl && (
+                                  <div className="flex items-center gap-2 text-[10.5px] text-emerald-400 font-mono truncate bg-emerald-950/40 p-1.5 rounded border border-emerald-800/40">
+                                    <span className="text-emerald-300 font-bold shrink-0">Direct HTK S3:</span>
+                                    <a href={item.newUrl} target="_blank" rel="noopener noreferrer" className="truncate hover:underline font-bold">
+                                      {item.newUrl}
+                                    </a>
+                                  </div>
+                                )}
+
+                                {item.error && (
+                                  <p className="text-[11px] text-red-400 font-semibold bg-red-950/30 p-1.5 rounded border border-red-800/40">
+                                    Error: {formatErrorMessage(item.error)}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Status & Actions */}
+                              <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                                {item.status === 'migrating' ? (
+                                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-950/80 border border-blue-500/40 text-blue-300 text-xs font-bold">
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                                    <span>Migrating...</span>
+                                  </div>
+                                ) : item.status === 'success' ? (
+                                  <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-bold">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span>S3 Direct Link Active</span>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleMigrateSingleAsset(item)}
+                                    disabled={isMigratingCloudinary}
+                                    className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                  >
+                                    <ArrowRight className="w-3.5 h-3.5" />
+                                    <span>Migrate to S3</span>
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 border border-dashed border-stone-800 rounded-xl bg-stone-950/40">
+                      <p className="text-xs text-stone-400 font-medium">
+                        Click <strong className="text-amber-300">"Detect Cloudinary Links"</strong> above to scan products, categories, site branding, and media for Cloudinary assets.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

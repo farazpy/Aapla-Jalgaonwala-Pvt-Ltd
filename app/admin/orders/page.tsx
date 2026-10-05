@@ -8,7 +8,7 @@ import {
   Search,
   RefreshCw,
   Eye,
-  DollarSign,
+  IndianRupee,
   Clock,
   CheckCircle,
   Phone,
@@ -23,6 +23,7 @@ import {
   Filter,
   Truck,
   MapPin,
+  Loader2,
   Navigation,
   Users,
   FileText,
@@ -43,8 +44,15 @@ import { ShipmentTrackerMap } from '@/components/common/ShipmentTrackerMap';
 import { InvoiceModal } from '@/components/invoice/InvoiceModal';
 import { formatDisplayName } from '@/utils/transliterate';
 import { formatDtdcDate, formatDtdcTime } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
+import { OrderSimulationModal } from '@/components/admin/OrderSimulationModal';
 
 export default function AdminOrdersPage() {
+  const { user } = useAuth();
+  // Allow simulation tool for all admins in the admin panel
+  const isSimulationAllowed = Boolean(!user || user.role !== 'customer');
+  const [isSimulationModalOpen, setIsSimulationModalOpen] = useState(false);
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncingTracking, setIsSyncingTracking] = useState(false);
@@ -107,6 +115,41 @@ export default function AdminOrdersPage() {
   const [notifyPartnerToggle, setNotifyPartnerToggle] = useState(true);
   const [partnerFilterQuery, setPartnerFilterQuery] = useState('');
   const [isTransferring, setIsTransferring] = useState(false);
+
+  // Fake orders options state
+  const [isDeletingFake, setIsDeletingFake] = useState(false);
+  const [showFakeOption, setShowFakeOption] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const search = window.location.search || '';
+      setShowFakeOption(search.includes('fake=1'));
+    }
+  }, []);
+
+  const handleDeleteFakeOrders = async () => {
+    if (!window.confirm('Are you sure you want to permanently delete all fake/simulated orders (marked as is_fake = 1) from the database? This action is irreversible.')) {
+      return;
+    }
+    setIsDeletingFake(true);
+    try {
+      const res = await fetch('/api/admin/orders/delete-fake', {
+        method: 'DELETE'
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(json.data?.message || 'Successfully deleted fake orders!');
+        fetchOrders(true);
+      } else {
+        showToast(json.error?.message || 'Failed to delete fake orders.', 'error');
+      }
+    } catch (err: any) {
+      console.error(err);
+      showToast('Error occurred while deleting fake orders.', 'error');
+    } finally {
+      setIsDeletingFake(false);
+    }
+  };
 
   const showToast = (message: any, type: 'success' | 'error' = 'success') => {
     const safeMsg = typeof message === 'string'
@@ -742,6 +785,34 @@ export default function AdminOrdersPage() {
       ]}
       actions={
         <div className="flex items-center gap-2">
+          {showFakeOption && (
+            <button
+              onClick={handleDeleteFakeOrders}
+              disabled={isDeletingFake}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-rose-300 bg-rose-600 hover:bg-rose-700 rounded-lg text-xs font-black text-white transition-colors shadow-2xs cursor-pointer"
+              title="Delete all simulated orders (is_fake = 1)"
+            >
+              {isDeletingFake ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Trash2 className="w-3.5 h-3.5 text-rose-200" />
+              )}
+              <span>Delete All Fake Orders</span>
+            </button>
+          )}
+
+          {/* SIMULATION GENERATOR - Available to all admins in Admin Panel if ?fake=1 is provided */}
+          {isSimulationAllowed && showFakeOption && (
+            <button
+              onClick={() => setIsSimulationModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-purple-300 bg-purple-50 hover:bg-purple-100 rounded-lg text-xs font-bold text-purple-800 transition-colors shadow-2xs cursor-pointer"
+              title="Simulate Orders (Admin Tool)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <span>Simulate Orders</span>
+            </button>
+          )}
+
           <button
             onClick={handleSyncTracking}
             disabled={isSyncingTracking}
@@ -808,13 +879,13 @@ export default function AdminOrdersPage() {
           <div className="bg-white p-4 rounded-xl border border-[#e1e3e5] shadow-xs flex items-center justify-between">
             <div>
               <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-wider">Total Revenue</p>
-              <h3 className="text-xl font-bold text-[#9B111E] mt-0.5">₹{stats.totalRevenue}</h3>
+              <h3 className="text-xl font-bold text-[#9B111E] mt-0.5">₹{Number(stats.totalRevenue).toFixed(2)}</h3>
               <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-bold border border-emerald-100 mt-1 inline-block">
                 Excl. Cancelled
               </span>
             </div>
             <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600 border border-emerald-100">
-              <DollarSign className="w-4 h-4" />
+              <IndianRupee className="w-4 h-4" />
             </div>
           </div>
 
@@ -2525,6 +2596,20 @@ export default function AdminOrdersPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Simulation Modal (Available for all admins in Admin Panel if ?fake=1 is provided) */}
+      {isSimulationAllowed && showFakeOption && (
+        <OrderSimulationModal
+          isOpen={isSimulationModalOpen}
+          onClose={() => setIsSimulationModalOpen(false)}
+          onSuccess={(count, total) => {
+            showToast(`Created ${count} authentic simulated order(s) totaling ₹${total.toLocaleString('en-IN')}`);
+            fetchOrders(true);
+          }}
+          adminEmail={user?.email || 'admin@aapla-jalgaonwala.com'}
+          partnersList={partnersList}
+        />
       )}
     </AdminLayout>
   );

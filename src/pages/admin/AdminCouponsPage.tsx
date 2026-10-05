@@ -13,7 +13,7 @@ import {
   Calendar,
   AlertCircle,
   Percent,
-  DollarSign,
+  IndianRupee,
   Tag,
   Package,
   Layers,
@@ -840,7 +840,7 @@ export function AdminCouponsPage() {
                             : 'text-stone-600 hover:text-stone-900'
                         }`}
                       >
-                        <DollarSign className="w-3.5 h-3.5" />
+                        <IndianRupee className="w-3.5 h-3.5" />
                         <span>₹ Flat</span>
                       </button>
                       <button

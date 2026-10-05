@@ -59,8 +59,8 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState('');
   const [addressLine1, setAddressLine1] = useState('');
   const [addressLine2, setAddressLine2] = useState('');
-  const [city, setCity] = useState('Jalgaon');
-  const [state, setState] = useState('Maharashtra');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
   const [pincode, setPincode] = useState('');
   const [landmark, setLandmark] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'ONLINE'>('COD');
@@ -87,22 +87,31 @@ export default function CheckoutPage() {
     fetch('/api/settings')
       .then((r) => r.json())
       .then((j) => {
-        if (j.success && j.data) setSiteSettings(j.data);
+        if (j.success && j.data) {
+          setSiteSettings(j.data);
+          if (j.data.enableCod === false) {
+            setPaymentMethod('ONLINE');
+          }
+        }
       })
       .catch((err) => console.warn('Failed to fetch settings in checkout:', err));
   }, []);
 
   // Auto-fill from user account on load / auth change
   useEffect(() => {
-    if (user) {
+    // Only prefill personal details if user is logged in AND not a new referral customer session
+    if (user && !referralPartnerCode) {
       if (!fullName && user.name) setFullName(user.name);
       if (!email && user.email) setEmail(user.email);
       if (!phone && user.phone) setPhone(user.phone.replace(/\D/g, '').slice(-10));
     }
-  }, [user]);
+  }, [user, referralPartnerCode]);
 
-  // If user has saved addresses, prefill default address
+  // If user has saved addresses, ONLY prefill if NOT arriving via a woman referral code
   useEffect(() => {
+    if (referralPartnerCode) {
+      return; // Do not auto-apply address when coming via woman referral
+    }
     if (addresses && addresses.length > 0 && !addressLine1) {
       const def = addresses.find(a => a.isDefault) || addresses[0];
       if (def) {
@@ -117,7 +126,7 @@ export default function CheckoutPage() {
         setPincode(def.pincode);
       }
     }
-  }, [addresses]);
+  }, [addresses, referralPartnerCode]);
 
   const handleSelectSavedAddress = (addrId: string) => {
     setSelectedAddressId(addrId);
@@ -303,14 +312,22 @@ export default function CheckoutPage() {
 
   const estimatedTotal = finalTotal;
 
-  const isCodAdvanceEnabled = Boolean(siteSettings?.codAdvanceFeeEnabled !== false && Number(siteSettings?.codAdvanceFeeAmount || 50) > 0);
+  const isCodEnabled = siteSettings ? siteSettings.enableCod !== false : true;
+  const isCodAdvanceEnabled = Boolean(isCodEnabled && siteSettings?.codAdvanceFeeEnabled !== false && Number(siteSettings?.codAdvanceFeeAmount || 50) > 0);
   const codFeeAmountSetting = Number(siteSettings?.codAdvanceFeeAmount || 50);
   const codFeeTypeSetting = siteSettings?.codAdvanceFeeType || 'fixed';
+
+  // Fallback check: If COD is disabled, ensure paymentMethod is ONLINE
+  useEffect(() => {
+    if (!isCodEnabled && paymentMethod === 'COD') {
+      setPaymentMethod('ONLINE');
+    }
+  }, [isCodEnabled, paymentMethod]);
 
   let codAdvanceFee = 0;
   let codRemainingBalance = estimatedTotal;
 
-  if (paymentMethod === 'COD' && isCodAdvanceEnabled) {
+  if (isCodEnabled && paymentMethod === 'COD' && isCodAdvanceEnabled) {
     if (codFeeTypeSetting === 'percentage') {
       codAdvanceFee = Math.round((estimatedTotal * codFeeAmountSetting) / 100);
     } else {
@@ -441,6 +458,11 @@ export default function CheckoutPage() {
 
     if (!/^\d{6}$/.test(pincode.trim())) {
       setFormError('Please enter a valid 6-digit PIN code (e.g. 425001).');
+      return;
+    }
+
+    if (paymentMethod === 'COD' && !isCodEnabled) {
+      setFormError('Cash on Delivery is currently disabled. Please proceed with Razorpay Online Payment.');
       return;
     }
 
@@ -931,10 +953,13 @@ export default function CheckoutPage() {
                       const list = INDIAN_STATES_AND_CITIES[newState] || [];
                       if (list.length > 0) {
                         setCity(list[0]);
+                      } else {
+                        setCity('');
                       }
                     }}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#D9531E]"
                   >
+                    <option value="">Select State</option>
                     {ALL_STATES.map((st) => (
                       <option key={st} value={st}>{st}</option>
                     ))}
@@ -949,6 +974,7 @@ export default function CheckoutPage() {
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-semibold text-stone-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#D9531E]"
                   >
+                    <option value="">Select City / Town</option>
                     {finalCityList.map((cty) => (
                       <option key={cty} value={cty}>{cty}</option>
                     ))}
@@ -988,47 +1014,49 @@ export default function CheckoutPage() {
               </div>
 
               <div className="space-y-3">
-                <label className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${paymentMethod === 'COD' ? 'border-[#9B111E] bg-amber-50/40 ring-2 ring-[#9B111E]/10' : 'border-stone-200 hover:bg-stone-50'}`}>
-                  <input
-                    type="radio"
-                    name="payment"
-                    value="COD"
-                    checked={paymentMethod === 'COD'}
-                    onChange={() => setPaymentMethod('COD')}
-                    className="accent-[#9B111E] mt-1"
-                  />
-                  <Banknote className="w-5 h-5 text-[#D9531E] shrink-0 mt-0.5" />
-                  <div className="flex-1 space-y-2">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className="block font-bold text-xs text-stone-900">Cash on Delivery (COD)</span>
-                        {isCodAdvanceEnabled && (
-                          <span className="text-[9px] bg-amber-100 text-amber-900 font-extrabold px-2 py-0.5 rounded-full uppercase">
-                            Deposit Required
-                          </span>
-                        )}
+                {isCodEnabled && (
+                  <label className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${paymentMethod === 'COD' ? 'border-[#9B111E] bg-amber-50/40 ring-2 ring-[#9B111E]/10' : 'border-stone-200 hover:bg-stone-50'}`}>
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="COD"
+                      checked={paymentMethod === 'COD'}
+                      onChange={() => setPaymentMethod('COD')}
+                      className="accent-[#9B111E] mt-1"
+                    />
+                    <Banknote className="w-5 h-5 text-[#D9531E] shrink-0 mt-0.5" />
+                    <div className="flex-1 space-y-2">
+                      <div>
+                        <div className="flex items-center justify-between">
+                          <span className="block font-bold text-xs text-stone-900">Cash on Delivery (COD)</span>
+                          {isCodAdvanceEnabled && (
+                            <span className="text-[9px] bg-amber-100 text-amber-900 font-extrabold px-2 py-0.5 rounded-full uppercase">
+                              Deposit Required
+                            </span>
+                          )}
+                        </div>
+                        <span className="block text-[11px] text-stone-500 mt-0.5">
+                          {isCodAdvanceEnabled
+                            ? `Pay ₹${codAdvanceFee} deposit online via Razorpay, pay remaining ₹${codRemainingBalance} cash on delivery.`
+                            : 'Pay with cash upon package receipt.'}
+                        </span>
                       </div>
-                      <span className="block text-[11px] text-stone-500 mt-0.5">
-                        {isCodAdvanceEnabled
-                          ? `Pay ₹${codAdvanceFee} deposit online via Razorpay, pay remaining ₹${codRemainingBalance} cash on delivery.`
-                          : 'Pay with cash upon package receipt.'}
-                      </span>
-                    </div>
 
-                    {paymentMethod === 'COD' && isCodAdvanceEnabled && (
-                      <div className="p-3 bg-stone-50 rounded-xl border border-stone-200/90 text-xs space-y-1.5 shadow-2xs">
-                        <div className="flex items-center justify-between text-stone-600 text-[11px] font-medium">
-                          <span>Pay Online Now (Advance Deposit):</span>
-                          <span className="font-bold text-[#9B111E]">₹{codAdvanceFee}</span>
+                      {paymentMethod === 'COD' && isCodAdvanceEnabled && (
+                        <div className="p-3 bg-stone-50 rounded-xl border border-stone-200/90 text-xs space-y-1.5 shadow-2xs">
+                          <div className="flex items-center justify-between text-stone-600 text-[11px] font-medium">
+                            <span>Pay Online Now (Advance Deposit):</span>
+                            <span className="font-bold text-[#9B111E]">₹{codAdvanceFee}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-stone-700 text-[11px] font-medium pt-1 border-t border-stone-200/70">
+                            <span>Cash Due on Delivery:</span>
+                            <span className="font-bold text-stone-900">₹{codRemainingBalance}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-stone-700 text-[11px] font-medium pt-1 border-t border-stone-200/70">
-                          <span>Cash Due on Delivery:</span>
-                          <span className="font-bold text-stone-900">₹{codRemainingBalance}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </label>
+                      )}
+                    </div>
+                  </label>
+                )}
 
                 <label className={`flex items-start gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all ${paymentMethod === 'ONLINE' ? 'border-[#9B111E] bg-amber-50/40 ring-2 ring-[#9B111E]/10' : 'border-stone-200 hover:bg-stone-50'}`}>
                   <input
@@ -1045,9 +1073,26 @@ export default function CheckoutPage() {
                       Online Payment (Razorpay Gateway)
                       <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-extrabold uppercase">Free Delivery on ₹499+</span>
                     </span>
-                    <span className="block text-[11px] text-stone-500 mt-0.5">Pay seamlessly with UPI, Card, Netbanking, or Wallet. Securely verified by Razorpay.</span>
+                    <span className="block text-[11px] text-stone-500 mt-0.5">Pay seamlessly with UPI (GPay, PhonePe, Paytm), Cards, Netbanking, or Wallet. Securely verified by Razorpay.</span>
                   </div>
                 </label>
+
+                {!isCodEnabled && (
+                  <div className="p-3 bg-gradient-to-r from-amber-50/90 via-orange-50/70 to-amber-50/90 rounded-2xl border border-amber-200/80 text-xs text-stone-700 flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-amber-100 text-amber-800 shrink-0">
+                      <CreditCard className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-stone-900 text-xs flex items-center gap-1.5">
+                        <span>Direct Razorpay Gateway Active</span>
+                        <span className="text-[9px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded-full uppercase">Instant Confirmation</span>
+                      </div>
+                      <div className="text-[11px] text-stone-600 mt-0.5">
+                        Cash on Delivery is currently disabled. All orders are processed instantly through 100% encrypted bank-grade Razorpay gateway.
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

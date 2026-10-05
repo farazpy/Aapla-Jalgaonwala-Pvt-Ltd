@@ -96,7 +96,7 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
         const errorMsg =
           (typeof data.error === 'string' ? data.error : data.error?.message) ||
           (typeof data.message === 'string' && !data.success ? data.message : null) ||
-          'Failed to upload files. Please verify your Cloudinary configurations.';
+          'Failed to upload files. Please verify your TeleCloud Storage configurations in Admin Settings.';
         setError(errorMsg);
         if (typeof onUploadError === 'function') onUploadError(errorMsg);
         if (typeof onError === 'function') onError(errorMsg);
@@ -143,7 +143,7 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
         onDragLeave={onDragLeave}
         onDrop={onDrop}
         onClick={() => fileInputRef.current?.click()}
-        id="cloudinary-dropzone"
+        id="storage-dropzone"
         className={`
           border-2 border-dashed rounded-xl p-4 text-center cursor-pointer transition-all min-h-[110px] flex flex-col justify-center items-center gap-2
           ${isDragging 
@@ -158,14 +158,14 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
           accept={accept}
           multiple={multiple}
           className="hidden"
-          id="cloudinary-file-input"
+          id="storage-file-input"
         />
 
         {isUploading ? (
           <div className="flex flex-col items-center gap-1.5 text-[#9B111E]">
             <Loader2 className="w-6 h-6 animate-spin" />
             <span className="text-[11px] font-bold">
-              Uploading {uploadCount > 1 ? `${uploadCount} files` : 'file'} to Cloudinary...
+              Uploading {uploadCount > 1 ? `${uploadCount} files` : 'file'} to Storage Engine...
             </span>
           </div>
         ) : success ? (
@@ -181,7 +181,7 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
             <span className="text-[11px] font-bold text-stone-700">
               {multiple ? 'Drag & drop multiple files or click to browse' : 'Drag & drop here or click to browse'}
             </span>
-            <span className="text-[9px] text-stone-400">Supports JPG, PNG, WEBP, MP4, GIF (Max 10MB per file)</span>
+            <span className="text-[9px] text-stone-400">Supports JPG, PNG, WEBP, MP4, GIF (Max 50MB per file)</span>
           </div>
         )}
       </div>
@@ -223,3 +223,6 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
     </div>
   );
 };
+
+export const TeleCloudUpload = CloudinaryUpload;
+export const StorageUpload = CloudinaryUpload;

@@ -241,6 +241,7 @@ export interface Order {
   codRemainingBalance?: number;
   paymentDetails?: any;
   notes?: string;
+  is_fake?: number | boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -326,10 +327,11 @@ export interface SiteSettings {
   telegramChatId?: string;
   enableTelegramAlerts?: boolean;
 
-  // Razorpay
+  // Payment Gateways
   enableRazorpay?: boolean;
   razorpayKeyId?: string;
   razorpayKeySecret?: string;
+  enableCod?: boolean;
 
   // Google API Keys
   googleMapsApiKey?: string;
@@ -395,7 +397,14 @@ export interface SiteSettings {
   heroPillSubtitle?: string;
   heroPillEnabled?: boolean;
 
-  // Cloudinary Settings
+  // TeleCloud Storage Engine (Custom S3) Settings
+  teleCloudEndpoint?: string;
+  teleCloudApiKey?: string;
+  teleCloudWorkspaceId?: string | number;
+  teleCloudCaption?: string;
+  storageProvider?: 'telecloud' | 'cloudinary' | 'local';
+
+  // Cloudinary Settings (Legacy / Fallback)
   cloudinaryCloudName?: string;
   cloudinaryApiKey?: string;
   cloudinaryApiSecret?: string;
@@ -478,7 +487,10 @@ export interface BusinessPartner {
   onHoldCommission?: number;
   deliveredOrdersCount?: number;
   referredByPartnerCode?: string;
+  referredByPartnerName?: string;
   referralBonusEarned?: number;
+  invitedPartnersCount?: number;
+  invitedPartnersList?: InvitedPartner[];
   paymentStatus?: 'paid' | 'free' | 'unpaid' | 'bypassed' | string;
   paymentRef?: string;
   transactionId?: string;
@@ -544,6 +556,22 @@ export interface PartnerDashboardStats {
   totalPendingPayout: number;
   totalOnHoldCommission?: number;
   pendingSundayPayouts?: number;
+}
+
+export interface InvitedPartner {
+  id: string;
+  partnerCode: string;
+  fullName: string;
+  phone?: string;
+  email?: string;
+  city: string;
+  state: string;
+  status: 'pending' | 'approved' | 'active' | 'rejected' | 'suspended';
+  paymentStatus: string;
+  paymentAmount: number;
+  paymentDate?: string;
+  createdAt: string;
+  bonusAmount: number;
 }
 
 export interface QuickSuggestionItem {

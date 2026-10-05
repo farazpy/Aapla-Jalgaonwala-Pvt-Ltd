@@ -176,9 +176,9 @@ export class Analytics {
   }
 
   /**
-   * Start automated background heartbeat (every 15 seconds)
+   * Start automated background heartbeat (every 60 seconds to minimize Cloud Run requests)
    */
-  static startHeartbeat(intervalMs = 15000) {
+  static startHeartbeat(intervalMs = 60000) {
     if (typeof window === 'undefined') return;
     this.heartbeat();
     if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);

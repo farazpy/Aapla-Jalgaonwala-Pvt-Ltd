@@ -759,7 +759,7 @@ export default function AdminEditProductPage() {
 
                 <div className="p-4 bg-stone-50 rounded-xl border border-stone-200">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-xs text-stone-600 font-medium">Upload new image via Cloudinary / Storage (Auto-saves to DB):</p>
+                    <p className="text-xs text-stone-600 font-medium">Upload new image via S3 Storage Engine (Auto-saves to DB):</p>
                     <span className="text-[10px] font-bold text-[#9B111E] bg-[#9B111E]/10 px-2 py-0.5 rounded-md">
                       Instant DB Sync
                     </span>

@@ -340,7 +340,7 @@ export class CouponRepository {
             updated.isActive ? 1 : 0,
             updated.isAutoApply ? 1 : 0,
             updated.autoApplyTitle || null,
-            updated.updatedAt,
+            new Date().toISOString().slice(0, 19).replace('T', ' '),
             updated.id,
             updated.code
           ]

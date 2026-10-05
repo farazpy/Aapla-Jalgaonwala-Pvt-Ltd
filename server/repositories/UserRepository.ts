@@ -28,32 +28,35 @@ export interface StoredUser extends User {
 }
 
 export const SUPER_ADMIN_EMAIL = 'operationalhtklabs@gmail.com';
+export const SUPER_ADMIN_EMAILS = ['operationalhtklabs@gmail.com', 'farazk0792@gmail.com'];
 
 function ensureSuperAdmin(users: StoredUser[]): StoredUser[] {
-  const superAdminIndex = users.findIndex(u => u.email.toLowerCase() === SUPER_ADMIN_EMAIL);
-  if (superAdminIndex >= 0) {
-    const existing = users[superAdminIndex];
-    users[superAdminIndex] = {
-      ...existing,
-      name: existing.name || 'Super Administrator',
-      role: 'super_admin',
-      isStaff: true,
-      status: 'active',
-      passwordHash: existing.passwordHash || 'admin123'
-    };
-  } else {
-    users.unshift({
-      id: 'usr_super_admin_primary',
-      name: 'Super Administrator',
-      email: SUPER_ADMIN_EMAIL,
-      phone: '9822012345',
-      role: 'super_admin',
-      isStaff: true,
-      status: 'active',
-      passwordHash: 'admin123',
-      authProvider: 'email',
-      createdAt: '2025-01-01T00:00:00.000Z'
-    });
+  for (const adminEmail of SUPER_ADMIN_EMAILS) {
+    const superAdminIndex = users.findIndex(u => u.email.toLowerCase() === adminEmail.toLowerCase());
+    if (superAdminIndex >= 0) {
+      const existing = users[superAdminIndex];
+      users[superAdminIndex] = {
+        ...existing,
+        name: existing.name || 'Super Administrator',
+        role: 'super_admin',
+        isStaff: true,
+        status: 'active',
+        passwordHash: existing.passwordHash || 'admin123'
+      };
+    } else {
+      users.unshift({
+        id: `usr_super_admin_${adminEmail.split('@')[0]}`,
+        name: 'Super Administrator',
+        email: adminEmail,
+        phone: '9822012345',
+        role: 'super_admin',
+        isStaff: true,
+        status: 'active',
+        passwordHash: 'admin123',
+        authProvider: 'email',
+        createdAt: '2025-01-01T00:00:00.000Z'
+      });
+    }
   }
   return users;
 }

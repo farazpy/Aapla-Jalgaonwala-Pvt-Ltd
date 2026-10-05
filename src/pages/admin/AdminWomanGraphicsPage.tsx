@@ -348,7 +348,7 @@ export function AdminWomanGraphicsPage() {
         <div className="bg-white rounded-2xl border border-stone-200/90 p-5 sm:p-6 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 border-b border-stone-100 pb-3">
             <Upload className="w-4 h-4 text-[#9B111E]" />
-            <h2 className="text-sm font-black text-stone-900 uppercase tracking-wide">Upload Multiple Graphics Posts (Cloudinary)</h2>
+            <h2 className="text-sm font-black text-stone-900 uppercase tracking-wide">Upload Multiple Graphics Posts (S3 Storage)</h2>
           </div>
 
           <form onSubmit={handleUploadAndSave} className="space-y-4">
@@ -370,7 +370,7 @@ export function AdminWomanGraphicsPage() {
                     Click to browse or drag & drop multiple image files here
                   </p>
                   <p className="text-[11px] text-stone-400 font-medium mt-0.5">
-                    PNG, JPG, WEBP formats supported • Uploaded directly to Cloudinary
+                    PNG, JPG, WEBP formats supported • Uploaded securely via S3 Storage Engine
                   </p>
                 </div>
               </div>
@@ -381,7 +381,7 @@ export function AdminWomanGraphicsPage() {
               <div className="space-y-2 bg-stone-50 p-3.5 rounded-xl border border-stone-200">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-stone-700">
-                    {selectedFiles.length} file(s) selected for Cloudinary upload:
+                    {selectedFiles.length} file(s) selected for upload:
                   </span>
                   <button
                     type="button"

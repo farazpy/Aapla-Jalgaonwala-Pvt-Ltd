@@ -96,6 +96,7 @@ export class OrderRepository {
       trackingUrl: row.tracking_url || (row.awb_number ? `https://track.dtdc.com/ctrk-web-war/track/search?reqType=tracking&awbNo=${row.awb_number}` : undefined),
       paymentDetails: paymentDetails || undefined,
       notes: row.notes || undefined,
+      is_fake: (row.is_fake === 1 || row.is_fake === true || row.is_fake === '1') ? 1 : 0,
       createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
       updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined
     };
@@ -315,6 +316,7 @@ export class OrderRepository {
       trackingUrl: rawOrder.trackingUrl || (rawOrder.awbNumber ? `https://track.dtdc.com/ctrk-web-war/track/search?reqType=tracking&awbNo=${rawOrder.awbNumber}` : undefined),
       paymentDetails: rawOrder.paymentDetails || undefined,
       notes: rawOrder.notes || undefined,
+      is_fake: (rawOrder.is_fake === 1 || rawOrder.is_fake === true || rawOrder.is_fake === '1') ? 1 : 0,
       createdAt: rawOrder.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -322,9 +324,15 @@ export class OrderRepository {
     const pool = getDbPool();
     if (pool) {
       try {
+        const isFakeVal = order.is_fake ? 1 : 0;
+        const createdAtDate = order.createdAt ? new Date(order.createdAt) : new Date();
+        const createdAtVal = isNaN(createdAtDate.getTime()) 
+          ? new Date().toISOString().slice(0, 19).replace('T', ' ')
+          : createdAtDate.toISOString().slice(0, 19).replace('T', ' ');
+
         await pool.query(
-          `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address_json, subtotal, discount, shipping_fee, total_amount, coupon_code, referral_partner_code, status, payment_status, payment_method, cod_advance_fee_paid, cod_remaining_balance, awb_number, courier_name, tracking_url, payment_details_json, notes)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          `INSERT INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address_json, subtotal, discount, shipping_fee, total_amount, coupon_code, referral_partner_code, status, payment_status, payment_method, cod_advance_fee_paid, cod_remaining_balance, awb_number, courier_name, tracking_url, payment_details_json, notes, is_fake, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             order.id,
             order.orderNumber,
@@ -348,7 +356,9 @@ export class OrderRepository {
             order.courierName || null,
             order.trackingUrl || null,
             order.paymentDetails ? JSON.stringify(order.paymentDetails) : null,
-            order.notes || null
+            order.notes || null,
+            isFakeVal,
+            createdAtVal
           ]
         );
 
@@ -508,6 +518,16 @@ export class OrderRepository {
       return true;
     } catch (err) {
       console.error('[OrderRepo] JSON delete failed:', err);
+    }
+    return false;
+  }
+
+  static async saveAll(orders: Order[]): Promise<boolean> {
+    try {
+      await writeJson(FILE_NAME, orders);
+      return true;
+    } catch (err) {
+      console.error('[OrderRepo] JSON saveAll failed:', err);
     }
     return false;
   }

@@ -244,8 +244,38 @@ export default function AddProductPage() {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.price) {
-      alert('Please enter a product name and price.');
+    
+    // Proper validations
+    const nameTrimmed = formData.name.trim();
+    if (!nameTrimmed) {
+      alert('Validation Error: Product name is required.');
+      return;
+    }
+    if (nameTrimmed.length < 3) {
+      alert('Validation Error: Product name must be at least 3 characters long.');
+      return;
+    }
+
+    const priceNum = Number(formData.price);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      alert('Validation Error: Please enter a valid selling price greater than 0.');
+      return;
+    }
+
+    const mrpNum = Number(formData.mrp || formData.price);
+    if (isNaN(mrpNum) || mrpNum < priceNum) {
+      alert('Validation Error: MRP (Maximum Retail Price) cannot be less than the selling price.');
+      return;
+    }
+
+    const stockNum = Number(formData.stock || 100);
+    if (isNaN(stockNum) || stockNum < 0) {
+      alert('Validation Error: Stock must be a valid non-negative number.');
+      return;
+    }
+
+    if (!formData.category) {
+      alert('Validation Error: Please select a valid product category.');
       return;
     }
 
