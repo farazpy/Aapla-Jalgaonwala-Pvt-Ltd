@@ -124,11 +124,11 @@ export default function NavratriOfferPage() {
   };
 
   const handleAction = () => {
-    addToCart(navratriComboProduct, selectedVariant, quantity, true);
+    addToCart(navratriComboProduct, selectedVariant, quantity, false);
     setIsAdded(true);
     setTimeout(() => {
       setIsAdded(false);
-      navigate('/cart');
+      navigate('/checkout');
     }, 800);
   };
 

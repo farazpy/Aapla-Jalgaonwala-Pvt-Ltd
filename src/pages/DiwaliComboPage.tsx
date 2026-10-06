@@ -78,11 +78,11 @@ export default function DiwaliComboPage() {
       };
 
   const handleAction = () => {
-    addToCart(diwaliProduct, selectedVariant, quantity, true);
+    addToCart(diwaliProduct, selectedVariant, quantity, false);
     setIsBooked(true);
     setTimeout(() => {
       setIsBooked(false);
-      navigate('/cart');
+      navigate('/checkout');
     }, 800);
   };
 
