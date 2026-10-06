@@ -117,28 +117,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!isLoaded) return;
     try {
       const safeCart = cart.map((item) => ({
-        product: {
-          id: item.product.id,
-          slug: item.product.slug,
-          name: item.product.name,
-          category: item.product.category,
-          price: item.product.price,
-          mrp: item.product.mrp,
-          netQuantity: item.product.netQuantity,
-          flavour: item.product.flavour,
-          images: item.product.images || [],
-          isAvailable: item.product.isAvailable,
-          stock: item.product.stock,
-        },
-        selectedVariant: item.selectedVariant
-          ? {
-              id: item.selectedVariant.id,
-              weight: item.selectedVariant.weight,
-              price: item.selectedVariant.price,
-              mrp: item.selectedVariant.mrp,
-              stock: item.selectedVariant.stock,
-            }
-          : undefined,
+        product: item.product,
+        selectedVariant: item.selectedVariant,
         quantity: item.quantity,
       }));
       localStorage.setItem('aapla_cart', JSON.stringify(safeCart));

@@ -123,13 +123,17 @@ export default function NavratriOfferPage() {
     stock: 2000
   };
 
-  const handleAction = () => {
-    addToCart(navratriComboProduct, selectedVariant, quantity, false);
+  const handleAddToCart = () => {
+    addToCart(navratriComboProduct, selectedVariant, quantity, true);
     setIsAdded(true);
     setTimeout(() => {
       setIsAdded(false);
-      navigate('/checkout');
-    }, 800);
+    }, 2000);
+  };
+
+  const handleBuyNow = () => {
+    addToCart(navratriComboProduct, selectedVariant, quantity, false);
+    navigate('/checkout');
   };
 
   if (isLoading) {
@@ -292,24 +296,36 @@ export default function NavratriOfferPage() {
               </div>
 
               {/* Action Buttons */}
-              <button
-                type="button"
-                onClick={handleAction}
-                disabled={isAdded}
-                className="w-full py-4 bg-gradient-to-r from-orange-600 to-[#9B111E] hover:from-orange-700 hover:to-[#800A14] text-white rounded-2xl text-sm font-extrabold flex items-center justify-center gap-2.5 shadow-lg shadow-[#9B111E]/20 transition-all cursor-pointer active:scale-98 disabled:opacity-50"
-              >
-                {isAdded ? (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-white animate-bounce" />
-                    <span>Added Pack To Cart!</span>
-                  </>
-                ) : (
-                  <>
-                    <ShoppingBag className="w-4 h-4" />
-                    <span>Order Special Combo Pack (₹{price})</span>
-                  </>
-                )}
-              </button>
+              <div className="space-y-2.5">
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  disabled={isAdded}
+                  className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-white rounded-2xl text-xs font-extrabold flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer active:scale-98 disabled:opacity-50"
+                >
+                  {isAdded ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-bounce" />
+                      <span>Added Pack To Cart!</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingBag className="w-4 h-4 text-amber-400" />
+                      <span>Add Pack To Cart (₹{price * quantity})</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleBuyNow}
+                  className="w-full py-4 bg-gradient-to-r from-orange-600 to-[#9B111E] hover:from-orange-700 hover:to-[#800A14] text-white rounded-2xl text-sm font-black flex items-center justify-center gap-2 shadow-lg shadow-[#9B111E]/20 transition-all cursor-pointer active:scale-98"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Buy Now - Direct Checkout</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
 
               <div className="text-center">
                 <span className="inline-block text-[10px] text-stone-500 font-semibold leading-relaxed">
