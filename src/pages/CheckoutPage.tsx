@@ -364,42 +364,6 @@ export default function CheckoutPage() {
     codRemainingBalance = Math.max(0, estimatedTotal - codAdvanceFee);
   }
 
-  // Dynamically validate cart items against the actual store catalog on mount
-  useEffect(() => {
-    const validateCartItems = async () => {
-      try {
-        const res = await fetch('/api/products');
-        if (!res.ok) return;
-        const result = await res.json();
-        if (result && result.success && Array.isArray(result.data)) {
-          const availableProducts = result.data;
-          const availableIds = new Set(availableProducts.map((p: any) => String(p.id)));
-          const availableSlugs = new Set(availableProducts.map((p: any) => String(p.slug)));
-
-          const invalidItems = cart.filter(
-            (item) => !availableIds.has(String(item.product.id)) && !availableSlugs.has(String(item.product.slug))
-          );
-
-          if (invalidItems.length > 0) {
-            invalidItems.forEach((item) => {
-              removeFromCart(item.product.id, item.selectedVariant?.id);
-            });
-            setFormError(
-              `Notice: Stale items in your cart (${invalidItems.map((i) => i.product.name).join(', ')}) are no longer active in our store catalog and have been cleared.`
-            );
-          }
-        }
-      } catch (err) {
-        console.warn('Cart items validation failed:', err);
-      }
-    };
-
-    if (cart.length > 0) {
-      validateCartItems();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   // Dynamic Pincode Lookup for City and State
   useEffect(() => {
     if (pincode.length === 6) {
