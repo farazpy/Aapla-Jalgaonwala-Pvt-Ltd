@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Analytics } from '@/services/analyticsTracker';
+import { setReferralCookie } from '@/utils/referralCookie';
 
 export const AnalyticsTrackerProvider: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
@@ -19,7 +20,9 @@ export const AnalyticsTrackerProvider: React.FC<{ children?: React.ReactNode }> 
     const searchParams = new URLSearchParams(location.search);
     const refCode = searchParams.get('ref') || searchParams.get('partner');
     if (refCode) {
-      Analytics.trackPartnerReferralVisit(refCode);
+      const cleanRef = refCode.trim().toUpperCase();
+      Analytics.trackPartnerReferralVisit(cleanRef);
+      setReferralCookie(cleanRef);
     }
   }, [location.pathname, location.search]);
 

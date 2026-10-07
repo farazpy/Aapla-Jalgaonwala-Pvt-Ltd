@@ -103,7 +103,6 @@ export default function CheckoutPage() {
   const [manualCodeInput, setManualCodeInput] = useState('');
   const [codeCheckLoading, setCodeCheckLoading] = useState(false);
   const [codeMessage, setCodeMessage] = useState<string | null>(null);
-  const [randomAssignLoading, setRandomAssignLoading] = useState(false);
   const [userRemovedCoupon, setUserRemovedCoupon] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return sessionStorage.getItem('ajw_coupon_removed') === 'true';
@@ -203,41 +202,6 @@ export default function CheckoutPage() {
     }
   };
 
-  // Automatically assign a random woman partner coupon without button click!
-  useEffect(() => {
-    if (subtotal > 0 && !appliedCoupon && !userRemovedCoupon && !randomAssignLoading && !manualCodeInput) {
-      let isCancelled = false;
-
-      const autoAssign = async () => {
-        try {
-          const currentCode = referralPartnerCode || '';
-          const url = currentCode
-            ? `/api/partner-program/random-partner?exclude=${encodeURIComponent(currentCode)}`
-            : '/api/partner-program/random-partner';
-          const res = await fetch(url);
-          const json = await res.json();
-          if (!isCancelled && json.success && json.data) {
-            const partner = json.data;
-            const applyRes = await applyCouponCode(partner.partnerCode);
-            if (!isCancelled && applyRes.success) {
-              setReferralPartnerCode(partner.partnerCode);
-              setPartnerDiscountInfo({ partnerName: partner.fullName, valid: true });
-              setReferralCookie(partner.partnerCode, partner.fullName);
-            }
-          }
-        } catch (err) {
-          console.warn('Auto-assigning woman partner error:', err);
-        }
-      };
-
-      autoAssign();
-
-      return () => {
-        isCancelled = true;
-      };
-    }
-  }, [subtotal, appliedCoupon, userRemovedCoupon, referralPartnerCode]);
-
   useEffect(() => {
     if (referralPartnerCode) {
       fetch(`/api/partner-program/verify/${encodeURIComponent(referralPartnerCode)}`)
@@ -278,45 +242,6 @@ export default function CheckoutPage() {
       setManualCodeInput('');
     } else {
       setCodeMessage(res.message || 'Invalid coupon or promo code.');
-    }
-  };
-
-  const handleRandomAssignWomanPartner = async (excludeCurrent = true) => {
-    setRandomAssignLoading(true);
-    setCodeMessage(null);
-    if (typeof window !== 'undefined') {
-      sessionStorage.removeItem('ajw_coupon_removed');
-    }
-    setUserRemovedCoupon(false);
-
-    try {
-      const currentCode = appliedCoupon?.isPartnerCode ? appliedCoupon.code : (referralPartnerCode || '');
-      const url = excludeCurrent && currentCode
-        ? `/api/partner-program/random-partner?exclude=${encodeURIComponent(currentCode)}`
-        : '/api/partner-program/random-partner';
-
-      const res = await fetch(url);
-      const json = await res.json();
-
-      if (json.success && json.data) {
-        const partner = json.data;
-        const applyRes = await applyCouponCode(partner.partnerCode);
-        if (applyRes.success) {
-          setReferralPartnerCode(partner.partnerCode);
-          setPartnerDiscountInfo({ partnerName: partner.fullName, valid: true });
-          setReferralCookie(partner.partnerCode, partner.fullName);
-          setCodeMessage(`Discount from ${partner.fullName} applied! Saved ₹${applyRes.coupon?.discountAmount || Math.round(subtotal * 0.04)}`);
-        } else {
-          setCodeMessage(applyRes.message || 'Failed to apply woman partner code.');
-        }
-      } else {
-        setCodeMessage(json.error?.message || json.message || 'No active women partners available right now.');
-      }
-    } catch (err: any) {
-      console.error('Error assigning random partner:', err);
-      setCodeMessage('Failed to randomly assign a woman partner code.');
-    } finally {
-      setRandomAssignLoading(false);
     }
   };
 
@@ -1224,55 +1149,29 @@ export default function CheckoutPage() {
                   </div>
                 )
               ) : (
-                /* No coupon applied (e.g. user removed coupon or waiting) */
-                <div className="space-y-3">
-                  {userRemovedCoupon ? (
-                    <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-stone-800">Coupon removed</p>
-                        <p className="text-[10.5px] text-stone-600">Want to re-apply the 4% woman partner discount?</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRandomAssignWomanPartner(false)}
-                        disabled={randomAssignLoading}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-[#9B111E] hover:bg-[#800A14] text-white font-bold text-[11px] shrink-0 transition-colors shadow-2xs active:scale-95 cursor-pointer"
-                      >
-                        <Sparkles className="w-3 h-3 text-amber-300" />
-                        <span>{randomAssignLoading ? 'Applying...' : 'Re-apply 4% OFF'}</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="p-3 rounded-2xl bg-rose-50/60 border border-rose-100 flex items-center gap-2">
-                      <Heart className="w-4 h-4 text-[#9B111E] fill-[#9B111E] shrink-0 animate-pulse" />
-                      <span className="text-xs text-stone-700 font-medium">Applying 4% Woman Partner discount...</span>
-                    </div>
-                  )}
-
-                  {/* Manual coupon code input */}
-                  <div className="space-y-1.5">
-                    <span className="text-[11px] font-bold text-stone-600">Have a promo or partner code?</span>
-                    <div className="flex gap-1.5">
-                      <input
-                        type="text"
-                        placeholder="e.g. FREEDOM15 or WBP-PRIYA123"
-                        value={manualCodeInput}
-                        onChange={(e) => setManualCodeInput(e.target.value.toUpperCase())}
-                        className="flex-1 px-3 py-1.5 rounded-xl border border-stone-300 text-xs uppercase font-mono focus:ring-1 focus:ring-[#9B111E] focus:outline-none bg-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleApplyPartnerCode}
-                        disabled={codeCheckLoading || !manualCodeInput.trim()}
-                        className="px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs disabled:opacity-40 cursor-pointer"
-                      >
-                        {codeCheckLoading ? '...' : 'Apply'}
-                      </button>
-                    </div>
-                    {codeMessage && (
-                      <p className="text-[10.5px] text-stone-600 font-medium">{codeMessage}</p>
-                    )}
+                /* No coupon applied */
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-[11px] font-bold text-stone-600">Have a coupon or referral code?</span>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="text"
+                      placeholder="e.g. FESTIVE10 or WBP-PRIYA123"
+                      value={manualCodeInput}
+                      onChange={(e) => setManualCodeInput(e.target.value.toUpperCase())}
+                      className="flex-1 px-3 py-1.5 rounded-xl border border-stone-300 text-xs uppercase font-mono focus:ring-1 focus:ring-[#9B111E] focus:outline-none bg-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyPartnerCode}
+                      disabled={codeCheckLoading || !manualCodeInput.trim()}
+                      className="px-3.5 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs disabled:opacity-40 cursor-pointer transition-colors"
+                    >
+                      {codeCheckLoading ? '...' : 'Apply'}
+                    </button>
                   </div>
+                  {codeMessage && (
+                    <p className="text-[10.5px] text-stone-600 font-medium">{codeMessage}</p>
+                  )}
                 </div>
               )}
             </div>
