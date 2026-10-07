@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { SEO } from '@/components/seo/SEO';
 import { Container } from '@/components/ui/Container';
 import { ProductGrid } from '@/components/product/ProductGrid';
@@ -41,7 +41,8 @@ const FLAVOUR_OPTIONS = [
 
 export default function ReferralLandingPage() {
   const { code } = useParams<{ code: string }>();
-  const { applyCouponCode } = useCart();
+  const navigate = useNavigate();
+  const { addToCart, applyCouponCode } = useCart();
 
   const [partnerInfo, setPartnerInfo] = useState<{
     partnerName: string;
@@ -61,6 +62,8 @@ export default function ReferralLandingPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [navratriOffer, setNavratriOffer] = useState<any>(null);
+  const [navratriAdded, setNavratriAdded] = useState(false);
 
   // Filter & Search states
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -95,6 +98,20 @@ export default function ReferralLandingPage() {
       .catch((err) => console.warn('Referral verification error:', err));
   }, [code, applyCouponCode]);
 
+  // Fetch Navratri offer config
+  useEffect(() => {
+    fetch(`/api/navratri-offer?_t=${Date.now()}`, { cache: 'no-store' })
+      .then(async (res) => {
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data) {
+            setNavratriOffer(json.data);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   // Fetch all categories
   useEffect(() => {
     let isMounted = true;
@@ -113,7 +130,7 @@ export default function ReferralLandingPage() {
     };
   }, []);
 
-  // Fetch all products from MySQL database
+  // Fetch all products from MySQL database and inject Navratri combo pack
   useEffect(() => {
     let isMounted = true;
     setLoading(true);
@@ -122,8 +139,44 @@ export default function ReferralLandingPage() {
       .then((res) => res.json())
       .then((json) => {
         if (isMounted) {
-          const list = json.data || (Array.isArray(json) ? json : []);
-          setAllProducts(Array.isArray(list) ? list : []);
+          const list: Product[] = json.data || (Array.isArray(json) ? json : []);
+          
+          const navPrice = Number(navratriOffer?.price || 599);
+          const navProduct: Product = {
+            id: 'navratri-festive-combo',
+            slug: 'navratri-festive-combo-pack',
+            name: 'Navratri Festive Special Combo Pack (नवरात्री स्पेशल कॉम्बो)',
+            category: 'combo-packs',
+            categoryId: 'combo-packs',
+            categoryName: 'Combo Packs & Gifting',
+            description: navratriOffer?.description || 'Special Navratri Festivity Pack containing 500g Salted Banana Chips, 500g Spicy Masala Banana Chips, 500g Sweet Potato Chivda, 500g Spicy Potato Chivda, and a FREE pack of nutritious Rajgira Ladoos! Made 100% Satvik with Sendha Namak (Rock Salt) in separate dedicated frying lines.',
+            shortDescription: '500g Salted + 500g Masala Banana Chips + 500g Sweet + 500g Spicy Potato Chivda + FREE Rajgira Ladoo (2.2kg Net Weight)',
+            price: navPrice,
+            mrp: Math.round(navPrice * 1.5),
+            stock: 2000,
+            isAvailable: true,
+            isFeatured: true,
+            isBestSeller: true,
+            flavour: 'Fasting Satvik Mixed',
+            netQuantity: '2.2kg Complete Festivity Pack',
+            tags: ['navratri', 'upwas', 'combo', 'fasting', 'festive', 'gift', 'satvik'],
+            images: [{
+              id: 'img-navratri-combo-1',
+              url: navratriOffer?.featuredImage || 'https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=1200&q=80',
+              alt: 'Navratri Special Festive Combo Pack with Free Ladoo',
+              isPrimary: true
+            }],
+            variants: [{
+              id: 'var-navratri-combo-full',
+              weight: '2.2kg Complete Festivity Pack',
+              price: navPrice,
+              mrp: Math.round(navPrice * 1.5),
+              stock: 2000
+            }]
+          };
+
+          const combined = [navProduct, ...list.filter((p) => p.id !== 'navratri-festive-combo' && p.slug !== 'navratri-festive-combo-pack')];
+          setAllProducts(combined);
         }
       })
       .catch((err) => {
@@ -137,7 +190,7 @@ export default function ReferralLandingPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [navratriOffer]);
 
   // Filtered & Sorted products computation
   const filteredProducts = useMemo(() => {
@@ -308,6 +361,157 @@ export default function ReferralLandingPage() {
         </div>
 
         <Container className="pt-8 space-y-6">
+          {/* Featured Spotlight: Navratri Festive Special Combo Box */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-stone-900 via-[#4A0E17] to-stone-950 text-white p-6 sm:p-8 border border-amber-500/30 shadow-xl">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-amber-500/20 via-orange-600/10 to-transparent rounded-full blur-3xl pointer-events-none" />
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center relative z-10">
+              {/* Image Showcase */}
+              <div className="lg:col-span-5 relative rounded-2xl overflow-hidden border border-amber-400/30 shadow-lg group">
+                <img 
+                  src={navratriOffer?.featuredImage || 'https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=800&q=80'} 
+                  alt="Navratri Special Fasting Festivity Combo Box" 
+                  className="w-full h-56 sm:h-64 object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+                  <span className="px-3 py-1 bg-amber-500 text-stone-950 text-[10px] sm:text-xs font-black uppercase rounded-full tracking-wider shadow-md inline-flex items-center gap-1 border border-amber-300">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Navratri Festive Launch
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-emerald-600 text-white text-[9.5px] font-extrabold uppercase rounded-md shadow-sm">
+                    {discountDisplay}% Referral Privilege Applied
+                  </span>
+                </div>
+              </div>
+
+              {/* Offer Details */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-300 bg-amber-400/15 px-2.5 py-1 rounded-full border border-amber-400/30">
+                    🎉 FESTIVE SPECIAL (2.2 KG COMPLETE PACK + FREE GIFT)
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-white font-serif leading-tight">
+                    Navratri Festive Special Combo Pack (नवरात्री स्पेशल कॉम्बो)
+                  </h3>
+                  <p className="text-xs text-stone-300 leading-relaxed">
+                    ५००g खारट केळी वेफर्स + ५००g मसाला केळी वेफर्स + ५००g गोड बटाटा चिवडा + ५००g तिखट बटाटा चिवडा + मोफत राजगिरा लाडू! 100% Pure Sendha Namak Satvik Fasting Delicacy.
+                  </p>
+                </div>
+
+                {/* Pricing with Partner Referral Discount */}
+                <div className="flex flex-wrap items-baseline gap-3 bg-black/40 backdrop-blur-md p-3.5 rounded-2xl border border-white/10 w-fit">
+                  <div>
+                    <span className="text-[10px] text-stone-400 uppercase font-bold block">Exclusive Referral Price</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-2xl sm:text-3xl font-black text-amber-300">₹{Math.round(Number(navratriOffer?.price || 599) * (1 - discountDisplay / 100))}</span>
+                      <span className="text-xs text-stone-400 line-through">₹{Math.round(Number(navratriOffer?.price || 599) * 1.5)}</span>
+                      <span className="text-[11px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                        Save ₹{Math.round(Number(navratriOffer?.price || 599) * 1.5) - Math.round(Number(navratriOffer?.price || 599) * (1 - discountDisplay / 100))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick CTA Buttons */}
+                <div className="flex flex-wrap items-center gap-3 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const navPrice = Number(navratriOffer?.price || 599);
+                      const navProduct: Product = {
+                        id: 'navratri-festive-combo',
+                        slug: 'navratri-festive-combo-pack',
+                        name: 'Navratri Festive Special Combo Pack (नवरात्री स्पेशल कॉम्बो)',
+                        category: 'combo-packs',
+                        categoryId: 'combo-packs',
+                        categoryName: 'Combo Packs & Gifting',
+                        description: navratriOffer?.description || 'Special Navratri Festivity Pack containing 500g Salted Banana Chips, 500g Spicy Masala Banana Chips, 500g Sweet Potato Chivda, 500g Spicy Potato Chivda, and a FREE pack of nutritious Rajgira Ladoos!',
+                        price: navPrice,
+                        mrp: Math.round(navPrice * 1.5),
+                        stock: 2000,
+                        images: [{
+                          id: 'img-navratri-combo-1',
+                          url: navratriOffer?.featuredImage || 'https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=1200&q=80',
+                          alt: 'Navratri Special Festive Combo Pack with Free Ladoo',
+                          isPrimary: true
+                        }]
+                      };
+                      const navVariant = {
+                        id: 'var-navratri-combo-full',
+                        weight: '2.2kg Complete Festivity Pack',
+                        price: navPrice,
+                        mrp: Math.round(navPrice * 1.5),
+                        stock: 2000
+                      };
+                      addToCart(navProduct, navVariant, 1, true);
+                      setNavratriAdded(true);
+                      setTimeout(() => setNavratriAdded(false), 2000);
+                    }}
+                    disabled={navratriAdded}
+                    className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-extrabold text-xs flex items-center gap-2 shadow-md transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+                  >
+                    {navratriAdded ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-900 animate-bounce" />
+                        <span>Added to Cart!</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag className="w-4 h-4" />
+                        <span>Add Navratri Combo to Cart</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const navPrice = Number(navratriOffer?.price || 599);
+                      const navProduct: Product = {
+                        id: 'navratri-festive-combo',
+                        slug: 'navratri-festive-combo-pack',
+                        name: 'Navratri Festive Special Combo Pack (नवरात्री स्पेशल कॉम्बो)',
+                        category: 'combo-packs',
+                        categoryId: 'combo-packs',
+                        categoryName: 'Combo Packs & Gifting',
+                        description: navratriOffer?.description || 'Special Navratri Festivity Pack containing 500g Salted Banana Chips, 500g Spicy Masala Banana Chips, 500g Sweet Potato Chivda, 500g Spicy Potato Chivda, and a FREE pack of nutritious Rajgira Ladoos!',
+                        price: navPrice,
+                        mrp: Math.round(navPrice * 1.5),
+                        stock: 2000,
+                        images: [{
+                          id: 'img-navratri-combo-1',
+                          url: navratriOffer?.featuredImage || 'https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=1200&q=80',
+                          alt: 'Navratri Special Festive Combo Pack with Free Ladoo',
+                          isPrimary: true
+                        }]
+                      };
+                      const navVariant = {
+                        id: 'var-navratri-combo-full',
+                        weight: '2.2kg Complete Festivity Pack',
+                        price: navPrice,
+                        mrp: Math.round(navPrice * 1.5),
+                        stock: 2000
+                      };
+                      addToCart(navProduct, navVariant, 1, false);
+                      navigate('/checkout');
+                    }}
+                    className="px-5 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-[#9B111E] hover:from-orange-700 hover:to-[#800A14] text-white font-extrabold text-xs flex items-center gap-1.5 shadow-md transition-all cursor-pointer active:scale-95"
+                  >
+                    <span>Instant Checkout</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+
+                  <Link
+                    to="/navratri-offer"
+                    className="text-xs font-bold text-stone-300 hover:text-white underline decoration-stone-500 hover:decoration-white transition-colors ml-auto hidden sm:inline-block"
+                  >
+                    View Full Navratri Details →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Quick Category Tabs / Pills (Scrollable horizontally on mobile) */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             <button
