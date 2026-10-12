@@ -1,7 +1,7 @@
 import { SiteSettings } from '@/types';
 
-export const DEFAULT_HEADER_LOGO = 'https://res.cloudinary.com/db7nvcm4i/image/upload/fl_original/v1789546237/branding/1789546235891_wqs7e2wxhhj4chie8bun__1_.png';
-export const DEFAULT_HERO_IMAGE = 'https://res.cloudinary.com/db7nvcm4i/image/upload/v1789546373/hero/1789546371699_file_0000000071f082088902c2dd7b7807f7__1_.jpg';
+export const DEFAULT_HEADER_LOGO = 'https://s3.htknetwork.in/f/rmjD5kjJ';
+export const DEFAULT_HERO_IMAGE = 'https://s3.htknetwork.in/f/7JMBAEVe';
 
 export const initialSiteSettings: SiteSettings = {
   announcementText: "Women’s Program officially starts from 1st May.",
@@ -13,7 +13,7 @@ export const initialSiteSettings: SiteSettings = {
   tagline: 'Authentic Khandeshi Taste',
   appLogo: DEFAULT_HEADER_LOGO,
   logoType: 'badge',
-  defaultUserAvatar: 'https://res.cloudinary.com/xbtfj9zf/image/upload/v1786888364/ChatGPT_Image_Aug_16_2026_07_22_26_PM.png',
+  defaultUserAvatar: 'https://s3.htknetwork.in/f/p6v4eC6U',
   storeAddress: 'Aapla JalgaonWala Enterprises, Dehu - Yelwadi Rd, near by yelwadi, kaman, Dehu, Yelwadi, Maharashtra 412109',
   storeHours: 'Monday - Sunday: 8:00 AM - 11:00 PM',
   contactPhone: '+91 70574 46409',
@@ -50,11 +50,11 @@ export const initialSiteSettings: SiteSettings = {
   heroPillEnabled: true,
   showStoryMediaGallery: false,
   showStoryVideoSection: true,
-  faviconUrl: '/favicons/favicon-96x96.png',
-  faviconSvgUrl: '/favicons/favicon.svg',
-  faviconIcoUrl: '/favicons/favicon.ico',
-  appleTouchIconUrl: '/favicons/apple-touch-icon.png',
-  siteWebmanifestUrl: '/favicons/site.webmanifest',
+  faviconUrl: 'https://s3.htknetwork.in/f/9gbsxJ9R',
+  faviconSvgUrl: 'https://s3.htknetwork.in/f/qUWTXXBG',
+  faviconIcoUrl: 'https://s3.htknetwork.in/f/vAXnct8m',
+  appleTouchIconUrl: 'https://s3.htknetwork.in/f/dar6UW6b',
+  siteWebmanifestUrl: 'https://s3.htknetwork.in/f/3ZKuPFzR',
   mobileWebAppTitle: 'AJW',
   enableRazorpay: true,
   enableCod: true,

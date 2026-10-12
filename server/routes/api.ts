@@ -2253,11 +2253,26 @@ apiRouter.post('/admin/favicons/upload', safeUploadMiddleware, async (req: Reque
 
     const saved = await saveSingleFaviconFile(targetFilename, fileBuffer);
 
-    // If uploading primary favicon and it returned a path, keep SettingsRepository faviconUrl updated if needed
-    if ((targetFilename === 'favicon-96x96.png' || targetFilename === 'favicon.ico') && saved.path) {
-      try {
-        await SettingsRepository.update({ faviconUrl: saved.path });
-      } catch {}
+    // Persist new icon URL directly into SettingsRepository & MySQL site_settings
+    if (saved.path) {
+      const fieldMap: Record<string, string> = {
+        'favicon-96x96.png': 'faviconUrl',
+        'favicon.ico': 'faviconIcoUrl',
+        'favicon.svg': 'faviconSvgUrl',
+        'apple-touch-icon.png': 'appleTouchIconUrl',
+        'site.webmanifest': 'siteWebmanifestUrl'
+      };
+      const dbField = fieldMap[targetFilename];
+      if (dbField) {
+        try {
+          await SettingsRepository.update({ [dbField]: saved.path });
+          if (targetFilename === 'favicon-96x96.png' || targetFilename === 'favicon.ico') {
+            await SettingsRepository.update({ faviconUrl: saved.path });
+          }
+        } catch (dbErr) {
+          console.error('[Favicon API] Failed to update settings with icon URL:', dbErr);
+        }
+      }
     }
 
     const settings = await SettingsRepository.get();
@@ -6285,7 +6300,7 @@ apiRouter.get('/store/info', async (_req: Request, res: Response) => {
         whatsapp: `https://wa.me/${(settings.whatsappNumber || '917057446409').replace(/\D/g, '')}`
       },
       branding: {
-        logo: settings.appLogo || 'https://res.cloudinary.com/db7nvcm4i/image/upload/fl_original/v1789546237/branding/1789546235891_wqs7e2wxhhj4chie8bun__1_.png',
+        logo: settings.appLogo || 'https://s3.htknetwork.in/f/rmjD5kjJ',
         favicon: settings.faviconUrl || '',
         faviconIco: settings.faviconIcoUrl || '',
         appleTouchIcon: settings.appleTouchIconUrl || ''

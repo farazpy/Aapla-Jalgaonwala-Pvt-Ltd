@@ -40,7 +40,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         }
         const getSafeFaviconUrl = (url?: string, defaultPath: string = '') => {
           if (!url || typeof url !== 'string' || !url.trim()) return defaultPath;
-          if (url.includes('res.cloudinary.com/xbtfj9zf')) return defaultPath;
+          if (url.includes('res.cloudinary.com')) return defaultPath;
           return url;
         };
 

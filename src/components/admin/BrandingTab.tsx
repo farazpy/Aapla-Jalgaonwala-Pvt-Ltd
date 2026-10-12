@@ -70,6 +70,27 @@ export const BrandingTab: React.FC<{ showToast: (msg: string) => void }> = ({ sh
     };
   }, []);
 
+  const autoSaveSettingsField = async (field: string, value: any, label: string) => {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value })
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast(`✅ ${label} saved to MySQL database!`);
+        if (field === 'appLogo' && typeof window !== 'undefined') {
+          localStorage.setItem('ajw_site_logo', value);
+        }
+      } else {
+        console.warn(`Failed to auto-save ${field}:`, json.error);
+      }
+    } catch (err) {
+      console.error(`Auto-save error for ${field}:`, err);
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -84,6 +105,7 @@ export const BrandingTab: React.FC<{ showToast: (msg: string) => void }> = ({ sh
         if (settings) {
           setSettings({ ...settings, appLogo: base64 });
         }
+        autoSaveSettingsField('appLogo', base64, 'App Logo');
       };
       reader.readAsDataURL(file);
     }
@@ -102,8 +124,11 @@ export const BrandingTab: React.FC<{ showToast: (msg: string) => void }> = ({ sh
       });
       const json = await res.json();
       if (json.success) {
-        showToast('App Logo & Site Settings updated live!');
+        showToast('App Logo & Site Settings updated live in MySQL database!');
         setSettings(json.data);
+        if (json.data?.appLogo && typeof window !== 'undefined') {
+          localStorage.setItem('ajw_site_logo', json.data.appLogo);
+        }
       } else {
         alert(json.error || 'Failed to update settings');
       }
@@ -134,10 +159,21 @@ export const BrandingTab: React.FC<{ showToast: (msg: string) => void }> = ({ sh
             <h2 className="text-xl font-black text-stone-900">App Logo & Brand Badge</h2>
             <p className="text-xs text-stone-500">Update your store logo displayed in header, footer, and admin panel.</p>
           </div>
-          <span className="px-3 py-1 bg-amber-100 text-amber-900 text-xs font-extrabold rounded-full flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-[#9B111E]" />
-            Live Sync
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:flex px-3 py-1 bg-amber-100 text-amber-900 text-xs font-extrabold rounded-full items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-[#9B111E]" />
+              Live Sync
+            </span>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-4 py-1.5 bg-[#9B111E] hover:bg-[#800A14] text-white rounded-xl text-xs font-black shadow-xs flex items-center gap-1.5 transition-all disabled:opacity-50 cursor-pointer"
+            >
+              {isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-300" /> : <Save className="w-3.5 h-3.5 text-amber-300" />}
+              <span>{isSaving ? 'Saving...' : 'Save Branding'}</span>
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
@@ -171,6 +207,7 @@ export const BrandingTab: React.FC<{ showToast: (msg: string) => void }> = ({ sh
                 if (settings) {
                   setSettings({ ...settings, appLogo: url });
                 }
+                autoSaveSettingsField('appLogo', url, 'App Logo');
               }}
             />
 
@@ -184,6 +221,7 @@ export const BrandingTab: React.FC<{ showToast: (msg: string) => void }> = ({ sh
                 if (settings) {
                   setSettings({ ...settings, faviconUrl: url });
                 }
+                autoSaveSettingsField('faviconUrl', url, 'Store Favicon');
               }}
             />
 
@@ -374,6 +412,7 @@ export const BrandingTab: React.FC<{ showToast: (msg: string) => void }> = ({ sh
                   if (settings) {
                     setSettings({ ...settings, heroCardImage: url });
                   }
+                  autoSaveSettingsField('heroCardImage', url, 'Hero Showcase Card Image');
                 }}
               />
 

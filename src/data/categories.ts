@@ -7,7 +7,7 @@ export const initialCategories: Category[] = [
     name: 'Banana Chips',
     tagline: '10 Signature Flavours from Jalgaon Raw Bananas',
     description: 'Crispy wafer-thin banana chips in 10 signature flavours made from fresh Jalgaon raw bananas.',
-    image: 'https://res.cloudinary.com/xbtfj9zf/image/upload/v1786714268/categories/Banana_Chips.png',
+    image: 'https://s3.htknetwork.in/f/1V',
     productCount: 10
   },
   {
@@ -16,7 +16,7 @@ export const initialCategories: Category[] = [
     name: 'Khandeshi Farsaan',
     tagline: 'Authentic Tikhat Shev, Bhadang & Lasun Chivda',
     description: 'Authentic Maharashtrian savoury snacks, Tikhat Shev, Bhadang, and Lasun Chivda.',
-    image: 'https://res.cloudinary.com/xbtfj9zf/image/upload/v1786714310/categories/Farsaan.png',
+    image: 'https://s3.htknetwork.in/f/1W',
     productCount: 8
   },
   {
@@ -25,7 +25,7 @@ export const initialCategories: Category[] = [
     name: 'Kitchen Masalas',
     tagline: 'Stone-Ground Kala Masala & Pure Spice Blends',
     description: 'Handcrafted stone-ground Khandeshi Kala Masala, Goda Masala, and authentic spice blends.',
-    image: 'https://res.cloudinary.com/xbtfj9zf/image/upload/v1786714319/categories/Masalas.png',
+    image: 'https://s3.htknetwork.in/f/1X',
     productCount: 6
   },
   {
@@ -34,7 +34,7 @@ export const initialCategories: Category[] = [
     name: 'Potato Chips',
     tagline: 'Golden Handcrafted Wafers with Artisanal Spices',
     description: 'Crispy handcrafted golden potato wafers seasoned with classic and modern spices.',
-    image: 'https://res.cloudinary.com/xbtfj9zf/image/upload/v1786714329/categories/Potato_Chips.png',
+    image: 'https://s3.htknetwork.in/f/1Y',
     productCount: 6
   },
   {

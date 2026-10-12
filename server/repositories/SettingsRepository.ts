@@ -2,7 +2,6 @@ import { SiteSettings } from '@/types';
 import { initialSiteSettings } from '@/data/settings';
 import { readJson, writeJson } from '../utils/jsonStorage';
 import { getDbPool } from '../database/connection';
-import { addCloudinaryOriginalFlag } from '../utils/cloudinary';
 
 const FILE_NAME = 'settings.json';
 
@@ -107,6 +106,24 @@ export class SettingsRepository {
           if (rowMap['admin_pin'] !== undefined && rowMap['admin_pin'] !== null) {
             result.adminPin = String(rowMap['admin_pin'] || '').trim();
           }
+          if (rowMap['app_logo'] !== undefined && rowMap['app_logo'] !== null) {
+            result.appLogo = String(rowMap['app_logo'] || '').trim();
+          }
+          if (rowMap['favicon_url'] !== undefined && rowMap['favicon_url'] !== null) {
+            result.faviconUrl = String(rowMap['favicon_url'] || '').trim();
+          }
+          if (rowMap['favicon_svg_url'] !== undefined && rowMap['favicon_svg_url'] !== null) {
+            result.faviconSvgUrl = String(rowMap['favicon_svg_url'] || '').trim();
+          }
+          if (rowMap['favicon_ico_url'] !== undefined && rowMap['favicon_ico_url'] !== null) {
+            result.faviconIcoUrl = String(rowMap['favicon_ico_url'] || '').trim();
+          }
+          if (rowMap['apple_touch_icon_url'] !== undefined && rowMap['apple_touch_icon_url'] !== null) {
+            result.appleTouchIconUrl = String(rowMap['apple_touch_icon_url'] || '').trim();
+          }
+          if (rowMap['site_webmanifest_url'] !== undefined && rowMap['site_webmanifest_url'] !== null) {
+            result.siteWebmanifestUrl = String(rowMap['site_webmanifest_url'] || '').trim();
+          }
         }
       } catch (err: any) {
         if (err?.code !== 'ER_NO_SUCH_TABLE' && !err?.message?.includes("doesn't exist")) {
@@ -129,6 +146,39 @@ export class SettingsRepository {
       result.razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
     }
 
+    // Purge any legacy Cloudinary URLs completely to maintain clean production state
+    if (result.appLogo?.includes('cloudinary') || !result.appLogo) {
+      result.appLogo = 'https://s3.htknetwork.in/f/rmjD5kjJ';
+    }
+    if (result.faviconUrl?.includes('cloudinary') || !result.faviconUrl) {
+      result.faviconUrl = 'https://s3.htknetwork.in/f/9gbsxJ9R';
+    }
+    if (result.faviconSvgUrl?.includes('cloudinary') || !result.faviconSvgUrl) {
+      result.faviconSvgUrl = 'https://s3.htknetwork.in/f/qUWTXXBG';
+    }
+    if (result.faviconIcoUrl?.includes('cloudinary') || !result.faviconIcoUrl) {
+      result.faviconIcoUrl = 'https://s3.htknetwork.in/f/vAXnct8m';
+    }
+    if (result.appleTouchIconUrl?.includes('cloudinary') || !result.appleTouchIconUrl) {
+      result.appleTouchIconUrl = 'https://s3.htknetwork.in/f/dar6UW6b';
+    }
+    if (result.siteWebmanifestUrl?.includes('cloudinary') || !result.siteWebmanifestUrl) {
+      result.siteWebmanifestUrl = 'https://s3.htknetwork.in/f/3ZKuPFzR';
+    }
+    if (result.heroCardImage?.includes('cloudinary')) {
+      result.heroCardImage = 'https://s3.htknetwork.in/f/7JMBAEVe';
+    }
+    if (result.defaultUserAvatar?.includes('cloudinary')) {
+      result.defaultUserAvatar = 'https://s3.htknetwork.in/f/p6v4eC6U';
+    }
+    if (result.ourStoryHeroImageUrl?.includes('cloudinary')) {
+      result.ourStoryHeroImageUrl = 'https://s3.htknetwork.in/f/pkukfKyT';
+    }
+    result.storageProvider = 'telecloud';
+    result.cloudinaryCloudName = '';
+    result.cloudinaryApiKey = '';
+    result.cloudinaryApiSecret = '';
+
     settingsMemoryCache = { data: result, timestamp: Date.now() };
     return result;
   }
@@ -148,9 +198,6 @@ export class SettingsRepository {
     if (cleanedSettings.smtpPass === '' && current.smtpPass) {
       cleanedSettings.smtpPass = current.smtpPass;
     }
-    if (cleanedSettings.cloudinaryApiSecret === '' && current.cloudinaryApiSecret) {
-      cleanedSettings.cloudinaryApiSecret = current.cloudinaryApiSecret;
-    }
     if (cleanedSettings.telegramBotToken === '' && current.telegramBotToken) {
       cleanedSettings.telegramBotToken = current.telegramBotToken;
     }
@@ -167,13 +214,12 @@ export class SettingsRepository {
       cleanedSettings.googleMapsApiKey = current.googleMapsApiKey;
     }
 
-    const updated = { ...current, ...cleanedSettings };
+    cleanedSettings.cloudinaryCloudName = '';
+    cleanedSettings.cloudinaryApiKey = '';
+    cleanedSettings.cloudinaryApiSecret = '';
+    cleanedSettings.storageProvider = 'telecloud';
 
-    // Sanitize image URLs
-    if (updated.appLogo) updated.appLogo = addCloudinaryOriginalFlag(updated.appLogo);
-    if (updated.ourStoryHeroImageUrl) updated.ourStoryHeroImageUrl = addCloudinaryOriginalFlag(updated.ourStoryHeroImageUrl);
-    if (updated.faviconIcoUrl) updated.faviconIcoUrl = addCloudinaryOriginalFlag(updated.faviconIcoUrl);
-    if (updated.appleTouchIconUrl) updated.appleTouchIconUrl = addCloudinaryOriginalFlag(updated.appleTouchIconUrl);
+    const updated = { ...current, ...cleanedSettings };
 
     // Save to durable JSON file
     await writeJson(FILE_NAME, updated);
@@ -226,7 +272,13 @@ export class SettingsRepository {
           ['google_maps_api_key', JSON.stringify((updated.googleMapsApiKey || '').trim())],
           ['cookie_secret', JSON.stringify((updated.cookieSecret || '').trim())],
           ['recaptcha_secret_key', JSON.stringify((updated.recaptchaSecretKey || '').trim())],
-          ['admin_pin', JSON.stringify((updated.adminPin || '').trim())]
+          ['admin_pin', JSON.stringify((updated.adminPin || '').trim())],
+          ['app_logo', JSON.stringify((updated.appLogo || '').trim())],
+          ['favicon_url', JSON.stringify((updated.faviconUrl || '').trim())],
+          ['favicon_svg_url', JSON.stringify((updated.faviconSvgUrl || '').trim())],
+          ['favicon_ico_url', JSON.stringify((updated.faviconIcoUrl || '').trim())],
+          ['apple_touch_icon_url', JSON.stringify((updated.appleTouchIconUrl || '').trim())],
+          ['site_webmanifest_url', JSON.stringify((updated.siteWebmanifestUrl || '').trim())]
         ];
 
         for (const [sKey, sVal] of itemsToSave) {

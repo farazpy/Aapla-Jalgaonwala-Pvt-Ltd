@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { getSharp } from './safeSharp';
-import { uploadToCloudinary, isCloudinaryConfiguredAsync } from './cloudinary';
 import { uploadToTeleCloud, isTeleCloudConfiguredAsync } from './telecloud';
 import { SettingsRepository } from '../repositories/SettingsRepository';
 
@@ -246,9 +245,8 @@ export async function saveSingleFaviconFile(targetFilename: string, buffer: Buff
   const stat = fs.statSync(filePath);
   let returnPath = `/favicons/${targetFilename}`;
 
-  // If TeleCloud or Cloudinary is configured, upload and save to DB
+  // If TeleCloud S3 is configured, upload and save to DB
   const hasTeleCloud = await isTeleCloudConfiguredAsync();
-  const hasCloudinary = !hasTeleCloud && await isCloudinaryConfiguredAsync();
 
   if (hasTeleCloud) {
     try {
@@ -264,25 +262,6 @@ export async function saveSingleFaviconFile(targetFilename: string, buffer: Buff
       }
     } catch (err) {
       console.error(`[FaviconManager] TeleCloud upload failed for ${targetFilename}:`, err);
-    }
-  } else if (hasCloudinary) {
-    try {
-      const ext = path.extname(targetFilename).toLowerCase();
-      const resourceType = (ext === '.webmanifest' || ext === '.json') ? 'raw' : 'image';
-      const cldResult = await uploadToCloudinary(fileBuf, targetFilename, {
-        folder: 'favicons',
-        resourceType: resourceType
-      });
-
-      if (cldResult && cldResult.url) {
-        returnPath = cldResult.url;
-        const dbField = getSettingsFieldForFavicon(targetFilename);
-        if (dbField) {
-          await SettingsRepository.update({ [dbField]: cldResult.url });
-        }
-      }
-    } catch (err) {
-      console.error(`[FaviconManager] Cloudinary single upload failed for ${targetFilename}:`, err);
     }
   } else {
     // Save local path to database
@@ -387,24 +366,6 @@ export async function generateAllFaviconsFromMaster(
     } catch (err) {
       console.error('[FaviconManager] TeleCloud uploads failed during multi-generation:', err);
     }
-  } else if (hasCloudinary) {
-    try {
-      console.log('[FaviconManager] Cloudinary is configured, uploading generated assets...');
-      const upload96 = await uploadToCloudinary(png96Buffer, 'favicon-96x96.png', { folder: 'favicons' });
-      cldUrls['favicon-96x96.png'] = upload96.url;
-
-      const uploadApple = await uploadToCloudinary(apple180Buffer, 'apple-touch-icon.png', { folder: 'favicons' });
-      cldUrls['apple-touch-icon.png'] = uploadApple.url;
-
-      const uploadIco = await uploadToCloudinary(icoBuffer, 'favicon.ico', { folder: 'favicons' });
-      cldUrls['favicon.ico'] = uploadIco.url;
-
-      const svgBuffer = Buffer.from(svgContent, 'utf-8');
-      const uploadSvg = await uploadToCloudinary(svgBuffer, 'favicon.svg', { folder: 'favicons' });
-      cldUrls['favicon.svg'] = uploadSvg.url;
-    } catch (err) {
-      console.error('[FaviconManager] Cloudinary uploads failed during multi-generation:', err);
-    }
   }
 
   const png96Url = cldUrls['favicon-96x96.png'] || '/favicons/favicon-96x96.png';
@@ -459,17 +420,6 @@ export async function generateAllFaviconsFromMaster(
       cldUrls['site.webmanifest'] = uploadManifest.url;
     } catch (err) {
       console.error('[FaviconManager] TeleCloud manifest upload failed during generation:', err);
-    }
-  } else if (hasCloudinary) {
-    try {
-      const manifestBuffer = Buffer.from(manifestJson, 'utf-8');
-      const uploadManifest = await uploadToCloudinary(manifestBuffer, 'site.webmanifest', {
-        folder: 'favicons',
-        resourceType: 'raw'
-      });
-      cldUrls['site.webmanifest'] = uploadManifest.url;
-    } catch (err) {
-      console.error('[FaviconManager] Cloudinary manifest upload failed during generation:', err);
     }
   }
 

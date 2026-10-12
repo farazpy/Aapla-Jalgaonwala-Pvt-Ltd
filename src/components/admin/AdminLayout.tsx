@@ -95,7 +95,12 @@ export function AdminLayout({
   // Store Branding
   const [adminSiteLogo, setAdminSiteLogo] = useState<string | null>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('ajw_site_logo') || DEFAULT_HEADER_LOGO;
+      const cached = localStorage.getItem('ajw_site_logo');
+      if (cached && !cached.includes('cloudinary')) {
+        return cached;
+      }
+      localStorage.setItem('ajw_site_logo', DEFAULT_HEADER_LOGO);
+      return DEFAULT_HEADER_LOGO;
     }
     return DEFAULT_HEADER_LOGO;
   });

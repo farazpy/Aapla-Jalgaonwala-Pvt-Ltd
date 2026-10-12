@@ -716,17 +716,17 @@ export const MediaTab: React.FC<{
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 text-[10px] font-black uppercase tracking-wider mb-1">
             <Sparkles className="w-3 h-3 text-amber-600" />
-            <span>Cloudinary Media & Story Showcase</span>
+            <span>HTK S3 Media & Story Showcase</span>
           </div>
           <h2 className="text-xl font-black text-stone-900">
             {activeSubTab === 'gallery'
               ? 'Our Story Photo Gallery & Image Categories'
               : activeSubTab === 'videos'
               ? 'Our Story Video Showcase'
-              : 'Cloudinary Asset Library'}
+              : 'HTK S3 Media Asset Library'}
           </h2>
           <p className="text-xs text-stone-500 font-medium">
-            Manage photos, categorize gallery shots for Our Story, curate videos, and upload assets to Cloudinary.
+            Manage photos, categorize gallery shots for Our Story, curate videos, and manage HTK S3 media assets.
           </p>
         </div>
 
@@ -758,7 +758,7 @@ export const MediaTab: React.FC<{
               }`}
             >
               <FileImage className="w-3.5 h-3.5 text-[#9B111E]" />
-              <span>Cloudinary Storage ({cloudinaryAssets.length})</span>
+              <span>HTK S3 Storage ({cloudinaryAssets.length})</span>
             </button>
           </div>
 

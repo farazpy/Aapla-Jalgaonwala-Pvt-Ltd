@@ -66,7 +66,7 @@ export const CloudinaryUpload: React.FC<CloudinaryUploadProps> = ({
         data.data?.urls ||
         (data.url ? [data.url] : (data.data?.url ? [data.data.url] : []));
 
-      const uploadedUrls: string[] = rawUrls.map(u => applyCloudinaryOriginalFlag(u));
+      const uploadedUrls: string[] = rawUrls.filter(Boolean);
 
       if (data.success && uploadedUrls.length > 0) {
         setSuccess(true);
