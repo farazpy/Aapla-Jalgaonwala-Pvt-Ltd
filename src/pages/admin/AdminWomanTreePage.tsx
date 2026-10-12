@@ -13,26 +13,28 @@ import {
   Edit3, 
   Phone, 
   MessageSquare, 
-  DollarSign, 
-  TrendingUp, 
   Award, 
-  Layers, 
-  UserCheck, 
-  AlertCircle, 
-  CheckCircle2, 
+  TrendingUp, 
+  Sparkles, 
   X, 
-  ArrowRight, 
-  Sparkles,
-  ExternalLink,
-  ShieldCheck,
+  CheckCircle2, 
+  AlertCircle,
+  Plus,
+  Minus,
+  ZoomIn,
+  ZoomOut,
+  Trophy,
+  Crown,
+  UserCheck,
   Building2,
-  Calendar
+  ArrowDownCircle,
+  ArrowUpRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { BusinessPartner } from '@/types';
 
-// Response Rating configuration with icons, colors, and descriptions
+// Response Rating configuration for Light White UI
 export type ResponseRatingType = 'poor' | 'average' | 'good' | 'excellent' | 'outstanding';
 
 interface RatingConfig {
@@ -41,71 +43,57 @@ interface RatingConfig {
   badgeBg: string;
   badgeText: string;
   border: string;
-  dotBg: string;
   emoji: string;
-  desc: string;
 }
 
 const RESPONSE_RATINGS: Record<ResponseRatingType, RatingConfig> = {
   poor: {
     id: 'poor',
     label: 'Poor',
-    badgeBg: 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300',
-    badgeText: 'text-rose-700 dark:text-rose-300',
-    border: 'border-rose-200 dark:border-rose-800/60',
-    dotBg: 'bg-rose-500',
-    emoji: '🔴',
-    desc: 'Low engagement or zero active sales converted'
+    badgeBg: 'bg-rose-50 text-rose-700',
+    badgeText: 'text-rose-700',
+    border: 'border-rose-200',
+    emoji: '🔴'
   },
   average: {
     id: 'average',
     label: 'Average',
-    badgeBg: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-    badgeText: 'text-amber-700 dark:text-amber-300',
-    border: 'border-amber-200 dark:border-amber-800/60',
-    dotBg: 'bg-amber-500',
-    emoji: '🟠',
-    desc: 'Moderate engagement & occasional referral orders'
+    badgeBg: 'bg-amber-50 text-amber-700',
+    badgeText: 'text-amber-700',
+    border: 'border-amber-200',
+    emoji: '🟠'
   },
   good: {
     id: 'good',
     label: 'Good',
-    badgeBg: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300',
-    badgeText: 'text-yellow-800 dark:text-yellow-300',
-    border: 'border-yellow-200 dark:border-yellow-800/60',
-    dotBg: 'bg-yellow-500',
-    emoji: '🟡',
-    desc: 'Active promoter converting consistent customer orders'
+    badgeBg: 'bg-yellow-50 text-yellow-800',
+    badgeText: 'text-yellow-800',
+    border: 'border-yellow-200',
+    emoji: '🟡'
   },
   excellent: {
     id: 'excellent',
     label: 'Excellent',
-    badgeBg: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
-    badgeText: 'text-emerald-700 dark:text-emerald-300',
-    border: 'border-emerald-200 dark:border-emerald-800/60',
-    dotBg: 'bg-emerald-500',
-    emoji: '🟢',
-    desc: 'High performer with active downline network'
+    badgeBg: 'bg-emerald-50 text-emerald-700',
+    badgeText: 'text-emerald-700',
+    border: 'border-emerald-200',
+    emoji: '🟢'
   },
   outstanding: {
     id: 'outstanding',
     label: 'Outstanding',
-    badgeBg: 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300',
-    badgeText: 'text-purple-700 dark:text-purple-300',
-    border: 'border-purple-200 dark:border-purple-800/60',
-    dotBg: 'bg-purple-500',
-    emoji: '💎',
-    desc: 'Top leader, high sales volume & sub-partner network'
+    badgeBg: 'bg-purple-50 text-purple-700',
+    badgeText: 'text-purple-700',
+    border: 'border-purple-200',
+    emoji: '💎'
   }
 };
 
-// Helper to determine or get partner response rating
 function getPartnerResponseRating(partner: BusinessPartner): ResponseRatingType {
   if (partner.responseStatus && RESPONSE_RATINGS[partner.responseStatus as ResponseRatingType]) {
     return partner.responseStatus as ResponseRatingType;
   }
   
-  // Auto-calculate response rating from activity if not explicitly assigned
   const sales = partner.totalSalesAmount || 0;
   const orders = partner.totalOrdersCount || 0;
   const invited = partner.invitedPartnersCount || 0;
@@ -117,7 +105,6 @@ function getPartnerResponseRating(partner: BusinessPartner): ResponseRatingType 
   return 'poor';
 }
 
-// Tree Node Interface
 interface TreeNode {
   partner: BusinessPartner;
   children: TreeNode[];
@@ -133,13 +120,15 @@ export function AdminWomanTreePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters & Views
+  // Filters & Controls (Default: Only Women with Referrals enabled, White Light UI)
   const [searchQuery, setSearchQuery] = useState('');
+  const [onlyWithReferrals, setOnlyWithReferrals] = useState(true);
   const [selectedRatingFilter, setSelectedRatingFilter] = useState<string>('all');
-  const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'tree' | 'columns' | 'table'>('tree');
-  
-  // Collapsed Node IDs map (id -> boolean)
+  const [sortBy, setSortBy] = useState<'invited' | 'sales' | 'name'>('invited');
+  const [zoomLevel, setZoomLevel] = useState<number>(100);
+  const [viewMode, setViewMode] = useState<'diagram' | 'leaderboard' | 'matrix'>('diagram');
+
+  // Collapsed Nodes Map
   const [collapsedNodes, setCollapsedNodes] = useState<Record<string, boolean>>({});
 
   // Re-assign / Edit Partner Modal State
@@ -151,7 +140,7 @@ export function AdminWomanTreePage() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
-  // Detail Slide-over / Modal
+  // Detail Modal
   const [selectedDetailPartner, setSelectedDetailPartner] = useState<BusinessPartner | null>(null);
 
   // Fetch partners
@@ -180,7 +169,6 @@ export function AdminWomanTreePage() {
     fetchPartners();
   }, []);
 
-  // Format currency
   const formatINR = (amount: number = 0) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -190,10 +178,9 @@ export function AdminWomanTreePage() {
   };
 
   // Build Hierarchical Tree Structure
-  const treeData = useMemo(() => {
+  const rawTreeData = useMemo(() => {
     if (!partners || partners.length === 0) return [];
 
-    // Map by partner code (case-insensitive clean code)
     const codeMap = new Map<string, BusinessPartner>();
     partners.forEach(p => {
       if (p.partnerCode) {
@@ -201,7 +188,6 @@ export function AdminWomanTreePage() {
       }
     });
 
-    // Parent to children mapping
     const childrenMap = new Map<string, BusinessPartner[]>();
     const roots: BusinessPartner[] = [];
 
@@ -216,11 +202,13 @@ export function AdminWomanTreePage() {
       }
     });
 
-    // Helper recursive function to construct TreeNode
     const buildNode = (p: BusinessPartner, level: number): TreeNode => {
       const code = (p.partnerCode || '').trim().toUpperCase();
       const rawChildren = childrenMap.get(code) || [];
       const childrenNodes = rawChildren.map(c => buildNode(c, level + 1));
+
+      // Sort children by invited count
+      childrenNodes.sort((a, b) => (b.children.length - a.children.length));
 
       const totalTreeSales = (p.totalSalesAmount || 0) + childrenNodes.reduce((sum, c) => sum + c.totalTreeSales, 0);
       const totalTreeCommission = (p.totalCommissionEarned || 0) + childrenNodes.reduce((sum, c) => sum + c.totalTreeCommission, 0);
@@ -239,71 +227,89 @@ export function AdminWomanTreePage() {
     return roots.map(root => buildNode(root, 1));
   }, [partners]);
 
-  // Overall Network Summary Statistics
+  // Filtered Tree Data: If onlyWithReferrals is true, show roots that have invited women (or have children)
+  const treeData = useMemo(() => {
+    let list = [...rawTreeData];
+
+    if (onlyWithReferrals) {
+      list = list.filter(node => node.children.length > 0);
+    }
+
+    // Sort roots by criteria
+    if (sortBy === 'invited') {
+      list.sort((a, b) => (b.children.length - a.children.length) || (b.totalTreeMembers - a.totalTreeMembers));
+    } else if (sortBy === 'sales') {
+      list.sort((a, b) => (b.totalTreeSales - a.totalTreeSales));
+    } else if (sortBy === 'name') {
+      list.sort((a, b) => (a.partner.fullName || '').localeCompare(b.partner.fullName || ''));
+    }
+
+    return list;
+  }, [rawTreeData, onlyWithReferrals, sortBy]);
+
+  // Top Referrers Leaderboard Ranking (Women who invited the most women)
+  const topInviters = useMemo(() => {
+    const list = partners
+      .map(p => {
+        const code = (p.partnerCode || '').trim().toUpperCase();
+        // Count direct children
+        const directInvitedCount = partners.filter(
+          child => (child.referredByPartnerCode || '').trim().toUpperCase() === code
+        ).length;
+
+        return {
+          partner: p,
+          directInvitedCount,
+          rating: getPartnerResponseRating(p)
+        };
+      })
+      .filter(item => item.directInvitedCount > 0)
+      .sort((a, b) => b.directInvitedCount - a.directInvitedCount || (b.partner.totalSalesAmount || 0) - (a.partner.totalSalesAmount || 0));
+
+    return list;
+  }, [partners]);
+
+  // Network Statistics
   const stats = useMemo(() => {
     const totalCount = partners.length;
-    let rootCount = 0;
-    let referredCount = 0;
+    const activeTreeCount = rawTreeData.filter(r => r.children.length > 0).length;
+    const totalReferrals = partners.filter(p => Boolean(p.referredByPartnerCode)).length;
+
     let totalSales = 0;
     let totalCommission = 0;
-
-    const ratingCounts: Record<ResponseRatingType, number> = {
-      poor: 0,
-      average: 0,
-      good: 0,
-      excellent: 0,
-      outstanding: 0
-    };
 
     partners.forEach(p => {
       totalSales += p.totalSalesAmount || 0;
       totalCommission += p.totalCommissionEarned || 0;
-
-      if (p.referredByPartnerCode) {
-        referredCount++;
-      } else {
-        rootCount++;
-      }
-
-      const rating = getPartnerResponseRating(p);
-      ratingCounts[rating] = (ratingCounts[rating] || 0) + 1;
     });
 
     return {
       totalCount,
-      rootCount,
-      referredCount,
+      activeTreeCount,
+      totalReferrals,
       totalSales,
-      totalCommission,
-      ratingCounts
+      totalCommission
     };
-  }, [partners]);
+  }, [partners, rawTreeData]);
 
-  // Filter & Search Helper
+  // Search Match Filter
   const matchesFilter = (p: BusinessPartner) => {
-    if (selectedStatusFilter !== 'all' && p.status !== selectedStatusFilter) {
-      return false;
-    }
-
-    const rating = getPartnerResponseRating(p);
-    if (selectedRatingFilter !== 'all' && rating !== selectedRatingFilter) {
-      return false;
-    }
+    const r = getPartnerResponseRating(p);
+    if (selectedRatingFilter !== 'all' && r !== selectedRatingFilter) return false;
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      const nameMatch = p.fullName?.toLowerCase().includes(q);
-      const codeMatch = p.partnerCode?.toLowerCase().includes(q);
-      const phoneMatch = p.phone?.toLowerCase().includes(q);
-      const cityMatch = p.city?.toLowerCase().includes(q);
-      const stateMatch = p.state?.toLowerCase().includes(q);
-      return Boolean(nameMatch || codeMatch || phoneMatch || cityMatch || stateMatch);
+      return Boolean(
+        p.fullName?.toLowerCase().includes(q) ||
+        p.partnerCode?.toLowerCase().includes(q) ||
+        p.phone?.toLowerCase().includes(q) ||
+        p.city?.toLowerCase().includes(q)
+      );
     }
 
     return true;
   };
 
-  // Toggle Collapse
   const toggleCollapse = (id: string) => {
     setCollapsedNodes(prev => ({ ...prev, [id]: !prev[id] }));
   };
@@ -311,23 +317,19 @@ export function AdminWomanTreePage() {
   const expandAll = () => setCollapsedNodes({});
   const collapseAll = () => {
     const map: Record<string, boolean> = {};
-    partners.forEach(p => {
-      map[p.id] = true;
-    });
+    partners.forEach(p => { map[p.id] = true; });
     setCollapsedNodes(map);
   };
 
-  // Open Edit Modal
-  const openEditModal = (partner: BusinessPartner) => {
-    setEditingPartner(partner);
-    setParentReferrerCode(partner.referredByPartnerCode || '');
-    setNewResponseStatus(getPartnerResponseRating(partner));
-    setNewCommissionRate(partner.commissionRate || 12);
-    setEditNotes(partner.notes || '');
+  const openEditModal = (p: BusinessPartner) => {
+    setEditingPartner(p);
+    setParentReferrerCode(p.referredByPartnerCode || '');
+    setNewResponseStatus(getPartnerResponseRating(p));
+    setNewCommissionRate(p.commissionRate || 12);
+    setEditNotes(p.notes || '');
     setSaveSuccessMsg(null);
   };
 
-  // Handle Save Edit
   const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPartner) return;
@@ -335,7 +337,6 @@ export function AdminWomanTreePage() {
     setIsSavingEdit(true);
     setSaveSuccessMsg(null);
 
-    // Format updated notes to contain response tag if needed
     let cleanNotes = editNotes.replace(/\[Response:\s*[a-zA-Z]+\]/gi, '').trim();
     if (newResponseStatus) {
       cleanNotes = `[Response: ${newResponseStatus}] ${cleanNotes}`.trim();
@@ -361,9 +362,9 @@ export function AdminWomanTreePage() {
         setTimeout(() => {
           setEditingPartner(null);
           fetchPartners(true);
-        }, 1200);
+        }, 1000);
       } else {
-        alert(json.message || 'Failed to update partner details.');
+        alert(json.message || 'Failed to update partner assignment.');
       }
     } catch (err: any) {
       alert(err.message || 'Error updating partner assignment.');
@@ -372,8 +373,8 @@ export function AdminWomanTreePage() {
     }
   };
 
-  // Recursive Tree Node Renderer
-  const renderTreeNodeCard = (node: TreeNode, depth: number = 0) => {
+  // RECURSIVE VISUAL ORG-CHART NODE COMPONENT (Clean White Light Theme)
+  const VisualDiagramTreeNode: React.FC<{ node: TreeNode; rankIndex?: number }> = ({ node, rankIndex }) => {
     const p = node.partner;
     const isCollapsed = Boolean(collapsedNodes[p.id]);
     const isMatched = matchesFilter(p);
@@ -381,168 +382,157 @@ export function AdminWomanTreePage() {
     const rating = getPartnerResponseRating(p);
     const ratingCfg = RESPONSE_RATINGS[rating];
 
-    // If node and all its children do not match search query, skip rendering in filtered view
-    const childrenMatchSearch = (n: TreeNode): boolean => {
-      if (matchesFilter(n.partner)) return true;
-      return n.children.some(childrenMatchSearch);
-    };
-
-    if (!isMatched && !childrenMatchSearch(node) && (searchQuery || selectedRatingFilter !== 'all' || selectedStatusFilter !== 'all')) {
-      return null;
-    }
+    const isTopInviter = rankIndex === 0;
 
     return (
-      <div key={p.id} className="relative group/node">
-        {/* Node Card Container */}
+      <div className="flex flex-col items-center relative">
+        {/* WOMAN PARTNER NODE CARD */}
         <div 
-          className={`relative z-10 bg-white dark:bg-stone-900 rounded-2xl border ${
-            isMatched 
-              ? 'border-stone-200/90 dark:border-stone-800 shadow-md hover:shadow-xl hover:border-amber-400/80' 
-              : 'border-stone-200/50 dark:border-stone-800/50 opacity-60'
-          } transition-all duration-300 p-4 max-w-xl`}
+          className={`relative z-10 w-72 sm:w-80 bg-white rounded-2xl border ${
+            isTopInviter
+              ? 'border-amber-400 shadow-lg ring-2 ring-amber-300/60'
+              : hasChildren
+              ? 'border-stone-300/90 shadow-md hover:border-amber-400 hover:shadow-xl'
+              : 'border-stone-200 shadow-xs hover:border-stone-400'
+          } ${!isMatched ? 'opacity-40' : ''} transition-all duration-300 p-4 font-sans text-stone-900`}
         >
-          {/* Header Row: Level Badge, Partner Info, Response Status */}
-          <div className="flex flex-wrap items-start justify-between gap-2 border-b border-stone-100 dark:border-stone-800/80 pb-3 mb-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {/* Level Indicator Badge */}
-              <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider shrink-0 ${
-                depth === 0 
-                  ? 'bg-amber-100 text-amber-900 border border-amber-300/80 dark:bg-amber-950/80 dark:text-amber-200 dark:border-amber-700/50' 
-                  : depth === 1 
-                  ? 'bg-blue-100 text-blue-900 border border-blue-300/80 dark:bg-blue-950/80 dark:text-blue-200 dark:border-blue-700/50' 
-                  : 'bg-stone-100 text-stone-700 border border-stone-200 dark:bg-stone-800 dark:text-stone-300'
-              }`}>
-                {depth === 0 ? '👑 Level 1 (Root)' : depth === 1 ? '🌿 Level 2 (Direct)' : `🌿 Level ${depth + 1}`}
-              </span>
-
-              {/* Status Badge */}
-              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
-                p.status === 'active' || p.status === 'approved'
-                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300'
-                  : p.status === 'pending'
-                  ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300'
-                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300'
-              }`}>
-                {p.status || 'Active'}
-              </span>
-            </div>
-
-            {/* Response Rating Pill */}
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold shadow-xs ${ratingCfg.badgeBg} ${ratingCfg.border}`}>
-              <span>{ratingCfg.emoji}</span>
-              <span>{ratingCfg.label}</span>
-            </div>
-          </div>
-
-          {/* Main Info Box */}
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-            {/* Avatar & Partner Details */}
-            <div className="sm:col-span-7 flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-rose-600 text-white font-black text-sm flex items-center justify-center shadow-md shrink-0">
-                {p.fullName ? p.fullName.slice(0, 2).toUpperCase() : 'WB'}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <h4 className="text-sm font-bold text-stone-900 dark:text-white truncate">
-                    {p.fullName || 'Woman Partner'}
-                  </h4>
-                  <span className="font-mono text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 px-1.5 py-0.2 rounded border border-amber-200/60 dark:border-amber-800/40">
-                    {p.partnerCode}
-                  </span>
-                </div>
-                <p className="text-xs text-stone-500 dark:text-stone-400 flex items-center gap-2 mt-0.5">
-                  <span>{p.city || 'Jalgaon'}{p.state ? `, ${p.state}` : ''}</span>
-                  <span>•</span>
-                  <span>{p.phone || 'N/A'}</span>
-                </p>
-                {p.referredByPartnerName && (
-                  <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium mt-1 flex items-center gap-1">
-                    <GitFork className="w-3 h-3 text-amber-600 shrink-0" />
-                    <span>Referred by: <strong className="text-stone-800 dark:text-stone-200">{p.referredByPartnerName}</strong> ({p.referredByPartnerCode})</span>
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Financial Commission & Sales Pill */}
-            <div className="sm:col-span-5 bg-stone-50 dark:bg-stone-950/60 border border-stone-200/80 dark:border-stone-800/80 rounded-xl p-2.5 space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-stone-500 dark:text-stone-400 font-medium">Commission:</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  {formatINR(p.totalCommissionEarned || 0)} ({p.commissionRate || 12}%)
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-stone-500 dark:text-stone-400 font-medium">Direct Sales:</span>
-                <span className="font-bold text-stone-900 dark:text-stone-100">
-                  {formatINR(p.totalSalesAmount || 0)}
-                </span>
-              </div>
-              {hasChildren && (
-                <div className="flex items-center justify-between text-[11px] pt-1 border-t border-stone-200/60 dark:border-stone-800/60">
-                  <span className="text-amber-700 dark:text-amber-400 font-bold">Tree Total:</span>
-                  <span className="font-bold text-amber-700 dark:text-amber-300">
-                    {formatINR(node.totalTreeSales)} ({node.totalTreeMembers} Members)
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Node Footer Actions Bar */}
-          <div className="mt-3 pt-2.5 border-t border-stone-100 dark:border-stone-800/80 flex items-center justify-between flex-wrap gap-2 text-xs">
-            {/* Direct Referrals Counter & Collapse Toggle */}
-            <div>
-              {hasChildren ? (
-                <button
-                  type="button"
-                  onClick={() => toggleCollapse(p.id)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/80 text-amber-900 dark:text-amber-200 font-bold rounded-lg border border-amber-200 dark:border-amber-800/60 transition-colors cursor-pointer"
-                >
-                  {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  <span>{node.children.length} {node.children.length === 1 ? 'Sub-Woman Assigned' : 'Sub-Women Assigned'}</span>
-                </button>
-              ) : (
-                <span className="text-[11px] text-stone-400 font-medium italic">No sub-referrals assigned</span>
-              )}
-            </div>
-
-            {/* Quick Actions */}
+          {/* Top Rank / Crown / Code Row */}
+          <div className="flex items-center justify-between pb-2 mb-2.5 border-b border-stone-100">
             <div className="flex items-center gap-1.5">
-              {p.phone && (
-                <a
-                  href={`https://wa.me/91${p.phone.replace(/\D/g, '').slice(-10)}?text=${encodeURIComponent(`Hello ${p.fullName || ''}, regarding your Women Business Partner account (${p.partnerCode})`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 rounded-lg transition-colors"
-                  title="WhatsApp Partner"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                </a>
+              {isTopInviter ? (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                  <Crown className="w-3 h-3 text-amber-600 fill-amber-500" />
+                  <span>#1 Top Inviter</span>
+                </span>
+              ) : rankIndex !== undefined && rankIndex < 3 ? (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-stone-100 text-stone-800 border border-stone-300">
+                  Top #{rankIndex + 1}
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-stone-100 text-stone-700">
+                  Level {node.level}
+                </span>
               )}
+
+              <span className="font-mono text-[11px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                {p.partnerCode}
+              </span>
+            </div>
+
+            {/* Response Rating Tag */}
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${ratingCfg.badgeBg} ${ratingCfg.border}`}>
+              {ratingCfg.emoji} {ratingCfg.label}
+            </span>
+          </div>
+
+          {/* Woman Profile Info */}
+          <div className="flex items-start gap-3">
+            <div className={`w-11 h-11 rounded-2xl ${isTopInviter ? 'bg-gradient-to-br from-amber-500 to-rose-600' : 'bg-gradient-to-br from-stone-800 to-amber-700'} text-white font-black text-sm flex items-center justify-center shadow-md shrink-0`}>
+              {p.fullName ? p.fullName.slice(0, 2).toUpperCase() : 'WB'}
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h4 className="text-sm font-black text-stone-900 truncate">
+                {p.fullName || 'Woman Partner'}
+              </h4>
+              <p className="text-[11px] text-stone-500 truncate">
+                {p.city || 'Jalgaon'}{p.state ? `, ${p.state}` : ''} • {p.phone || 'N/A'}
+              </p>
+            </div>
+          </div>
+
+          {/* Highlighted Invited Counter Badge */}
+          <div className="mt-3 bg-amber-50/80 border border-amber-200/90 rounded-xl p-2.5 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 font-bold text-amber-900">
+              <Users className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>Invited Women Partners:</span>
+            </div>
+            <span className="px-2.5 py-0.5 bg-amber-600 text-white font-black text-xs rounded-full shadow-xs">
+              {node.children.length} Women
+            </span>
+          </div>
+
+          {/* Financial Metrics */}
+          <div className="mt-2 space-y-1 text-[11px] px-1 pt-1">
+            <div className="flex items-center justify-between text-stone-600">
+              <span>Commission Earned:</span>
+              <span className="font-bold text-emerald-700">{formatINR(p.totalCommissionEarned)} ({p.commissionRate || 12}%)</span>
+            </div>
+            <div className="flex items-center justify-between text-stone-600">
+              <span>Direct Sales:</span>
+              <span className="font-bold text-stone-900">{formatINR(p.totalSalesAmount)}</span>
+            </div>
+            {hasChildren && (
+              <div className="flex items-center justify-between font-bold text-amber-800 pt-1 border-t border-stone-100">
+                <span>Tree Downline Sales:</span>
+                <span>{formatINR(node.totalTreeSales)}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Footer Controls */}
+          <div className="mt-3 pt-2.5 border-t border-stone-100 flex items-center justify-between text-xs">
+            {hasChildren ? (
+              <button
+                type="button"
+                onClick={() => toggleCollapse(p.id)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 text-[11px] font-bold rounded-lg border border-amber-300 transition-colors cursor-pointer"
+              >
+                {isCollapsed ? <Plus className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
+                <span>{isCollapsed ? 'Show' : 'Hide'} {node.children.length} Below</span>
+              </button>
+            ) : (
+              <span className="text-[10px] text-stone-400 italic">No sub-referrals</span>
+            )}
+
+            <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setSelectedDetailPartner(p)}
-                className="px-2 py-1 text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 font-semibold rounded-lg transition-colors cursor-pointer"
+                className="p-1 text-stone-500 hover:text-stone-900 rounded-md transition-colors text-[11px] font-bold cursor-pointer"
               >
-                View Details
+                Profile
               </button>
               <button
                 type="button"
                 onClick={() => openEditModal(p)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#9B111E] hover:bg-[#800d18] text-white font-bold rounded-lg shadow-xs transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#9B111E] hover:bg-[#800d18] text-white text-[11px] font-bold rounded-lg shadow-xs transition-colors cursor-pointer"
               >
-                <Edit3 className="w-3.5 h-3.5" />
-                <span>Re-assign / Edit</span>
+                <Edit3 className="w-3 h-3" />
+                <span>Re-assign</span>
               </button>
             </div>
           </div>
         </div>
 
-        {/* Children Sub-Branches (Tree Branches View) */}
+        {/* DOWNWARD BRANCHING LINES & SUB-WOMEN GRID (CONNECTED DIRECTLY BELOW) */}
         {hasChildren && !isCollapsed && (
-          <div className="pl-6 sm:pl-10 mt-3 space-y-3 relative before:absolute before:left-3 sm:before:left-5 before:top-0 before:bottom-3 before:w-0.5 before:bg-gradient-to-b before:from-amber-400/80 before:to-stone-300 dark:before:to-stone-800">
-            {node.children.map(childNode => renderTreeNodeCard(childNode, depth + 1))}
+          <div className="flex flex-col items-center w-full">
+            {/* Vertical Connector Line Down from Parent Node */}
+            <div className="w-0.5 h-8 bg-amber-500 shrink-0" />
+
+            {/* Horizontal Stem Line Across All Children */}
+            <div className="relative flex justify-center w-full">
+              {node.children.length > 1 && (
+                <div 
+                  className="absolute top-0 left-1/2 -translate-x-1/2 h-0.5 bg-amber-500"
+                  style={{
+                    width: `calc(100% - ${100 / node.children.length}%)`
+                  }}
+                />
+              )}
+
+              {/* Children Row directly underneath */}
+              <div className="flex flex-row justify-center gap-6 sm:gap-10 w-full pt-8">
+                {node.children.map(childNode => (
+                  <div key={childNode.partner.id} className="relative flex flex-col items-center">
+                    {/* Vertical Connector Line down to top of Child Node */}
+                    <div className="absolute -top-8 w-0.5 h-8 bg-amber-500" />
+                    <VisualDiagramTreeNode node={childNode} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -551,82 +541,115 @@ export function AdminWomanTreePage() {
 
   return (
     <AdminLayout pageTitle="Woman Tree Network" breadcrumbs={[{ label: 'Women Partners', href: '/admin/partners' }, { label: 'Woman Tree' }]}>
-      <div className="space-y-6 pb-12 font-sans antialiased text-stone-900 dark:text-stone-100">
+      <div className="space-y-6 pb-12 font-sans text-stone-900 antialiased bg-stone-50/50 p-2 sm:p-4 rounded-3xl">
         
-        {/* Top Header Banner */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-stone-900 via-amber-950 to-stone-900 text-white p-6 sm:p-8 shadow-xl border border-amber-500/20">
-          <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-500/20 via-transparent to-transparent pointer-events-none" />
-          <div className="relative z-10 space-y-3 max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/30 text-amber-300 text-xs font-bold uppercase tracking-wider">
-              <GitFork className="w-3.5 h-3.5 text-amber-400" />
-              <span>Women Partner Tree Diagram & Response Matrix</span>
+        {/* WHITE LIGHT HEADER BANNER */}
+        <div className="bg-white border border-stone-200/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold uppercase tracking-wider">
+                <Crown className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
+                <span>Woman Tree & Top Referrer Leaderboard</span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-stone-900 tracking-tight">
+                Woman Network Referral Tree
+              </h1>
+              <p className="text-xs sm:text-sm text-stone-600 leading-relaxed">
+                Filter and view women who invited other women partners. See top inviters ranked by referral count, track downline sales, and re-assign parent referrers.
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Woman Tree & Referral Network Hierarchy
-            </h1>
-            <p className="text-stone-300 text-xs sm:text-sm leading-relaxed">
-              Visualize complete hierarchical branches of which woman is assigned to whom, total sales & commission earnings, direct and sub-referral downlines, and assign engagement response ratings (Poor, Average, Good, Excellent, Outstanding).
-            </p>
-          </div>
-        </div>
 
-        {/* Network Metrics Stats Summary Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 text-xs font-bold">
-              <span>Total Network Women</span>
-              <Users className="w-4 h-4 text-amber-600" />
-            </div>
-            <p className="text-2xl font-black text-stone-900 dark:text-white">{stats.totalCount}</p>
-            <p className="text-[11px] text-stone-500">{stats.rootCount} Top Roots • {stats.referredCount} Sub-Referred</p>
-          </div>
-
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 text-xs font-bold">
-              <span>Tree Sales Generated</span>
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-black text-stone-900 dark:text-white">{formatINR(stats.totalSales)}</p>
-            <p className="text-[11px] text-emerald-600 font-bold">Across all referral branches</p>
-          </div>
-
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 shadow-sm space-y-1">
-            <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 text-xs font-bold">
-              <span>Tree Commissions Earned</span>
-              <Award className="w-4 h-4 text-amber-500" />
-            </div>
-            <p className="text-2xl font-black text-amber-600 dark:text-amber-400">{formatINR(stats.totalCommission)}</p>
-            <p className="text-[11px] text-amber-700 dark:text-amber-300 font-medium">12% direct referral share</p>
-          </div>
-
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 shadow-sm space-y-1 col-span-2 sm:col-span-1 lg:col-span-2">
-            <div className="flex items-center justify-between text-stone-500 dark:text-stone-400 text-xs font-bold">
-              <span>Response Performance Breakdown</span>
-              <Sparkles className="w-4 h-4 text-purple-500" />
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap pt-1">
-              <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300">
-                🔴 Poor ({stats.ratingCounts.poor})
-              </span>
-              <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300">
-                🟠 Avg ({stats.ratingCounts.average})
-              </span>
-              <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-yellow-100 text-yellow-800 dark:bg-yellow-950/80 dark:text-yellow-300">
-                🟡 Good ({stats.ratingCounts.good})
-              </span>
-              <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300">
-                🟢 Exc ({stats.ratingCounts.excellent})
-              </span>
-              <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-purple-100 text-purple-800 dark:bg-purple-950/80 dark:text-purple-300">
-                💎 Top ({stats.ratingCounts.outstanding})
-              </span>
+            {/* Quick Stats Pills */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 text-center min-w-[120px]">
+                <span className="text-[10px] font-bold uppercase text-amber-800 block">Active Network Trees</span>
+                <span className="text-xl font-black text-amber-900">{stats.activeTreeCount} Trees</span>
+              </div>
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3.5 text-center min-w-[120px]">
+                <span className="text-[10px] font-bold uppercase text-emerald-800 block">Total Tree Sales</span>
+                <span className="text-xl font-black text-emerald-900">{formatINR(stats.totalSales)}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Filter, Search & View Controls Bar */}
-        <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 shadow-sm space-y-4">
+        {/* TOP REFERRER LEADERBOARD SHOWCASE (MAIN PURPOSE: SEE WHICH WOMAN INVITED MOST WOMEN) */}
+        {topInviters.length > 0 && (
+          <div className="bg-white border border-stone-200/90 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <div>
+                <h2 className="text-base font-black text-stone-900 flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-amber-500 fill-amber-400" />
+                  <span>Top Women Partners Leaderboard (Most Invited)</span>
+                </h2>
+                <p className="text-xs text-stone-500">Ranked by highest number of invited women partners</p>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold border border-amber-300">
+                {topInviters.length} Active Referrers
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {topInviters.slice(0, 4).map((item, index) => {
+                const ratingCfg = RESPONSE_RATINGS[item.rating];
+                return (
+                  <div 
+                    key={item.partner.id}
+                    className={`relative bg-stone-50/80 border ${
+                      index === 0 
+                        ? 'border-amber-400 bg-gradient-to-b from-amber-50/60 to-white shadow-md' 
+                        : 'border-stone-200/80 hover:border-amber-300'
+                    } rounded-2xl p-4 space-y-3 transition-all`}
+                  >
+                    {/* Rank Badge */}
+                    <div className="flex items-center justify-between">
+                      <span className={`w-7 h-7 rounded-xl font-black text-xs flex items-center justify-center shadow-xs ${
+                        index === 0 
+                          ? 'bg-amber-500 text-white' 
+                          : index === 1 
+                          ? 'bg-stone-300 text-stone-800' 
+                          : index === 2 
+                          ? 'bg-amber-700 text-white' 
+                          : 'bg-stone-200 text-stone-700'
+                      }`}>
+                        #{index + 1}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${ratingCfg.badgeBg} ${ratingCfg.border}`}>
+                        {ratingCfg.emoji} {ratingCfg.label}
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-black text-stone-900 truncate">
+                        {item.partner.fullName}
+                      </h4>
+                      <p className="font-mono text-xs font-bold text-amber-700">
+                        {item.partner.partnerCode} • {item.partner.city || 'Jalgaon'}
+                      </p>
+                    </div>
+
+                    <div className="bg-white border border-stone-200/80 rounded-xl p-2.5 flex items-center justify-between text-xs">
+                      <span className="text-stone-500 font-bold">Women Invited:</span>
+                      <strong className="text-amber-800 font-black text-sm bg-amber-100 px-2 py-0.5 rounded-md">
+                        {item.directInvitedCount} Women
+                      </strong>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-stone-600">
+                      <span>Total Sales:</span>
+                      <strong className="text-emerald-700">{formatINR(item.partner.totalSalesAmount)}</strong>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* SEARCH & FILTER CONTROLS BAR (WHITE LIGHT UI) */}
+        <div className="bg-white border border-stone-200 rounded-2xl p-4 shadow-sm space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
+            
             {/* Search Input */}
             <div className="relative min-w-[240px] flex-1">
               <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -635,28 +658,39 @@ export function AdminWomanTreePage() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search woman by name, code (e.g. WBP-PRIYA), phone, city..."
-                className="w-full pl-10 pr-4 py-2 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                className="w-full pl-10 pr-4 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/50"
               />
               {searchQuery && (
-                <button 
-                  type="button" 
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
-                >
+                <button type="button" onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400">
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Filter Dropdowns */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Filter Options */}
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              
+              {/* Filter Toggle: Only Women with Referrals vs All Partners */}
+              <button
+                type="button"
+                onClick={() => setOnlyWithReferrals(!onlyWithReferrals)}
+                className={`px-3 py-2 rounded-xl font-bold border transition-colors cursor-pointer flex items-center gap-1.5 ${
+                  onlyWithReferrals
+                    ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-xs'
+                    : 'bg-stone-100 text-stone-700 border-stone-200'
+                }`}
+              >
+                <GitFork className="w-3.5 h-3.5 text-amber-600" />
+                <span>{onlyWithReferrals ? 'Showing: Only Women with Referrals' : 'Showing: All Partners'}</span>
+              </button>
+
               {/* Response Rating Filter */}
               <select
                 value={selectedRatingFilter}
                 onChange={e => setSelectedRatingFilter(e.target.value)}
-                className="px-3 py-2 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
+                className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
               >
-                <option value="all">All Responses (Poor/Good/Avg)</option>
+                <option value="all">All Response Ratings</option>
                 <option value="poor">🔴 Poor Response</option>
                 <option value="average">🟠 Average Response</option>
                 <option value="good">🟡 Good Response</option>
@@ -664,275 +698,164 @@ export function AdminWomanTreePage() {
                 <option value="outstanding">💎 Outstanding Response</option>
               </select>
 
-              {/* Status Filter */}
+              {/* Sort By Criteria */}
               <select
-                value={selectedStatusFilter}
-                onChange={e => setSelectedStatusFilter(e.target.value)}
-                className="px-3 py-2 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as any)}
+                className="px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
               >
-                <option value="all">All Partner Statuses</option>
-                <option value="active">Active</option>
-                <option value="approved">Approved</option>
-                <option value="pending">Pending</option>
+                <option value="invited">Sort: Most Invited Women First</option>
+                <option value="sales">Sort: Highest Tree Sales</option>
+                <option value="name">Sort: Partner Name A-Z</option>
               </select>
 
               {/* View Mode Toggle */}
-              <div className="flex items-center bg-stone-100 dark:bg-stone-800 p-1 rounded-xl border border-stone-200 dark:border-stone-700">
+              <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200">
                 <button
                   type="button"
-                  onClick={() => setViewMode('tree')}
+                  onClick={() => setViewMode('diagram')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'tree' ? 'bg-white dark:bg-stone-900 text-amber-700 dark:text-amber-300 shadow-xs' : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                    viewMode === 'diagram' ? 'bg-white text-amber-900 shadow-xs' : 'text-stone-600'
                   }`}
                 >
-                  Branch Tree
+                  Tree Diagram
                 </button>
                 <button
                   type="button"
-                  onClick={() => setViewMode('columns')}
+                  onClick={() => setViewMode('leaderboard')}
                   className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'columns' ? 'bg-white dark:bg-stone-900 text-amber-700 dark:text-amber-300 shadow-xs' : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
+                    viewMode === 'leaderboard' ? 'bg-white text-amber-900 shadow-xs' : 'text-stone-600'
                   }`}
                 >
-                  Levels
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewMode('table')}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    viewMode === 'table' ? 'bg-white dark:bg-stone-900 text-amber-700 dark:text-amber-300 shadow-xs' : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'
-                  }`}
-                >
-                  Table
+                  Leaderboard
                 </button>
               </div>
 
-              {/* Action buttons */}
-              <button
-                type="button"
-                onClick={expandAll}
-                className="p-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl transition-colors cursor-pointer"
-                title="Expand All Nodes"
-              >
+              {/* Zoom Controls */}
+              {viewMode === 'diagram' && (
+                <div className="flex items-center bg-stone-100 p-1 rounded-xl border border-stone-200">
+                  <button type="button" onClick={() => setZoomLevel(prev => Math.max(50, prev - 10))} className="p-1 hover:bg-stone-200 rounded-lg">
+                    <ZoomOut className="w-4 h-4 text-stone-700" />
+                  </button>
+                  <span className="text-[11px] font-bold px-1.5 min-w-[36px] text-center">{zoomLevel}%</span>
+                  <button type="button" onClick={() => setZoomLevel(prev => Math.min(150, prev + 10))} className="p-1 hover:bg-stone-200 rounded-lg">
+                    <ZoomIn className="w-4 h-4 text-stone-700" />
+                  </button>
+                </div>
+              )}
+
+              <button type="button" onClick={expandAll} className="p-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl" title="Expand All">
                 <Maximize2 className="w-4 h-4" />
               </button>
-              <button
-                type="button"
-                onClick={collapseAll}
-                className="p-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl transition-colors cursor-pointer"
-                title="Collapse All Nodes"
-              >
+              <button type="button" onClick={collapseAll} className="p-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl" title="Collapse All">
                 <Minimize2 className="w-4 h-4" />
               </button>
-              <button
-                type="button"
-                onClick={() => fetchPartners(true)}
-                disabled={isRefreshing}
-                className="p-2 bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
-                title="Refresh Tree Network"
-              >
+              <button type="button" onClick={() => fetchPartners(true)} disabled={isRefreshing} className="p-2 bg-stone-100 text-stone-700 rounded-xl disabled:opacity-50" title="Refresh">
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Loading / Error States */}
+        {/* MAIN TREE DISPLAY CANVAS (CLEAN WHITE LIGHT UI) */}
         {isLoading ? (
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-12 text-center space-y-3">
+          <div className="bg-white border border-stone-200 rounded-3xl p-12 text-center space-y-3 shadow-xs">
             <div className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-sm font-bold text-stone-700 dark:text-stone-300">Loading Woman Partner Tree Network...</p>
+            <p className="text-sm font-bold text-stone-700">Loading Woman Referral Tree Network...</p>
           </div>
         ) : error ? (
-          <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/80 rounded-2xl p-6 text-center space-y-2">
+          <div className="bg-rose-50 border border-rose-200 rounded-3xl p-6 text-center space-y-2">
             <AlertCircle className="w-8 h-8 text-rose-500 mx-auto" />
-            <p className="text-sm font-bold text-rose-800 dark:text-rose-200">{error}</p>
-            <button
-              type="button"
-              onClick={() => fetchPartners()}
-              className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl transition-colors cursor-pointer"
-            >
-              Retry
-            </button>
+            <p className="text-sm font-bold text-rose-800">{error}</p>
           </div>
         ) : treeData.length === 0 ? (
-          <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-12 text-center space-y-3">
-            <Users className="w-12 h-12 text-stone-300 dark:text-stone-600 mx-auto" />
-            <h3 className="text-base font-bold text-stone-800 dark:text-stone-200">No Women Partners Found</h3>
+          <div className="bg-white border border-stone-200 rounded-3xl p-12 text-center space-y-3 shadow-xs">
+            <Users className="w-12 h-12 text-stone-300 mx-auto" />
+            <h3 className="text-base font-bold text-stone-800">No Referral Network Trees Found</h3>
             <p className="text-xs text-stone-500 max-w-md mx-auto">
-              No registered women business partners match your filter criteria or search query.
+              {onlyWithReferrals 
+                ? 'No women partners currently have sub-referrals assigned. Click "Showing: All Partners" to view standalone partners or re-assign referrers.' 
+                : 'No partners match your current filter criteria.'}
             </p>
+            {onlyWithReferrals && (
+              <button
+                type="button"
+                onClick={() => setOnlyWithReferrals(false)}
+                className="px-4 py-2 bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-amber-700 transition-colors cursor-pointer"
+              >
+                Show All Partners
+              </button>
+            )}
           </div>
         ) : (
-          /* MAIN TREE CONTENT DISPLAY */
-          <div className="space-y-6">
-            {/* VIEW MODE 1: BRANCH TREE */}
-            {viewMode === 'tree' && (
-              <div className="space-y-6">
-                {treeData.map(rootNode => renderTreeNodeCard(rootNode, 0))}
-              </div>
-            )}
-
-            {/* VIEW MODE 2: GENERATION COLUMNS */}
-            {viewMode === 'columns' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Column 1: Root Women */}
-                <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 space-y-4">
-                  <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3">
-                    <h3 className="text-sm font-black text-amber-700 dark:text-amber-400 flex items-center gap-2">
-                      <CrownIcon className="w-4 h-4" />
-                      <span>Level 1 Root Women ({treeData.length})</span>
-                    </h3>
-                  </div>
-                  <div className="space-y-3">
-                    {treeData.map(node => {
-                      const p = node.partner;
-                      const ratingCfg = RESPONSE_RATINGS[getPartnerResponseRating(p)];
-                      return (
-                        <div key={p.id} className="bg-stone-50 dark:bg-stone-950 p-3 rounded-xl border border-stone-200/70 dark:border-stone-800 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-stone-900 dark:text-white">{p.fullName}</span>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${ratingCfg.badgeBg}`}>{ratingCfg.emoji} {ratingCfg.label}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-[11px] text-stone-500">
-                            <span>{p.partnerCode}</span>
-                            <span className="font-bold text-emerald-600">{formatINR(p.totalCommissionEarned)}</span>
-                          </div>
-                          {node.children.length > 0 && (
-                            <div className="text-[10px] font-bold text-amber-600 pt-1 border-t border-stone-200/60 dark:border-stone-800">
-                              ↳ {node.children.length} Sub-Referrals
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Column 2: Direct Sub-Referrals */}
-                <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 space-y-4">
-                  <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3">
-                    <h3 className="text-sm font-black text-blue-700 dark:text-blue-400 flex items-center gap-2">
-                      <GitFork className="w-4 h-4" />
-                      <span>Level 2 Direct Sub-Referrals</span>
-                    </h3>
-                  </div>
-                  <div className="space-y-3">
-                    {treeData.flatMap(r => r.children).map(node => {
-                      const p = node.partner;
-                      const ratingCfg = RESPONSE_RATINGS[getPartnerResponseRating(p)];
-                      return (
-                        <div key={p.id} className="bg-stone-50 dark:bg-stone-950 p-3 rounded-xl border border-stone-200/70 dark:border-stone-800 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-stone-900 dark:text-white">{p.fullName}</span>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${ratingCfg.badgeBg}`}>{ratingCfg.emoji} {ratingCfg.label}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-[11px] text-stone-500">
-                            <span>Referred by: {p.referredByPartnerName || p.referredByPartnerCode}</span>
-                            <span className="font-bold text-emerald-600">{formatINR(p.totalCommissionEarned)}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Column 3: Multi-Level Downlines */}
-                <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl p-4 space-y-4">
-                  <div className="flex items-center justify-between border-b border-stone-100 dark:border-stone-800 pb-3">
-                    <h3 className="text-sm font-black text-purple-700 dark:text-purple-400 flex items-center gap-2">
-                      <Network className="w-4 h-4" />
-                      <span>Level 3+ Deep Branches</span>
-                    </h3>
-                  </div>
-                  <div className="space-y-3">
-                    {treeData.flatMap(r => r.children.flatMap(c => c.children)).map(node => {
-                      const p = node.partner;
-                      const ratingCfg = RESPONSE_RATINGS[getPartnerResponseRating(p)];
-                      return (
-                        <div key={p.id} className="bg-stone-50 dark:bg-stone-950 p-3 rounded-xl border border-stone-200/70 dark:border-stone-800 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-stone-900 dark:text-white">{p.fullName}</span>
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${ratingCfg.badgeBg}`}>{ratingCfg.emoji} {ratingCfg.label}</span>
-                          </div>
-                          <div className="flex items-center justify-between text-[11px] text-stone-500">
-                            <span>{p.partnerCode}</span>
-                            <span className="font-bold text-emerald-600">{formatINR(p.totalCommissionEarned)}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+          <div className="space-y-8">
+            
+            {/* MODE 1: VISUAL TREE DIAGRAM (WHITE CANVAS WITH GOLD BRANCH STEMS) */}
+            {viewMode === 'diagram' && (
+              <div className="bg-white border border-stone-200/90 rounded-3xl p-6 sm:p-10 overflow-x-auto shadow-sm">
+                <div 
+                  className="min-w-max flex flex-col items-center gap-16 transition-transform duration-200 origin-top"
+                  style={{ transform: `scale(${zoomLevel / 100})` }}
+                >
+                  {treeData.map((rootNode, rankIdx) => (
+                    <VisualDiagramTreeNode key={rootNode.partner.id} node={rootNode} rankIndex={rankIdx} />
+                  ))}
                 </div>
               </div>
             )}
 
-            {/* VIEW MODE 3: MATRIX TABLE */}
-            {viewMode === 'table' && (
-              <div className="bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 rounded-2xl overflow-hidden shadow-sm">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-stone-50 dark:bg-stone-950 text-stone-500 dark:text-stone-400 font-bold uppercase tracking-wider border-b border-stone-200 dark:border-stone-800">
-                      <tr>
-                        <th className="p-3.5">Woman Partner & Code</th>
-                        <th className="p-3.5">Assigned Referrer</th>
-                        <th className="p-3.5">Response Rating</th>
-                        <th className="p-3.5">Commission Rate</th>
-                        <th className="p-3.5">Total Sales</th>
-                        <th className="p-3.5">Total Commission</th>
-                        <th className="p-3.5">City / State</th>
-                        <th className="p-3.5 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-stone-100 dark:divide-stone-800">
-                      {partners.filter(matchesFilter).map(p => {
-                        const ratingCfg = RESPONSE_RATINGS[getPartnerResponseRating(p)];
-                        return (
-                          <tr key={p.id} className="hover:bg-stone-50/80 dark:hover:bg-stone-800/40 transition-colors">
-                            <td className="p-3.5 font-bold text-stone-900 dark:text-white">
-                              <div>{p.fullName}</div>
-                              <div className="font-mono text-[10px] text-amber-600">{p.partnerCode}</div>
-                            </td>
-                            <td className="p-3.5 text-stone-600 dark:text-stone-300 font-medium">
-                              {p.referredByPartnerName ? (
-                                <div>
-                                  <span className="font-semibold text-stone-900 dark:text-white">{p.referredByPartnerName}</span>
-                                  <div className="text-[10px] text-stone-400">{p.referredByPartnerCode}</div>
-                                </div>
-                              ) : (
-                                <span className="text-stone-400 italic">None (Root)</span>
-                              )}
-                            </td>
-                            <td className="p-3.5">
-                              <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${ratingCfg.badgeBg}`}>
-                                {ratingCfg.emoji} {ratingCfg.label}
-                              </span>
-                            </td>
-                            <td className="p-3.5 font-bold text-amber-600">{p.commissionRate || 12}%</td>
-                            <td className="p-3.5 font-bold text-stone-900 dark:text-white">{formatINR(p.totalSalesAmount)}</td>
-                            <td className="p-3.5 font-bold text-emerald-600">{formatINR(p.totalCommissionEarned)}</td>
-                            <td className="p-3.5 text-stone-500">{p.city || 'Jalgaon'}</td>
-                            <td className="p-3.5 text-right">
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(p)}
-                                className="px-2.5 py-1 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 font-bold rounded-lg transition-colors cursor-pointer"
-                              >
-                                Edit / Re-assign
-                              </button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+            {/* MODE 2: LEADERBOARD DETAILED LIST */}
+            {viewMode === 'leaderboard' && (
+              <div className="bg-white border border-stone-200 rounded-3xl overflow-hidden shadow-sm">
+                <div className="p-4 border-b border-stone-100 bg-stone-50 flex items-center justify-between font-bold text-xs text-stone-700">
+                  <span>Women Partners Ranked by Direct Referrals</span>
+                  <span>{topInviters.length} Active Inviters</span>
+                </div>
+                <div className="divide-y divide-stone-100">
+                  {topInviters.map((item, idx) => {
+                    const ratingCfg = RESPONSE_RATINGS[item.rating];
+                    return (
+                      <div key={item.partner.id} className="p-4 flex items-center justify-between gap-4 text-xs hover:bg-stone-50/80 transition-colors">
+                        <div className="flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-xl bg-amber-100 text-amber-900 font-black text-xs flex items-center justify-center shrink-0 border border-amber-300">
+                            #{idx + 1}
+                          </span>
+                          <div>
+                            <h4 className="font-bold text-stone-900 text-sm">{item.partner.fullName}</h4>
+                            <p className="text-stone-500">{item.partner.partnerCode} • {item.partner.city || 'Jalgaon'}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <span className="text-stone-500 block text-[10px]">Direct Referrals</span>
+                            <strong className="text-amber-800 font-black text-sm bg-amber-50 px-2 py-0.5 rounded border border-amber-200">{item.directInvitedCount} Women</strong>
+                          </div>
+                          <div className="text-right">
+                            <span className="text-stone-500 block text-[10px]">Direct Sales</span>
+                            <strong className="text-stone-900">{formatINR(item.partner.totalSalesAmount)}</strong>
+                          </div>
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-bold border ${ratingCfg.badgeBg} ${ratingCfg.border}`}>
+                            {ratingCfg.emoji} {ratingCfg.label}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(item.partner)}
+                            className="px-3 py-1.5 bg-[#9B111E] text-white font-bold rounded-xl shadow-xs cursor-pointer"
+                          >
+                            Re-assign
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* MODAL: EDIT WOMAN & ASSIGN REFERRER / RESPONSE RATING */}
+        {/* MODAL: RE-ASSIGN WOMAN & EDIT RESPONSE RATING */}
         <AnimatePresence>
           {editingPartner && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
@@ -940,46 +863,40 @@ export function AdminWomanTreePage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5"
+                className="bg-white border border-stone-200 rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-5"
               >
-                {/* Modal Header */}
-                <div className="flex items-start justify-between border-b border-stone-100 dark:border-stone-800 pb-4">
+                <div className="flex items-start justify-between border-b border-stone-100 pb-3">
                   <div>
-                    <h3 className="text-base font-black text-stone-900 dark:text-white">
-                      Re-assign & Edit Woman Partner
+                    <h3 className="text-base font-black text-stone-900">
+                      Re-assign Woman & Response Rating
                     </h3>
-                    <p className="text-xs text-stone-500 mt-0.5">
-                      Editing <strong className="text-stone-800 dark:text-stone-200">{editingPartner.fullName}</strong> ({editingPartner.partnerCode})
+                    <p className="text-xs text-stone-500">
+                      Editing <strong className="text-stone-800">{editingPartner.fullName}</strong> ({editingPartner.partnerCode})
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setEditingPartner(null)}
-                    className="p-1 text-stone-400 hover:text-stone-600 rounded-lg cursor-pointer"
-                  >
+                  <button type="button" onClick={() => setEditingPartner(null)} className="p-1 text-stone-400">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 {saveSuccessMsg && (
-                  <div className="bg-emerald-50 text-emerald-800 p-3 rounded-xl text-xs font-bold border border-emerald-200 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div className="bg-emerald-50 text-emerald-800 p-3 rounded-xl text-xs font-bold flex items-center gap-2 border border-emerald-200">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>{saveSuccessMsg}</span>
                   </div>
                 )}
 
                 <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-                  {/* Field 1: Assigned Parent Referrer Woman */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-stone-800 dark:text-stone-200 block">
+                    <label className="font-bold text-stone-800 block">
                       Assign Referred By (Parent Woman Partner)
                     </label>
                     <select
                       value={parentReferrerCode}
                       onChange={e => setParentReferrerCode(e.target.value)}
-                      className="w-full px-3 py-2.5 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl font-bold text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
+                      className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-900 focus:outline-none cursor-pointer"
                     >
-                      <option value="">-- None (Independent Top Level Root) --</option>
+                      <option value="">-- None (Independent Root) --</option>
                       {partners
                         .filter(p => p.id !== editingPartner.id)
                         .map(p => (
@@ -988,14 +905,10 @@ export function AdminWomanTreePage() {
                           </option>
                         ))}
                     </select>
-                    <p className="text-[11px] text-stone-500">
-                      Woman A will be assigned under this parent partner (Woman B) in the tree network.
-                    </p>
                   </div>
 
-                  {/* Field 2: Response / Engagement Rating */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-stone-800 dark:text-stone-200 block">
+                    <label className="font-bold text-stone-800 block">
                       Engagement & Response Rating
                     </label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -1007,66 +920,38 @@ export function AdminWomanTreePage() {
                             type="button"
                             key={key}
                             onClick={() => setNewResponseStatus(key)}
-                            className={`p-2 rounded-xl border text-left flex items-center gap-1.5 transition-all cursor-pointer ${
+                            className={`p-2 rounded-xl border text-left flex items-center gap-1.5 cursor-pointer ${
                               isSelected
                                 ? `${r.badgeBg} ${r.border} ring-2 ring-amber-500/50 font-black`
-                                : 'bg-stone-50 dark:bg-stone-950 border-stone-200 dark:border-stone-800 text-stone-700 dark:text-stone-300 font-medium'
+                                : 'bg-stone-50 text-stone-700'
                             }`}
                           >
-                            <span className="text-base">{r.emoji}</span>
-                            <div>
-                              <div className="text-xs">{r.label}</div>
-                            </div>
+                            <span>{r.emoji}</span>
+                            <span className="text-xs">{r.label}</span>
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
-                  {/* Field 3: Commission Rate */}
                   <div className="space-y-1.5">
-                    <label className="font-bold text-stone-800 dark:text-stone-200 block">
-                      Direct Commission Rate (%)
+                    <label className="font-bold text-stone-800 block">
+                      Commission Rate (%)
                     </label>
                     <input
                       type="number"
                       step="0.5"
-                      min="1"
-                      max="50"
                       value={newCommissionRate}
                       onChange={e => setNewCommissionRate(Number(e.target.value))}
-                      className="w-full px-3 py-2 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl font-bold text-stone-900 dark:text-white"
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl font-bold text-stone-900"
                     />
                   </div>
 
-                  {/* Field 4: Internal Notes */}
-                  <div className="space-y-1.5">
-                    <label className="font-bold text-stone-800 dark:text-stone-200 block">
-                      Admin Notes & Relationship Remarks
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={editNotes}
-                      onChange={e => setEditNotes(e.target.value)}
-                      placeholder="Add custom notes or partner response remarks..."
-                      className="w-full p-2.5 bg-stone-50 dark:bg-stone-950 border border-stone-200 dark:border-stone-800 rounded-xl font-medium text-stone-900 dark:text-white"
-                    />
-                  </div>
-
-                  {/* Submit buttons */}
-                  <div className="pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-end gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditingPartner(null)}
-                      className="px-4 py-2 bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-300 font-bold rounded-xl transition-colors cursor-pointer"
-                    >
+                  <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-2">
+                    <button type="button" onClick={() => setEditingPartner(null)} className="px-4 py-2 bg-stone-100 text-stone-700 font-bold rounded-xl cursor-pointer">
                       Cancel
                     </button>
-                    <button
-                      type="submit"
-                      disabled={isSavingEdit}
-                      className="px-5 py-2 bg-[#9B111E] hover:bg-[#800d18] text-white font-bold rounded-xl shadow-md transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
-                    >
+                    <button type="submit" disabled={isSavingEdit} className="px-5 py-2 bg-[#9B111E] hover:bg-[#800d18] text-white font-bold rounded-xl shadow-md transition-colors cursor-pointer flex items-center gap-1.5">
                       {isSavingEdit && <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                       <span>Save Tree Assignment</span>
                     </button>
@@ -1077,7 +962,7 @@ export function AdminWomanTreePage() {
           )}
         </AnimatePresence>
 
-        {/* SLIDE-OVER DETAIL MODAL */}
+        {/* DETAIL PROFILE MODAL */}
         <AnimatePresence>
           {selectedDetailPartner && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
@@ -1085,63 +970,25 @@ export function AdminWomanTreePage() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-3xl p-6 max-w-xl w-full shadow-2xl space-y-5"
+                className="bg-white border border-stone-200 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4"
               >
-                <div className="flex items-start justify-between border-b border-stone-100 dark:border-stone-800 pb-3">
+                <div className="flex items-start justify-between border-b border-stone-100 pb-3">
                   <div>
-                    <h3 className="text-base font-black text-stone-900 dark:text-white">
-                      {selectedDetailPartner.fullName}
-                    </h3>
-                    <p className="text-xs text-amber-600 font-mono font-bold">
-                      {selectedDetailPartner.partnerCode} • {selectedDetailPartner.city || 'Jalgaon'}
-                    </p>
+                    <h3 className="text-base font-black text-stone-900">{selectedDetailPartner.fullName}</h3>
+                    <p className="text-xs text-amber-700 font-mono font-bold">{selectedDetailPartner.partnerCode}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDetailPartner(null)}
-                    className="p-1 text-stone-400 hover:text-stone-600 rounded-lg cursor-pointer"
-                  >
+                  <button type="button" onClick={() => setSelectedDetailPartner(null)} className="p-1 text-stone-400">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-
-                <div className="space-y-4 text-xs">
-                  <div className="grid grid-cols-2 gap-3 bg-stone-50 dark:bg-stone-950 p-3 rounded-2xl border border-stone-200/80 dark:border-stone-800">
-                    <div>
-                      <span className="text-stone-500 block">Total Sales</span>
-                      <strong className="text-sm text-stone-900 dark:text-white">{formatINR(selectedDetailPartner.totalSalesAmount)}</strong>
-                    </div>
-                    <div>
-                      <span className="text-stone-500 block">Commission Earned</span>
-                      <strong className="text-sm text-emerald-600">{formatINR(selectedDetailPartner.totalCommissionEarned)}</strong>
-                    </div>
-                    <div>
-                      <span className="text-stone-500 block">Direct Orders</span>
-                      <strong className="text-sm text-stone-900 dark:text-white">{selectedDetailPartner.totalOrdersCount || 0} Orders</strong>
-                    </div>
-                    <div>
-                      <span className="text-stone-500 block">Direct Sub-Referrals</span>
-                      <strong className="text-sm text-amber-600">{selectedDetailPartner.invitedPartnersCount || 0} Women</strong>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <h4 className="font-bold text-stone-800 dark:text-stone-200">Contact & Banking</h4>
-                    <p className="text-stone-600 dark:text-stone-400">Phone: <strong>{selectedDetailPartner.phone}</strong></p>
-                    <p className="text-stone-600 dark:text-stone-400">Email: <strong>{selectedDetailPartner.email || 'N/A'}</strong></p>
-                    <p className="text-stone-600 dark:text-stone-400">Bank: <strong>{selectedDetailPartner.bankName}</strong> ({selectedDetailPartner.bankAccountNumber})</p>
-                    <p className="text-stone-600 dark:text-stone-400">UPI: <strong>{selectedDetailPartner.upiId || 'N/A'}</strong></p>
-                  </div>
+                <div className="space-y-2 text-xs">
+                  <p className="text-stone-600">Sales: <strong>{formatINR(selectedDetailPartner.totalSalesAmount)}</strong></p>
+                  <p className="text-stone-600">Commission Earned: <strong className="text-emerald-700">{formatINR(selectedDetailPartner.totalCommissionEarned)}</strong></p>
+                  <p className="text-stone-600">Phone: <strong>{selectedDetailPartner.phone}</strong></p>
+                  <p className="text-stone-600">City: <strong>{selectedDetailPartner.city || 'Jalgaon'}</strong></p>
                 </div>
-
-                <div className="pt-3 border-t border-stone-100 dark:border-stone-800 text-right">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedDetailPartner(null)}
-                    className="px-4 py-2 bg-stone-900 text-white font-bold rounded-xl cursor-pointer"
-                  >
-                    Close
-                  </button>
+                <div className="pt-2 text-right">
+                  <button type="button" onClick={() => setSelectedDetailPartner(null)} className="px-4 py-2 bg-stone-900 text-white font-bold rounded-xl cursor-pointer">Close</button>
                 </div>
               </motion.div>
             </div>
@@ -1150,13 +997,5 @@ export function AdminWomanTreePage() {
 
       </div>
     </AdminLayout>
-  );
-}
-
-function CrownIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
-      <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
-    </svg>
   );
 }
