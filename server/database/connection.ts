@@ -315,6 +315,10 @@ async function ensureTablesExist(dbPool: mysql.Pool) {
   `).catch(() => {});
 
   await runQuery(`
+    ALTER TABLE products MODIFY COLUMN id VARCHAR(64) NOT NULL
+  `).catch(() => {});
+
+  await runQuery(`
     CREATE TABLE IF NOT EXISTS product_images (
       id VARCHAR(64) PRIMARY KEY,
       product_id VARCHAR(64) NOT NULL,

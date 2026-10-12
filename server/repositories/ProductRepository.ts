@@ -501,40 +501,84 @@ export class ProductRepository {
         throw new Error(`A product with the slug "${newProduct.slug}" already exists. Please choose a different slug or unique name.`);
       }
 
-      const [insertRes] = await pool.query(
-        `INSERT INTO products (
-          id, slug, name, category_id, description, short_description, price, mrp, profit, discount,
-          net_quantity, flavour, tags, is_featured, is_best_seller, is_new, is_available, stock,
-          seo_title, seo_description, _is_fake
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          newProduct.id,
-          newProduct.slug,
-          newProduct.name,
-          resolvedCat.id,
-          newProduct.description,
-          newProduct.shortDescription,
-          newProduct.price,
-          newProduct.mrp,
-          newProduct.profit || 0,
-          newProduct.discount,
-          newProduct.netQuantity,
-          newProduct.flavour || null,
-          JSON.stringify(newProduct.tags),
-          newProduct.isFeatured ? 1 : 0,
-          newProduct.isBestSeller ? 1 : 0,
-          newProduct.isNew ? 1 : 0,
-          newProduct.isAvailable ? 1 : 0,
-          newProduct.stock,
-          newProduct.seoTitle,
-          newProduct.seoDescription,
-          isFakeVal
-        ]
-      );
+      let insertRes: any;
+      try {
+        [insertRes] = await pool.query(
+          `INSERT INTO products (
+            id, slug, name, category_id, description, short_description, price, mrp, profit, discount,
+            net_quantity, flavour, tags, is_featured, is_best_seller, is_new, is_available, stock,
+            seo_title, seo_description, _is_fake
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            newProduct.id,
+            newProduct.slug,
+            newProduct.name,
+            resolvedCat.id,
+            newProduct.description,
+            newProduct.shortDescription,
+            newProduct.price,
+            newProduct.mrp,
+            newProduct.profit || 0,
+            newProduct.discount,
+            newProduct.netQuantity,
+            newProduct.flavour || null,
+            JSON.stringify(newProduct.tags),
+            newProduct.isFeatured ? 1 : 0,
+            newProduct.isBestSeller ? 1 : 0,
+            newProduct.isNew ? 1 : 0,
+            newProduct.isAvailable ? 1 : 0,
+            newProduct.stock,
+            newProduct.seoTitle,
+            newProduct.seoDescription,
+            isFakeVal
+          ]
+        );
+      } catch (insertErr: any) {
+        // If MySQL failed because column `id` is an INT / AUTO_INCREMENT integer column in the target database table
+        // (Error code 1366 / ER_TRUNCATED_WRONG_VALUE_FOR_FIELD / Incorrect integer value)
+        const isIntColError = insertErr.errno === 1366 ||
+          insertErr.code === 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD' ||
+          (insertErr.message && (insertErr.message.includes('Incorrect integer value') || insertErr.message.includes("column 'id'")));
+
+        if (isIntColError) {
+          console.warn('[ProductRepo] id column is INT in MySQL. Executing fallback insert without string id...');
+          [insertRes] = await pool.query(
+            `INSERT INTO products (
+              slug, name, category_id, description, short_description, price, mrp, profit, discount,
+              net_quantity, flavour, tags, is_featured, is_best_seller, is_new, is_available, stock,
+              seo_title, seo_description, _is_fake
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              newProduct.slug,
+              newProduct.name,
+              resolvedCat.id,
+              newProduct.description,
+              newProduct.shortDescription,
+              newProduct.price,
+              newProduct.mrp,
+              newProduct.profit || 0,
+              newProduct.discount,
+              newProduct.netQuantity,
+              newProduct.flavour || null,
+              JSON.stringify(newProduct.tags),
+              newProduct.isFeatured ? 1 : 0,
+              newProduct.isBestSeller ? 1 : 0,
+              newProduct.isNew ? 1 : 0,
+              newProduct.isAvailable ? 1 : 0,
+              newProduct.stock,
+              newProduct.seoTitle,
+              newProduct.seoDescription,
+              isFakeVal
+            ]
+          );
+        } else {
+          throw insertErr;
+        }
+      }
 
       const realId = (insertRes as any).insertId;
       if (realId) {
-        newProduct.id = realId;
+        newProduct.id = String(realId);
       }
       const insertIdStr = String(newProduct.id);
 
