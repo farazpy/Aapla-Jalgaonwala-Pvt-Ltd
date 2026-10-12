@@ -228,6 +228,77 @@ export default function AdminPartnersPage() {
     isAdminBypass: true
   });
 
+  // AI Brief Extraction State
+  const [showAiBriefBox, setShowAiBriefBox] = useState(false);
+  const [aiBriefMessage, setAiBriefMessage] = useState('');
+  const [isExtractingAiBrief, setIsExtractingAiBrief] = useState(false);
+  const [aiBriefSuccessMsg, setAiBriefSuccessMsg] = useState<string | null>(null);
+  const [aiBriefErrorMsg, setAiBriefErrorMsg] = useState<string | null>(null);
+
+  const handleExtractAiBrief = async () => {
+    if (!aiBriefMessage || !aiBriefMessage.trim()) {
+      setAiBriefErrorMsg('Please paste a brief message to extract details.');
+      return;
+    }
+
+    setIsExtractingAiBrief(true);
+    setAiBriefErrorMsg(null);
+    setAiBriefSuccessMsg(null);
+
+    try {
+      const res = await fetch('/api/partner-program/extract-ai-brief', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ briefMessage: aiBriefMessage })
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error?.message || json.message || 'Failed to extract partner details with AI.');
+      }
+
+      const data = json.data;
+      if (data) {
+        setAddPartnerForm(prev => ({
+          ...prev,
+          fullName: data.fullName || prev.fullName,
+          phone: data.phone || prev.phone,
+          email: data.email || prev.email,
+          city: data.city || prev.city,
+          state: data.state || prev.state,
+          socialPlatform: data.socialPlatform || prev.socialPlatform,
+          socialHandle: data.socialHandle || prev.socialHandle,
+          phonePeNumber: data.phonePeNumber || prev.phonePeNumber,
+          upiId: data.upiId || prev.upiId,
+          bankAccountName: data.bankAccountName || prev.bankAccountName,
+          bankName: data.bankName || prev.bankName,
+          bankAccountNumber: data.bankAccountNumber || prev.bankAccountNumber,
+          ifscCode: data.ifscCode || prev.ifscCode,
+          aadhaarPanNumber: data.aadhaarPanNumber || prev.aadhaarPanNumber,
+          customPartnerCode: data.customPartnerCode || prev.customPartnerCode,
+          referredByPartnerCode: data.referredByPartnerCode || prev.referredByPartnerCode,
+          adminNotes: data.notes ? (prev.adminNotes ? `${prev.adminNotes} | ${data.notes}` : data.notes) : prev.adminNotes
+        }));
+
+        if (data.phonePeNumber) {
+          setAdminPayoutTab('phonepe');
+        } else if (data.upiId) {
+          setAdminPayoutTab('upi');
+        } else if (data.bankAccountNumber) {
+          setAdminPayoutTab('bank');
+        }
+
+        setAiBriefSuccessMsg(`✨ Successfully extracted details for ${data.fullName || 'Partner'}! Review and adjust the filled fields below.`);
+        setTimeout(() => setAiBriefSuccessMsg(null), 8000);
+      }
+    } catch (err: any) {
+      setAiBriefErrorMsg(err.message || 'Failed to extract AI brief details.');
+    } finally {
+      setIsExtractingAiBrief(false);
+    }
+  };
+
   // Bulk Selection & Editing State
   const [recentlyAddedId, setRecentlyAddedId] = useState<string | null>(null);
   const [selectedPartnerIds, setSelectedPartnerIds] = useState<string[]>([]);
@@ -404,23 +475,58 @@ export default function AdminPartnersPage() {
     e.preventDefault();
     setAddPartnerError(null);
 
-    const cleanPhone = addPartnerForm.phone.replace(/\D/g, '');
-    if (cleanPhone.length < 10) {
-      setAddPartnerError('Please enter a valid 10-digit mobile phone number.');
+    const nameClean = addPartnerForm.fullName.trim();
+    if (!nameClean || nameClean.length < 2) {
+      setAddPartnerError('Please enter a valid full name (at least 2 characters).');
       return;
     }
 
-    if (adminPayoutTab === 'phonepe' && addPartnerForm.phonePeNumber) {
-      const cleanPhonePe = addPartnerForm.phonePeNumber.replace(/\D/g, '');
+    const cleanPhone = addPartnerForm.phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      setAddPartnerError('Please enter a valid 10-digit mobile phone number (numbers only).');
+      return;
+    }
+
+    const cleanEmail = addPartnerForm.email.trim();
+    if (cleanEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        setAddPartnerError('Please enter a valid email address (e.g. sunita@gmail.com).');
+        return;
+      }
+    }
+
+    if (!addPartnerForm.city.trim()) {
+      setAddPartnerError('Please enter the city or town name.');
+      return;
+    }
+
+    if (addPartnerForm.customPartnerCode.trim()) {
+      const cleanCustomCode = addPartnerForm.customPartnerCode.trim().toUpperCase();
+      if (cleanCustomCode.length < 3 || cleanCustomCode.length > 20) {
+        setAddPartnerError('Custom partner code must be between 3 and 20 alphanumeric characters.');
+        return;
+      }
+    }
+
+    let cleanPhonePe = addPartnerForm.phonePeNumber ? addPartnerForm.phonePeNumber.replace(/\D/g, '') : '';
+    if (adminPayoutTab === 'phonepe') {
+      if (!cleanPhonePe) cleanPhonePe = cleanPhone;
       if (cleanPhonePe.length !== 10) {
-        setAddPartnerError('PhonePe / Google Pay number must be exactly 10 digits.');
+        setAddPartnerError('PhonePe / Google Pay mobile number must be exactly 10 digits.');
+        return;
+      }
+    }
+
+    if (adminPayoutTab === 'upi' && addPartnerForm.upiId.trim()) {
+      if (!addPartnerForm.upiId.includes('@')) {
+        setAddPartnerError('Please enter a valid UPI ID (e.g. name@okhdfcbank or 9822012345@ybl).');
         return;
       }
     }
 
     setIsAddingPartner(true);
     try {
-      const cleanPhonePe = addPartnerForm.phonePeNumber ? addPartnerForm.phonePeNumber.replace(/\D/g, '') : '';
       const fallbackAccount = cleanPhonePe || addPartnerForm.upiId.trim() || 'ADMIN_ONBOARDED';
       const fallbackIfsc = addPartnerForm.ifscCode.trim() || (cleanPhonePe ? 'PHONEPE_UPI' : 'ADMIN_BYPASS');
       const fallbackBankName = addPartnerForm.bankName.trim() || (cleanPhonePe ? 'PhonePe / GPay' : (addPartnerForm.upiId ? 'UPI Account' : 'Admin Manual'));
@@ -429,14 +535,18 @@ export default function AdminPartnersPage() {
 
       const finalPayload = {
         ...addPartnerForm,
+        fullName: nameClean,
         phone: cleanPhone,
+        email: cleanEmail.toLowerCase(),
+        city: addPartnerForm.city.trim(),
+        state: (addPartnerForm.state || 'Maharashtra').trim(),
         phonePeNumber: cleanPhonePe,
-        partnerCode: addPartnerForm.customPartnerCode.trim() || undefined,
-        referredByPartnerCode: addPartnerForm.referredByPartnerCode.trim() || undefined,
+        partnerCode: addPartnerForm.customPartnerCode.trim() ? addPartnerForm.customPartnerCode.trim().toUpperCase() : undefined,
+        referredByPartnerCode: addPartnerForm.referredByPartnerCode.trim() ? addPartnerForm.referredByPartnerCode.trim().toUpperCase() : undefined,
         bankAccountNumber: addPartnerForm.bankAccountNumber.trim() || fallbackAccount,
         ifscCode: fallbackIfsc,
         bankName: fallbackBankName,
-        bankAccountName: addPartnerForm.bankAccountName.trim() || addPartnerForm.fullName.trim(),
+        bankAccountName: addPartnerForm.bankAccountName.trim() || nameClean,
         isAdminBypass: true,
         paymentRef: 'ADMIN_ONBOARDED',
         paymentStatus: 'paid'
@@ -3871,6 +3981,82 @@ export default function AdminPartnersPage() {
                   <p className="text-xs text-rose-800 font-bold">{addPartnerError}</p>
                 </div>
               )}
+
+              {/* AI Brief Paste & Extraction Assistant */}
+              <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50 p-3.5 rounded-2xl border border-purple-200/80 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-xl bg-purple-600 text-white font-bold text-xs shadow-xs shrink-0">
+                      <Sparkles className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
+                        <span>AI Smart Brief Auto-Fill</span>
+                        <span className="px-1.5 py-0.2 rounded-md bg-purple-200 text-purple-900 text-[9px] font-mono font-bold">Gemini 3.1 Flash Lite</span>
+                      </h4>
+                      <p className="text-[10.5px] text-purple-700">Paste any WhatsApp brief/note to auto-extract name, phone, PhonePe & referrers.</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowAiBriefBox(!showAiBriefBox)}
+                    className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1.5 shrink-0"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>{showAiBriefBox ? 'Close AI Brief' : 'Paste Brief & Auto-Fill'}</span>
+                  </button>
+                </div>
+
+                {showAiBriefBox && (
+                  <div className="pt-2 border-t border-purple-200/60 space-y-2.5 animate-in fade-in duration-150">
+                    <textarea
+                      rows={3}
+                      placeholder="e.g. Paste brief message here: 'Sunita Patil, Jalgaon, 9822012345, PhonePe: 9822012345, referred by Anita ANITA10, boutique owner...'"
+                      value={aiBriefMessage}
+                      onChange={(e) => setAiBriefMessage(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-white border border-purple-300 text-xs text-stone-800 placeholder-stone-400 focus:ring-2 focus:ring-purple-500 focus:outline-none font-medium"
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-purple-600 font-medium">Auto-fills all matching fields below</span>
+                      <div className="flex items-center gap-2">
+                        {aiBriefMessage && (
+                          <button
+                            type="button"
+                            onClick={() => setAiBriefMessage('')}
+                            className="text-[11px] text-stone-500 hover:text-stone-800 font-medium px-2 py-1"
+                          >
+                            Clear
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleExtractAiBrief}
+                          disabled={isExtractingAiBrief || !aiBriefMessage.trim()}
+                          className="px-3.5 py-1.5 rounded-xl bg-purple-700 hover:bg-purple-800 text-white text-xs font-bold transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-xs"
+                        >
+                          {isExtractingAiBrief ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Extracting with Gemini...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Sparkles className="w-3.5 h-3.5" />
+                              <span>Extract & Auto-Fill Fields</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    {aiBriefErrorMsg && (
+                      <p className="text-xs text-rose-600 font-bold bg-rose-50 p-2 rounded-lg border border-rose-200">{aiBriefErrorMsg}</p>
+                    )}
+                    {aiBriefSuccessMsg && (
+                      <p className="text-xs text-emerald-700 font-bold bg-emerald-50 p-2 rounded-lg border border-emerald-200">{aiBriefSuccessMsg}</p>
+                    )}
+                  </div>
+                )}
+              </div>
 
               <form onSubmit={handleAddPartnerSubmit} className="space-y-5">
                 {/* SECTION 1: Personal & Contact */}

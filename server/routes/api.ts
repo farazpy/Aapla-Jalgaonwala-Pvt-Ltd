@@ -20,7 +20,7 @@ import { AnalyticsRepository } from '../repositories/AnalyticsRepository';
 import { AdminRoleRepository, ALL_PERMISSIONS, ALL_PERMISSION_KEYS } from '../repositories/AdminRoleRepository';
 import { getDbPool, getDbConfig, testDbConnection, resetDbPool } from '../database/connection';
 import { createSuccessResponse, createErrorResponse } from '../utils/apiResponse';
-import { enhanceProductDetails, generateSeoWithGemini, analyzeSeoImprovements } from '../utils/gemini';
+import { enhanceProductDetails, generateSeoWithGemini, analyzeSeoImprovements, extractPartnerFromBriefMessage } from '../utils/gemini';
 import { handleSupportChat } from '../utils/aiSupportKnowledge';
 import { SnackMitraRepository } from '../repositories/SnackMitraRepository';
 import {
@@ -6961,6 +6961,22 @@ apiRouter.post('/partner-program/partners/bulk-delete', async (req: Request, res
     }));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to execute bulk delete'));
+  }
+});
+
+// Extract partner registration details from raw brief message using Gemini 3.1 Flash Lite
+apiRouter.post('/partner-program/extract-ai-brief', async (req: Request, res: Response) => {
+  try {
+    const { briefMessage } = req.body || {};
+    if (!briefMessage || typeof briefMessage !== 'string' || !briefMessage.trim()) {
+      return res.status(400).json(createErrorResponse('Please provide a message or text snippet to extract details from.'));
+    }
+
+    const extracted = await extractPartnerFromBriefMessage(briefMessage);
+    return res.json(createSuccessResponse(extracted));
+  } catch (error: any) {
+    console.error('[AI Extract Partner Brief Error]:', error);
+    return res.status(500).json(createErrorResponse(error.message || 'Failed to extract details using Gemini AI.'));
   }
 });
 

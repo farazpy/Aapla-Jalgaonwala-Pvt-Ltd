@@ -605,3 +605,131 @@ export async function analyzeSeoImprovements(input: SeoAnalysisInput): Promise<S
   }
 }
 
+export interface ExtractedPartnerDetails {
+  fullName: string;
+  phone: string;
+  email: string;
+  city: string;
+  state: string;
+  socialPlatform: string;
+  socialHandle: string;
+  phonePeNumber: string;
+  upiId: string;
+  bankAccountName: string;
+  bankName: string;
+  bankAccountNumber: string;
+  ifscCode: string;
+  aadhaarPanNumber: string;
+  customPartnerCode: string;
+  referredByPartnerCode: string;
+  notes: string;
+}
+
+/**
+ * Extracts woman partner registration details from raw unformatted brief message paste (e.g. WhatsApp, note, message) using Gemini 3.1 Flash Lite.
+ */
+export async function extractPartnerFromBriefMessage(briefMessage: string): Promise<ExtractedPartnerDetails> {
+  if (!briefMessage || !briefMessage.trim()) {
+    throw new Error('Please provide a message or text snippet to extract details from.');
+  }
+
+  const ai = getAiClient();
+
+  const prompt = `
+    You are an intelligent data extraction assistant for "Aapla Jalgaonwala".
+    An admin pasted an unformatted brief message containing details of a new woman business partner (e.g., from WhatsApp, SMS, email, or oral note).
+
+    Your job is to extract all relevant partner onboarding fields accurately:
+
+    Brief Message:
+    """
+    ${briefMessage.trim()}
+    """
+
+    EXACT EXTRACTION INSTRUCTIONS:
+    - "fullName": Full name of the woman partner. Capitalize nicely (e.g. "Sunita Patil").
+    - "phone": 10-digit mobile/WhatsApp number without country code or spaces (e.g. "9822012345").
+    - "email": Email address if present, or generate a valid placeholder like "sunita.patil@partner.aaplajalgaonwala.com" if missing.
+    - "city": City or town name (e.g. "Jalgaon", "Bhusawal", "Pune", "Mumbai"). Defaults to "Jalgaon" if unknown.
+    - "state": Indian state name. Defaults to "Maharashtra".
+    - "socialPlatform": Preferred network platform. Must be one of: "WhatsApp", "Housing Society", "Instagram", "Facebook", "Boutique", "Other".
+    - "socialHandle": Society name, handle, or boutique name mentioned in text.
+    - "phonePeNumber": 10-digit PhonePe or Google Pay mobile number if mentioned.
+    - "upiId": UPI ID/VPA if mentioned (e.g. "sunita@okhdfcbank").
+    - "bankAccountName": Bank account holder name if present.
+    - "bankName": Bank name if present.
+    - "bankAccountNumber": Account number if present.
+    - "ifscCode": 11-character bank IFSC code uppercase if present.
+    - "aadhaarPanNumber": Aadhaar (12 digits) or PAN card number (10 characters) if mentioned.
+    - "customPartnerCode": Any custom requested referral code if mentioned (e.g. "SUNITA10").
+    - "referredByPartnerCode": Code or name of referring partner if mentioned (e.g. "ANITA10").
+    - "notes": Any remaining useful notes or context from the message.
+
+    Return the result strictly as JSON conforming to the schema.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-3.1-flash-lite',
+    contents: prompt,
+    config: {
+      temperature: 0.1,
+      responseMimeType: 'application/json',
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          fullName: { type: Type.STRING },
+          phone: { type: Type.STRING },
+          email: { type: Type.STRING },
+          city: { type: Type.STRING },
+          state: { type: Type.STRING },
+          socialPlatform: { type: Type.STRING },
+          socialHandle: { type: Type.STRING },
+          phonePeNumber: { type: Type.STRING },
+          upiId: { type: Type.STRING },
+          bankAccountName: { type: Type.STRING },
+          bankName: { type: Type.STRING },
+          bankAccountNumber: { type: Type.STRING },
+          ifscCode: { type: Type.STRING },
+          aadhaarPanNumber: { type: Type.STRING },
+          customPartnerCode: { type: Type.STRING },
+          referredByPartnerCode: { type: Type.STRING },
+          notes: { type: Type.STRING },
+        },
+        required: ['fullName', 'phone', 'city', 'state'],
+      },
+    },
+  });
+
+  const rawText = response.text;
+  if (!rawText) {
+    throw new Error('Gemini model returned empty extraction result.');
+  }
+
+  try {
+    const data = JSON.parse(rawText.trim());
+    return {
+      fullName: data.fullName || '',
+      phone: (data.phone || '').replace(/\D/g, '').slice(-10),
+      email: data.email || '',
+      city: data.city || 'Jalgaon',
+      state: data.state || 'Maharashtra',
+      socialPlatform: data.socialPlatform || 'WhatsApp',
+      socialHandle: data.socialHandle || '',
+      phonePeNumber: (data.phonePeNumber || '').replace(/\D/g, '').slice(-10),
+      upiId: data.upiId || '',
+      bankAccountName: data.bankAccountName || '',
+      bankName: data.bankName || '',
+      bankAccountNumber: data.bankAccountNumber || '',
+      ifscCode: (data.ifscCode || '').toUpperCase(),
+      aadhaarPanNumber: data.aadhaarPanNumber || '',
+      customPartnerCode: (data.customPartnerCode || '').toUpperCase(),
+      referredByPartnerCode: (data.referredByPartnerCode || '').toUpperCase(),
+      notes: data.notes || '',
+    };
+  } catch (err) {
+    console.error('Failed to parse extracted partner JSON:', rawText, err);
+    throw new Error('Failed to parse AI extraction output. Please retry.');
+  }
+}
+
+
