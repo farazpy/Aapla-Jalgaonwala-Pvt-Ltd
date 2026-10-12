@@ -1990,34 +1990,48 @@ export class PartnerRepository {
 
   static async createSettlement(settlementData: Partial<PartnerSettlement>): Promise<PartnerSettlement> {
     const id = settlementData.id || `stl_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-    const now = new Date().toISOString();
+    const now = new Date();
+    const formattedDate = settlementData.settlementDate || now.toISOString().split('T')[0];
+    const formattedWeek = settlementData.settlementWeek || `Week Ending ${now.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+    // Resolve partner details first
+    const partner = (settlementData.partnerId ? await this.getById(settlementData.partnerId) : null) || 
+                    (settlementData.partnerCode ? await this.getByCode(settlementData.partnerCode) : null);
+
+    const partnerId = partner ? partner.id : (settlementData.partnerId || '');
+    const partnerCode = partner ? partner.partnerCode.toUpperCase() : (settlementData.partnerCode || '').toUpperCase();
+    const partnerName = partner ? partner.fullName : (settlementData.partnerName || 'Business Partner');
+    const accountOrUpi = settlementData.accountOrUpi || partner?.upiId || partner?.phone || 'PhonePe';
+    const amount = Number(settlementData.amount || 0);
 
     const newSettlement: PartnerSettlement = {
       id,
-      partnerId: settlementData.partnerId || '',
-      partnerCode: (settlementData.partnerCode || '').toUpperCase(),
-      partnerName: settlementData.partnerName || '',
-      settlementDate: settlementData.settlementDate || new Date().toISOString().split('T')[0],
-      settlementWeek: settlementData.settlementWeek || `Week Ending ${new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}`,
-      amount: Number(settlementData.amount || 0),
-      paymentMethod: settlementData.paymentMethod || 'UPI',
-      accountOrUpi: settlementData.accountOrUpi || '',
-      transactionReference: settlementData.transactionReference || `TXN${Date.now()}`,
+      partnerId,
+      partnerCode,
+      partnerName,
+      settlementDate: formattedDate,
+      settlementWeek: formattedWeek,
+      amount,
+      paymentMethod: settlementData.paymentMethod || 'PhonePe',
+      accountOrUpi,
+      transactionReference: (settlementData.transactionReference || `TXN${Date.now()}`).trim(),
       ordersCount: Number(settlementData.ordersCount || 0),
-      notes: settlementData.notes || 'Weekly Sunday Settlement for Business Partner',
+      notes: settlementData.notes || `Commission settlement for ${partnerName}`,
       status: settlementData.status || 'Completed',
-      createdAt: now
+      createdAt: now.toISOString()
     };
 
     const pool = getDbPool();
     if (pool) {
       try {
+        const sqlCreatedAt = toSqlDateTime(now);
         await pool.query(
           `INSERT INTO partner_settlements (
             id, partner_id, partner_code, partner_name, settlement_date,
             settlement_week, amount, payment_method, account_or_upi,
             transaction_reference, orders_count, notes, status, created_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ON DUPLICATE KEY UPDATE amount=VALUES(amount), status=VALUES(status)`,
           [
             newSettlement.id,
             newSettlement.partnerId,
@@ -2032,37 +2046,70 @@ export class PartnerRepository {
             newSettlement.ordersCount,
             newSettlement.notes,
             newSettlement.status,
-            newSettlement.createdAt
+            sqlCreatedAt
           ]
         );
-      } catch (err) {
-        console.warn('[PartnerRepo] MySQL insert settlement failed:', err);
+        console.log(`[PartnerRepo] ✅ Successfully saved settlement ${newSettlement.id} to MySQL partner_settlements`);
+
+        // Update Partner Paid Balance directly in MySQL
+        if (partner) {
+          const currentPaid = Number(partner.totalCommissionPaid || 0);
+          const currentEarned = Number(partner.totalCommissionEarned || 0) + Number(partner.referralBonusEarned || 0);
+          const newPaid = currentPaid + amount;
+          const newPending = Math.max(0, currentEarned - newPaid);
+
+          await pool.query(
+            `UPDATE business_partners 
+             SET total_commission_paid = ?, 
+                 pending_commission = ?,
+                 updated_at = NOW() 
+             WHERE id = ? OR partner_code = ?`,
+            [newPaid, newPending, partner.id, partner.partnerCode]
+          );
+
+          // Mark eligible referrals as settled
+          await pool.query(
+            `UPDATE partner_referrals 
+             SET status = 'settled', settlement_id = ? 
+             WHERE partner_code = ? AND status = 'eligible'`,
+            [newSettlement.id, partner.partnerCode]
+          ).catch(() => {});
+        }
+      } catch (err: any) {
+        console.error('[PartnerRepo] MySQL insert settlement error:', err);
+        throw new Error(`Failed to save payment in MySQL database: ${err.message}`);
       }
     }
 
+    // Save JSON fallback & clear cache
     const all = await readJson<PartnerSettlement[]>(SETTLEMENTS_FILE, this.getInitialSettlements());
     all.unshift(newSettlement);
     await writeJson(SETTLEMENTS_FILE, all);
+    this.clearCache();
 
-    // Update Partner Paid Balance
-    const partner = await this.getById(newSettlement.partnerId) || (newSettlement.partnerCode ? await this.getByCode(newSettlement.partnerCode) : null);
+    // Update partner in JSON storage as well
     if (partner) {
-      const newPaid = (partner.totalCommissionPaid || 0) + newSettlement.amount;
-      const newPending = Math.max(0, (partner.totalCommissionEarned || 0) - newPaid);
+      const currentPaid = Number(partner.totalCommissionPaid || 0);
+      const currentEarned = Number(partner.totalCommissionEarned || 0) + Number(partner.referralBonusEarned || 0);
+      const newPaid = currentPaid + amount;
+      const newPending = Math.max(0, currentEarned - newPaid);
+
+      partner.totalCommissionPaid = newPaid;
+      partner.pendingCommission = newPending;
       await this.update(partner.id, {
         totalCommissionPaid: newPaid,
         pendingCommission: newPending
-      });
+      }).catch(() => {});
 
-      // Send professional payout email in background
+      // Send payment email notification to partner
       if (partner.email) {
-        import('../utils/mailer').then(({ sendPartnerPaymentReceivedEmail }) => {
-          sendPartnerPaymentReceivedEmail(partner, newSettlement).catch((err) => {
-            console.error('[PartnerRepo] Error triggering partner payment received email:', err);
-          });
-        }).catch((err) => {
-          console.error('[PartnerRepo] Failed to dynamically load mailer for partner payment email:', err);
-        });
+        try {
+          const { sendPartnerPaymentReceivedEmail } = await import('../utils/mailer');
+          const sent = await sendPartnerPaymentReceivedEmail(partner, newSettlement);
+          console.log(`[PartnerRepo] Payment notification email sent to ${partner.email}:`, sent);
+        } catch (emailErr) {
+          console.error('[PartnerRepo] Error sending partner payment email:', emailErr);
+        }
       }
     }
 

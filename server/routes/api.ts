@@ -7427,8 +7427,8 @@ apiRouter.get('/partner-program/settlements', async (req: Request, res: Response
 apiRouter.post('/partner-program/settlements', async (req: Request, res: Response) => {
   try {
     const settlementData = req.body;
-    if (!settlementData.partnerId || !settlementData.amount || !settlementData.transactionReference) {
-      return res.status(400).json(createErrorResponse('Partner ID, Amount, and Transaction Reference are required'));
+    if ((!settlementData.partnerId && !settlementData.partnerCode) || !settlementData.amount || !settlementData.transactionReference) {
+      return res.status(400).json(createErrorResponse('Partner ID or Partner Code, Amount, and Transaction Reference are required'));
     }
 
     const created = await PartnerRepository.createSettlement(settlementData);
