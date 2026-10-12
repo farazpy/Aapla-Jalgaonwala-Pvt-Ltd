@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, UserAddress, Order } from '@/types';
-import { getBootstrapData } from '@/services/bootstrap';
+import { getBootstrapData, invalidateBootstrapCache } from '@/services/bootstrap';
 
 interface AuthContextType {
   user: User | null;
@@ -71,16 +71,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAddresses([]);
       setUserOrders([]);
     }
+    invalidateBootstrapCache();
   }, []);
 
   const refreshProfile = useCallback(async () => {
     const activeToken = token || localStorage.getItem(TOKEN_KEY);
 
+    if (!activeToken) {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+      setAddresses([]);
+      setUserOrders([]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const headers: Record<string, string> = {};
-      if (activeToken) {
-        headers['Authorization'] = `Bearer ${activeToken}`;
-      }
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${activeToken}`
+      };
 
       const res = await fetch('/api/auth/me', {
         headers,
@@ -97,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (fetchedUser.addresses) {
           setAddresses(fetchedUser.addresses);
         }
-      } else if (json.success && !json.data?.user) {
+      } else if (res.status === 401 || (json.success && !json.data?.user)) {
         setUser(null);
         setToken(null);
         localStorage.removeItem(USER_KEY);
@@ -168,15 +179,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (fetchedUser.addresses) {
             setAddresses(fetchedUser.addresses);
           }
+          setIsLoading(false);
         } else {
-          setUser(null);
-          setToken(null);
-          localStorage.removeItem(USER_KEY);
-          localStorage.removeItem(TOKEN_KEY);
-          setAddresses([]);
-          setUserOrders([]);
+          // If boot.auth.user is null, check if we have a saved token in localStorage before wiping session
+          const savedToken = localStorage.getItem(TOKEN_KEY);
+          if (savedToken) {
+            refreshProfile();
+          } else {
+            setUser(null);
+            setToken(null);
+            localStorage.removeItem(USER_KEY);
+            localStorage.removeItem(TOKEN_KEY);
+            setAddresses([]);
+            setUserOrders([]);
+            setIsLoading(false);
+          }
         }
-        setIsLoading(false);
       } else if (isMounted) {
         refreshProfile();
       }

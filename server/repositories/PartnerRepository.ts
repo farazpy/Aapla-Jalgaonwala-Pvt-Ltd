@@ -1286,6 +1286,7 @@ export class PartnerRepository {
     partnerCode?: string;
     amount: number; // in Rupees
     orderNumber?: string;
+    orderDate?: string;
     orderTotal?: number;
     customerName?: string;
     customerCity?: string;
@@ -1316,6 +1317,16 @@ export class PartnerRepository {
     const now = new Date();
     const nowIso = now.toISOString();
 
+    let formattedOrderDate = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    if (params.orderDate) {
+      const parsedDate = new Date(params.orderDate);
+      if (!isNaN(parsedDate.getTime())) {
+        formattedOrderDate = parsedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      } else {
+        formattedOrderDate = params.orderDate;
+      }
+    }
+
     const referral: PartnerOrderReferral = {
       id: `ref_wa_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
       partnerId: partner.id,
@@ -1323,7 +1334,7 @@ export class PartnerRepository {
       partnerName: partner.fullName,
       orderId: orderRef,
       orderNumber: orderRef,
-      orderDate: now.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+      orderDate: formattedOrderDate,
       customerName: (params.customerName || '').trim() || 'WhatsApp Customer',
       customerCity: (params.customerCity || '').trim() || '',
       orderTotal: orderTotal,

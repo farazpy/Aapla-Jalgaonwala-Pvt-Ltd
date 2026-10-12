@@ -43,7 +43,9 @@ import {
   Edit3,
   ToggleLeft,
   ToggleRight,
-  Settings2
+  Settings2,
+  Calendar,
+  PlusCircle
 } from 'lucide-react';
 
 type SortField = 'createdAt' | 'fullName' | 'partnerCode' | 'city' | 'totalOrdersCount' | 'totalSalesAmount' | 'totalCommissionEarned' | 'pendingCommission' | 'status';
@@ -181,6 +183,15 @@ export default function AdminPartnersPage() {
   const [customFundFeedback, setCustomFundFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [customFundPartnerReferrals, setCustomFundPartnerReferrals] = useState<PartnerOrderReferral[]>([]);
   const [isLoadingCustomFundReferrals, setIsLoadingCustomFundReferrals] = useState(false);
+
+  // Multi-order group fields state
+  const [customFundOrders, setCustomFundOrders] = useState<Array<{
+    id: string;
+    orderDate: string;
+    orderTotal: string;
+    amount: string;
+    orderRef?: string;
+  }>>([]);
 
   // Delete Referral / WhatsApp Order State
   const [referralToDelete, setReferralToDelete] = useState<{ referral: PartnerOrderReferral; partner?: BusinessPartner | null } | null>(null);
@@ -982,6 +993,53 @@ export default function AdminPartnersPage() {
     }
   };
 
+  const handleAddOrderRow = () => {
+    const todayIso = new Date().toISOString().split('T')[0];
+    setCustomFundOrders((prev) => [
+      ...prev,
+      {
+        id: `row_${Date.now()}_${prev.length + 1}`,
+        orderDate: todayIso,
+        orderTotal: '',
+        amount: '',
+        orderRef: `WA-${Date.now().toString().slice(-6)}-${prev.length + 1}`
+      }
+    ]);
+  };
+
+  const handleOrderRowTotalChange = (index: number, totalVal: string) => {
+    setCustomFundOrders((prev) => {
+      const updated = [...prev];
+      const rate = customFundPartner?.commissionRate || 12;
+      let calculatedAmt = '';
+      if (totalVal && !isNaN(parseFloat(totalVal)) && parseFloat(totalVal) > 0) {
+        const calc = Math.round((parseFloat(totalVal) * rate) / 100);
+        if (calc > 0) calculatedAmt = calc.toString();
+      }
+      updated[index] = {
+        ...updated[index],
+        orderTotal: totalVal,
+        amount: calculatedAmt
+      };
+      return updated;
+    });
+  };
+
+  const handleUpdateOrderRow = (index: number, field: 'orderDate' | 'orderTotal' | 'amount' | 'orderRef', val: string) => {
+    setCustomFundOrders((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: val };
+      return updated;
+    });
+  };
+
+  const handleRemoveOrderRow = (index: number) => {
+    setCustomFundOrders((prev) => {
+      if (prev.length <= 1) return prev;
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
   const handleOpenCustomFundModal = (partner?: BusinessPartner) => {
     setCustomFundFeedback(null);
     const targetPartner = partner || (partners.length > 0 ? partners[0] : null);
@@ -996,6 +1054,18 @@ export default function AdminPartnersPage() {
     setCustomFundPaymentMethod('UPI');
     setCustomFundTxnRef('');
     setCustomFundSendEmail(true);
+
+    const todayIso = new Date().toISOString().split('T')[0];
+    setCustomFundOrders([
+      {
+        id: `row_${Date.now()}_1`,
+        orderDate: todayIso,
+        orderTotal: '',
+        amount: '',
+        orderRef: `WA-${Date.now().toString().slice(-6)}`
+      }
+    ]);
+
     if (targetPartner?.partnerCode) {
       fetchCustomFundPartnerReferrals(targetPartner.partnerCode);
     } else {
@@ -1010,22 +1080,43 @@ export default function AdminPartnersPage() {
       setCustomFundFeedback({ type: 'error', message: 'Please select a woman partner.' });
       return;
     }
-    const parsedAmount = parseFloat(customFundAmount);
-    if (!parsedAmount || isNaN(parsedAmount) || parsedAmount <= 0) {
-      setCustomFundFeedback({ type: 'error', message: 'Please enter a valid commission amount in Rupees (> 0).' });
+
+    const validOrders = customFundOrders.filter(
+      (r) => (parseFloat(r.amount) || 0) > 0 || (parseFloat(r.orderTotal) || 0) > 0
+    );
+
+    if (validOrders.length === 0 && (!customFundAmount || parseFloat(customFundAmount) <= 0)) {
+      setCustomFundFeedback({ type: 'error', message: 'Please enter order total & commission amount (> 0) for at least one order.' });
       return;
     }
 
     setIsSubmittingCustomFund(true);
     setCustomFundFeedback(null);
+
     try {
+      const formattedOrders = validOrders.map((r, i) => {
+        const parsedTotal = parseFloat(r.orderTotal) || 0;
+        const parsedAmount =
+          parseFloat(r.amount) || (parsedTotal > 0 ? Math.round((parsedTotal * (customFundPartner.commissionRate || 12)) / 100) : 0);
+        return {
+          orderDate: r.orderDate || new Date().toISOString().split('T')[0],
+          orderTotal: parsedTotal,
+          amount: parsedAmount,
+          orderNumber: r.orderRef || `${customFundOrderRef || 'WA'}-${i + 1}`,
+          customerName: customFundCustomerName.trim() || undefined,
+          customerCity: customFundCustomerCity.trim() || customFundPartner.city || undefined,
+          notes: customFundNotes.trim() || undefined
+        };
+      });
+
       const res = await fetch('/api/partner-program/custom-fund', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           partnerId: customFundPartner.id,
           partnerCode: customFundPartner.partnerCode,
-          amount: parsedAmount,
+          orders: formattedOrders.length > 0 ? formattedOrders : undefined,
+          amount: formattedOrders.length === 0 ? parseFloat(customFundAmount) : undefined,
           orderNumber: customFundOrderRef.trim() || undefined,
           orderTotal: customFundOrderTotal ? parseFloat(customFundOrderTotal) : 0,
           customerName: customFundCustomerName.trim() || undefined,
@@ -1045,7 +1136,7 @@ export default function AdminPartnersPage() {
 
       setCustomFundFeedback({
         type: 'success',
-        message: json.data?.message || `Successfully credited ₹${parsedAmount} to ${customFundPartner.fullName}!`
+        message: json.data?.message || `Successfully credited commission to ${customFundPartner.fullName}!`
       });
 
       // Refresh partner records & stats
@@ -1057,15 +1148,24 @@ export default function AdminPartnersPage() {
         openPartnerDetails(customFundPartner);
       }
 
+      // Reset orders to single fresh row
+      const todayIso = new Date().toISOString().split('T')[0];
+      setCustomFundOrders([
+        {
+          id: `row_${Date.now()}_1`,
+          orderDate: todayIso,
+          orderTotal: '',
+          amount: '',
+          orderRef: `WA-${Date.now().toString().slice(-6)}`
+        }
+      ]);
+
       setTimeout(() => {
         setIsCustomFundModalOpen(false);
         setCustomFundFeedback(null);
-      }, 2200);
+      }, 2500);
     } catch (err: any) {
-      setCustomFundFeedback({
-        type: 'error',
-        message: err.message || 'An error occurred while processing custom fund.'
-      });
+      setCustomFundFeedback({ type: 'error', message: err.message || 'Failed to record custom order commission.' });
     } finally {
       setIsSubmittingCustomFund(false);
     }
@@ -3390,47 +3490,6 @@ export default function AdminPartnersPage() {
                 )}
               </div>
 
-              {/* Order Info Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700">WhatsApp Order Reference</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. WA-10294 or Chat Ref"
-                    value={customFundOrderRef}
-                    onChange={(e) => setCustomFundOrderRef(e.target.value)}
-                    className="w-full px-3.5 py-2 rounded-xl border border-stone-300 text-xs font-mono font-medium focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-stone-700">WhatsApp Order Value / Total (₹)</label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2 text-stone-400 font-bold text-xs">₹</span>
-                    <input
-                      type="number"
-                      step="any"
-                      placeholder="e.g. 1500"
-                      value={customFundOrderTotal}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setCustomFundOrderTotal(val);
-                        // Optional auto-suggest commission if not manually entered
-                        if (val && !customFundAmount && customFundPartner) {
-                          const rate = customFundPartner.commissionRate || 12;
-                          const calculated = Math.round((parseFloat(val) * rate) / 100);
-                          if (calculated > 0) {
-                            setCustomFundAmount(calculated.toString());
-                          }
-                        }
-                      }}
-                      className="w-full pl-7 pr-3.5 py-2 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
               {/* Customer Info Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
@@ -3456,56 +3515,124 @@ export default function AdminPartnersPage() {
                 </div>
               </div>
 
-              {/* Commission Amount Section */}
-              <div className="bg-emerald-50/60 p-4 rounded-2xl border border-emerald-200 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-black text-emerald-950 uppercase tracking-wide flex items-center gap-1.5">
-                    <IndianRupee className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Commission Fund in Rupees (₹) *</span>
-                  </label>
-                  {customFundOrderTotal && parseFloat(customFundOrderTotal) > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const total = parseFloat(customFundOrderTotal);
-                        const rate = customFundPartner?.commissionRate || 12;
-                        const calc = Math.round((total * rate) / 100);
-                        setCustomFundAmount(calc.toString());
-                      }}
-                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 bg-white px-2 py-0.5 rounded-md border border-emerald-300 cursor-pointer shadow-2xs"
-                    >
-                      Use {customFundPartner?.commissionRate || 12}% (₹{Math.round((parseFloat(customFundOrderTotal) * (customFundPartner?.commissionRate || 12)) / 100)})
-                    </button>
-                  )}
+              {/* Multiple Orders Entry Builder (3 Group Fields: Date - Order Total Amount - Commission (Auto 12%)) */}
+              <div className="space-y-3 bg-stone-50/80 p-4 rounded-2xl border border-stone-200">
+                <div className="flex items-center justify-between border-b border-stone-200/80 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <PlusCircle className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-black text-stone-900 uppercase tracking-wide">
+                      WhatsApp Orders & Commission List
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold text-stone-600 bg-white px-2 py-0.5 rounded-md border border-stone-200 shadow-2xs">
+                    Auto Commission: <strong className="text-emerald-700">{customFundPartner?.commissionRate || 12}%</strong>
+                  </span>
                 </div>
 
-                <div className="relative">
-                  <span className="absolute left-3.5 top-2.5 text-emerald-700 font-extrabold text-base">₹</span>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    step="any"
-                    placeholder="e.g. 180"
-                    value={customFundAmount}
-                    onChange={(e) => setCustomFundAmount(e.target.value)}
-                    className="w-full pl-8 pr-4 py-2.5 rounded-xl border-2 border-emerald-300 text-base font-black text-emerald-900 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 shadow-2xs"
-                  />
-                </div>
+                {/* Order Rows */}
+                <div className="space-y-3">
+                  {customFundOrders.map((row, idx) => (
+                    <div key={row.id} className="bg-white p-3.5 rounded-xl border border-stone-200 shadow-2xs space-y-2.5 relative group">
+                      <div className="flex items-center justify-between border-b border-stone-100 pb-2">
+                        <span className="text-[11px] font-black text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center text-[10px] font-extrabold">
+                            {idx + 1}
+                          </span>
+                          <span>Order #{idx + 1}</span>
+                        </span>
 
-                {/* Quick Preset Buttons */}
-                <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                  <span className="text-[10px] font-bold text-stone-500 mr-1">Quick Presets:</span>
-                  {[50, 100, 150, 200, 250, 500].map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setCustomFundAmount(preset.toString())}
-                      className="px-2 py-0.5 rounded-lg bg-white hover:bg-emerald-100 border border-emerald-200 text-[11px] font-bold text-emerald-800 transition-colors cursor-pointer"
-                    >
-                      ₹{preset}
-                    </button>
+                        {customFundOrders.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveOrderRow(idx)}
+                            className="text-rose-500 hover:text-rose-700 hover:bg-rose-50 p-1.5 rounded-lg transition-colors cursor-pointer text-xs flex items-center gap-1 font-bold"
+                            title="Remove order"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">Remove</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* 3 Group Fields: Date - Order Total Amount - Commission (Auto 12%) */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        {/* Field 1: Date */}
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-stone-700 flex items-center gap-1">
+                            <Calendar className="w-3 h-3 text-stone-400" />
+                            <span>Date *</span>
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={row.orderDate}
+                            onChange={(e) => handleUpdateOrderRow(idx, 'orderDate', e.target.value)}
+                            className="w-full px-2.5 py-2 rounded-xl border border-stone-300 text-xs font-medium text-stone-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white"
+                          />
+                        </div>
+
+                        {/* Field 2: Order Total Amount */}
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-stone-700 flex items-center justify-between">
+                            <span>Order Total (₹) *</span>
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-2 text-stone-400 font-bold text-xs">₹</span>
+                            <input
+                              type="number"
+                              step="any"
+                              required
+                              placeholder="e.g. 1500"
+                              value={row.orderTotal}
+                              onChange={(e) => handleOrderRowTotalChange(idx, e.target.value)}
+                              className="w-full pl-6 pr-2.5 py-2 rounded-xl border border-stone-300 text-xs font-bold text-stone-900 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Field 3: Commission (Auto 12%) */}
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-emerald-900 flex items-center justify-between">
+                            <span>Commission (12%) *</span>
+                            <span className="text-[9px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded">Auto 12%</span>
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-2.5 top-2 text-emerald-700 font-extrabold text-xs">₹</span>
+                            <input
+                              type="number"
+                              step="any"
+                              required
+                              min="1"
+                              placeholder="Auto 12%"
+                              value={row.amount}
+                              onChange={(e) => handleUpdateOrderRow(idx, 'amount', e.target.value)}
+                              className="w-full pl-6 pr-2.5 py-2 rounded-xl border-2 border-emerald-300 text-xs font-black text-emerald-900 focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-600 bg-emerald-50/30"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ))}
+                </div>
+
+                {/* Add More Button & Summary Bar */}
+                <div className="pt-1 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200/80 pt-3">
+                  <button
+                    type="button"
+                    onClick={handleAddOrderRow}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs hover:shadow-md transition-all cursor-pointer active:scale-98"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ Add More Order</span>
+                  </button>
+
+                  <div className="text-right text-xs bg-white px-3 py-1.5 rounded-xl border border-stone-200 shadow-2xs">
+                    <span className="text-stone-500 font-medium">Total ({customFundOrders.length} {customFundOrders.length === 1 ? 'order' : 'orders'}): </span>
+                    <span className="font-bold text-stone-900 mr-2">₹{customFundOrders.reduce((sum, r) => sum + (parseFloat(r.orderTotal) || 0), 0).toLocaleString('en-IN')}</span>
+                    <span className="font-black text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md border border-emerald-200">
+                      Total Comm: ₹{customFundOrders.reduce((sum, r) => sum + (parseFloat(r.amount) || 0), 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
                 </div>
               </div>
 

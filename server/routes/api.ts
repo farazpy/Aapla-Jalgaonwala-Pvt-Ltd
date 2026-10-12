@@ -5628,8 +5628,8 @@ apiRouter.post('/auth/signup', async (req: Request, res: Response) => {
     });
 
     setAuthCookies(res, token, user.id);
-    const { passwordHash: _, ...safeUser } = user;
-    return res.status(201).json(createSuccessResponse({ user: safeUser, token }));
+    const enrichedUser = await enrichUserForAuth(user);
+    return res.status(201).json(createSuccessResponse({ user: enrichedUser, token }));
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to sign up'));
   }
@@ -7412,8 +7412,10 @@ apiRouter.post('/partner-program/custom-fund', async (req: Request, res: Respons
     const {
       partnerId,
       partnerCode,
+      orders, // Array of order items [{ orderDate, orderTotal, amount, orderNumber, customerName, customerCity, notes }]
       amount,
       orderNumber,
+      orderDate,
       orderTotal,
       customerName,
       customerCity,
@@ -7428,6 +7430,51 @@ apiRouter.post('/partner-program/custom-fund', async (req: Request, res: Respons
       return res.status(400).json(createErrorResponse('Partner ID or Partner Code is required'));
     }
 
+    // Check if batch/multiple orders array is provided
+    if (Array.isArray(orders) && orders.length > 0) {
+      let totalCreditedAmount = 0;
+      let createdCount = 0;
+      let lastResult: any = null;
+
+      for (let i = 0; i < orders.length; i++) {
+        const item = orders[i];
+        const numAmt = Number(item.amount || item.commissionAmount || 0);
+        if (!numAmt || isNaN(numAmt) || numAmt <= 0) continue;
+
+        const resItem = await PartnerRepository.addCustomFund({
+          partnerId,
+          partnerCode,
+          amount: numAmt,
+          orderNumber: item.orderNumber || item.orderRef || `WA-${Date.now().toString().slice(-6)}-${i + 1}`,
+          orderDate: item.orderDate,
+          orderTotal: Number(item.orderTotal || 0),
+          customerName: item.customerName || customerName,
+          customerCity: item.customerCity || customerCity,
+          notes: item.notes || notes,
+          markAsPaid: Boolean(markAsPaid),
+          paymentMethod,
+          transactionReference,
+          sendEmail: sendEmail !== false && i === orders.length - 1
+        });
+
+        totalCreditedAmount += numAmt;
+        createdCount++;
+        lastResult = resItem;
+      }
+
+      if (createdCount === 0) {
+        return res.status(400).json(createErrorResponse('Please enter a valid commission amount in Rupees (> 0) for at least one order.'));
+      }
+
+      return res.status(201).json(createSuccessResponse({
+        partner: lastResult.partner,
+        totalCreditedAmount,
+        ordersCount: createdCount,
+        message: `Successfully credited ₹${totalCreditedAmount.toLocaleString('en-IN')} total commission across ${createdCount} order(s) for ${lastResult.partner.fullName}!`
+      }));
+    }
+
+    // Fallback for single order entry
     const numAmount = Number(amount);
     if (!numAmount || isNaN(numAmount) || numAmount <= 0) {
       return res.status(400).json(createErrorResponse('Please enter a valid fund/commission amount in Rupees (greater than 0)'));
@@ -7438,6 +7485,7 @@ apiRouter.post('/partner-program/custom-fund', async (req: Request, res: Respons
       partnerCode,
       amount: numAmount,
       orderNumber,
+      orderDate,
       orderTotal: Number(orderTotal || 0),
       customerName,
       customerCity,
