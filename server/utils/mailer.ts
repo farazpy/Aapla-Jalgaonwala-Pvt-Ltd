@@ -29,7 +29,11 @@ export async function getTransporter(): Promise<nodemailer.Transporter | null> {
     if (settings.smtpPort) port = Number(settings.smtpPort);
     if (settings.smtpUser) user = settings.smtpUser;
     if (settings.smtpPass) pass = settings.smtpPass;
-    if (port === 465) secure = true;
+    if (typeof settings.smtpSecure === 'boolean') {
+      secure = settings.smtpSecure;
+    } else if (port === 465) {
+      secure = true;
+    }
   } catch (err) {
     // Ignore error
   }

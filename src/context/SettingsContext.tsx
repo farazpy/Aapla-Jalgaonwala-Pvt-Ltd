@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { SiteSettings } from '@/types';
 import { initialSiteSettings } from '@/data/settings';
+import { getBootstrapData } from '@/services/bootstrap';
 
 interface SettingsContextType {
   settings: SiteSettings;
@@ -37,7 +38,24 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   useEffect(() => {
-    fetchSettings();
+    let isMounted = true;
+    getBootstrapData().then((boot) => {
+      if (isMounted && boot?.settings) {
+        setSettings({
+          ...initialSiteSettings,
+          ...boot.settings
+        });
+        setIsLoading(false);
+      } else if (isMounted) {
+        fetchSettings();
+      }
+    }).catch(() => {
+      if (isMounted) fetchSettings();
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [fetchSettings]);
 
   const updateSettings = async (newSettings: Partial<SiteSettings>): Promise<boolean> => {

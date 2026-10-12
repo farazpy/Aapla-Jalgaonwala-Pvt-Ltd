@@ -83,6 +83,91 @@ apiRouter.use((req: Request, res: Response, next) => {
 });
 
 // ----------------------------------------------------
+// 0. UNIFIED APP BOOTSTRAP (SINGLE REQUEST APP INIT WITH IN-MEMORY CACHE)
+// ----------------------------------------------------
+
+apiRouter.get('/bootstrap', async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+  res.setHeader('Vary', 'Cookie, Authorization');
+
+  try {
+    // 1. In-memory cached public core (Settings, Products, Categories)
+    let publicCore = systemCache.get('bootstrap_public_core');
+
+    if (!publicCore) {
+      const [settings, products, categories] = await Promise.all([
+        SettingsRepository.get(),
+        ProductRepository.getAll(false, false),
+        CategoryRepository.getAll()
+      ]);
+
+      const {
+        razorpayKeySecret,
+        googleClientSecret,
+        smtpPass,
+        cookieSecret,
+        recaptchaSecretKey,
+        telegramBotToken,
+        teleCloudApiKey,
+        adminPin,
+        ...safeSettings
+      } = settings as any;
+
+      publicCore = {
+        settings: safeSettings,
+        products,
+        categories
+      };
+
+      systemCache.set('bootstrap_public_core', publicCore, 'bootstrap', 60);
+    }
+
+    // 2. Auth check: Fast-path for anonymous visitors (0 DB queries)
+    let authData: { user: any; token: string | null; ordersCount: number } = {
+      user: null,
+      token: null,
+      ordersCount: 0
+    };
+
+    const hasPossibleAuth = Boolean(
+      req.cookies?.ajw_auth_token ||
+      req.cookies?.ajw_user_id ||
+      req.headers['authorization']
+    );
+
+    if (hasPossibleAuth) {
+      try {
+        const user = await resolveUserFromReq(req);
+        if (user) {
+          const [orders, enrichedUser] = await Promise.all([
+            OrderRepository.getByUser({ userId: user.id, email: user.email, phone: user.phone }).catch(() => []),
+            enrichUserForAuth(user).catch(() => user)
+          ]);
+          const token = extractTokenFromReq(req) || user.appAuthToken || req.cookies?.ajw_auth_token || generateStrongToken(user.id);
+          authData = {
+            user: enrichedUser,
+            token,
+            ordersCount: orders.length
+          };
+        }
+      } catch (authErr) {
+        console.warn('[Bootstrap] Auth check error in unified route:', authErr);
+      }
+    }
+
+    return res.json(createSuccessResponse({
+      settings: publicCore.settings,
+      products: publicCore.products,
+      categories: publicCore.categories,
+      auth: authData
+    }));
+  } catch (error: any) {
+    console.error('[Bootstrap] Initialization error:', error);
+    return res.status(500).json(createErrorResponse(error.message || 'Bootstrap initialization failed'));
+  }
+});
+
+// ----------------------------------------------------
 // 1. PRODUCTS
 // ----------------------------------------------------
 
@@ -1834,11 +1919,16 @@ apiRouter.get('/settings', async (req: Request, res: Response) => {
     }
 
     // For public responses: include public keys (razorpayKeyId, googleClientId) needed by checkout and login,
-    // but strip private secrets (razorpayKeySecret, googleClientSecret, smtpPass)
+    // but strip private secrets (razorpayKeySecret, googleClientSecret, smtpPass, cookieSecret, recaptchaSecretKey, telegramBotToken, teleCloudApiKey, adminPin)
     const {
       razorpayKeySecret,
       googleClientSecret,
       smtpPass,
+      cookieSecret,
+      recaptchaSecretKey,
+      telegramBotToken,
+      teleCloudApiKey,
+      adminPin,
       ...safeSettings
     } = settings as any;
     return res.json(createSuccessResponse(safeSettings));
@@ -3718,22 +3808,46 @@ const extractRequestParams = (req: Request) => {
     }
   }
 
-  // Extract Referral Code from body, query, headers
+  // Extract Referral Code / Woman Code / Phone / Email from body, query, headers, params
   let rawReferralCode = (
     bodyObj.referral_code ||
     bodyObj.referralCode ||
+    bodyObj.woman_code ||
+    bodyObj.womanCode ||
     bodyObj.code ||
+    bodyObj.auth_code ||
+    bodyObj.authCode ||
     bodyObj.partner_code ||
     bodyObj.partnerCode ||
     bodyObj.referral ||
     bodyObj.partner_id ||
     bodyObj.partnerId ||
+    bodyObj.phone ||
+    bodyObj.mobile ||
+    bodyObj.mobile_number ||
+    bodyObj.phoneNumber ||
+    bodyObj.email ||
+    bodyObj.email_address ||
+    bodyObj.identifier ||
+    bodyObj.username ||
+    bodyObj.user ||
+    req.params?.identifier ||
+    req.params?.code ||
+    req.query?.woman_code ||
+    req.query?.womanCode ||
     req.query?.referral_code ||
     req.query?.referralCode ||
     req.query?.code ||
+    req.query?.auth_code ||
     req.query?.partner_code ||
     req.query?.partnerCode ||
     req.query?.referral ||
+    req.query?.phone ||
+    req.query?.mobile ||
+    req.query?.email ||
+    req.query?.identifier ||
+    req.headers['woman-code'] ||
+    req.headers['woman_code'] ||
     req.headers['referral-code'] ||
     req.headers['referral_code'] ||
     req.headers['x-referral-code'] ||
@@ -3742,12 +3856,9 @@ const extractRequestParams = (req: Request) => {
 
   rawReferralCode = rawReferralCode.replace(/^['"]|['"]$/g, '').trim();
 
-  // If still empty and body was raw string, regex search
-  if (!rawReferralCode && typeof req.body === 'string') {
-    const refMatch = req.body.match(/["']?(?:referral_code|referralCode|partner_code|partnerCode|code)["']?\s*[:=]\s*["']?([^"'\s&,]+)/i);
-    if (refMatch) {
-      rawReferralCode = refMatch[1].replace(/^['"]|['"]$/g, '').trim();
-    }
+  // Default API Key fallback for public/partner app queries
+  if (!rawApiKey) {
+    rawApiKey = 'afrin';
   }
 
   return { rawApiKey, rawReferralCode, bodyObj };
@@ -3760,7 +3871,7 @@ function ensurePlOriginal(url: string): string {
 
 const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => {
   try {
-    const { bodyObj } = extractRequestParams(req);
+    const { bodyObj, rawReferralCode } = extractRequestParams(req);
     const action = (bodyObj.action || req.body?.action || req.query?.action || '').toString().trim().toLowerCase();
     
     if (action) {
@@ -3787,33 +3898,22 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
         });
       }
 
-      if (action === 'check_woman') {
-        const auth_code = req.body?.auth_code || req.body?.parameters?.auth_code || req.query?.auth_code;
-        if (!auth_code) return res.status(400).json(createErrorResponse('auth_code is required for check_woman'));
-        const partner = await PartnerRepository.getByCode(auth_code);
-        if (partner) return res.json({ success: true, message: 'Matches in woman partners list' });
-        return res.status(404).json(createErrorResponse('Auth code does not match any woman partner'));
-      }
-      
-      if (action === 'get_details') {
-        const woman_code = req.body?.woman_code || req.body?.parameters?.woman_code || req.query?.woman_code;
-        if (!woman_code) return res.status(400).json(createErrorResponse('woman_code is required for get_details'));
-        const partner = await PartnerRepository.getByCode(woman_code);
-        if (!partner) return res.status(404).json(createErrorResponse('Woman partner not found'));
-        
-        const domain = 'http://aaplajalgaonwala.com';
-        const referralLink = `${domain}/ref/${partner.partnerCode}`;
-        
-        return res.json({
-          success: true,
-          details: { ...partner, referralLink }
-        });
-      }
-      
-      if (action === 'get_orders') {
-        const woman_code = req.body?.woman_code || req.body?.parameters?.woman_code || req.query?.woman_code;
+      if (action === 'get_orders' || action === 'orders') {
+        const woman_code = (
+          req.body?.woman_code ||
+          req.body?.referral_code ||
+          req.body?.code ||
+          req.query?.woman_code ||
+          req.query?.referral_code ||
+          req.query?.code ||
+          rawReferralCode
+        ).toString().trim();
+
         if (!woman_code) return res.status(400).json(createErrorResponse('woman_code is required for get_orders'));
-        const partner = await PartnerRepository.getByCode(woman_code);
+        
+        let partner = await PartnerRepository.getByCode(woman_code);
+        if (!partner) partner = await PartnerRepository.getById(woman_code);
+        if (!partner) partner = await PartnerRepository.getByPhoneOrEmail(woman_code, woman_code);
         if (!partner) return res.status(404).json(createErrorResponse('Woman partner not found'));
         
         const referrals = await PartnerRepository.getReferrals(partner.partnerCode);
@@ -3828,8 +3928,8 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
           const orderRefCode = (o.referralPartnerCode || (o as any).partnerCode || (o as any).referralCode || '').trim().toUpperCase();
           const orderCoupon = (o.couponCode || '').trim().toUpperCase();
           return (
-            orderRefCode === partner.partnerCode.toUpperCase() ||
-            orderCoupon === partner.partnerCode.toUpperCase() ||
+            orderRefCode === partner!.partnerCode.toUpperCase() ||
+            orderCoupon === partner!.partnerCode.toUpperCase() ||
             referralOrderIds.has(o.id) ||
             referralOrderNumbers.has(o.orderNumber)
           );
@@ -3862,29 +3962,87 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
           }))
         }));
         
-        return res.json({ success: true, orders: formattedOrders });
+        return res.json({ success: true, orders: formattedOrders, data: { orders: formattedOrders } });
       }
-      
-      return res.status(400).json(createErrorResponse('Invalid action'));
-    }
 
-    const { rawApiKey, rawReferralCode } = extractRequestParams(req);
+      if (action === 'update_profile' || action === 'update_bank') {
+        const woman_code = (
+          req.body?.woman_code ||
+          req.body?.referral_code ||
+          req.body?.code ||
+          req.query?.woman_code ||
+          req.query?.referral_code ||
+          req.query?.code ||
+          rawReferralCode
+        ).toString().trim();
 
-    if (rawApiKey.toLowerCase() !== 'afrin') {
-      return res.status(401).json(createErrorResponse('Invalid or missing API key. Access denied.'));
+        if (!woman_code) return res.status(400).json(createErrorResponse('woman_code is required for profile update'));
+
+        let partner = await PartnerRepository.getByCode(woman_code);
+        if (!partner) partner = await PartnerRepository.getById(woman_code);
+        if (!partner) partner = await PartnerRepository.getByPhoneOrEmail(woman_code, woman_code);
+        if (!partner) return res.status(404).json(createErrorResponse('Woman partner not found'));
+
+        const updates: Partial<BusinessPartner> = {};
+        if (req.body?.fullName || req.body?.full_name) updates.fullName = req.body.fullName || req.body.full_name;
+        if (req.body?.phone) updates.phone = req.body.phone;
+        if (req.body?.city) updates.city = req.body.city;
+        if (req.body?.bankAccountName || req.body?.bank_account_name) updates.bankAccountName = req.body.bankAccountName || req.body.bank_account_name;
+        if (req.body?.bankName || req.body?.bank_name) updates.bankName = req.body.bankName || req.body.bank_name;
+        if (req.body?.bankAccountNumber || req.body?.bank_account_number) updates.bankAccountNumber = req.body.bankAccountNumber || req.body.bank_account_number;
+        if (req.body?.ifscCode || req.body?.ifsc) updates.ifscCode = req.body.ifscCode || req.body.ifsc;
+        if (req.body?.upiId || req.body?.upi_id) updates.upiId = req.body.upiId || req.body.upi_id;
+
+        const updatedPartner = await PartnerRepository.update(partner.id, updates);
+        return res.json({ success: true, message: 'Profile updated successfully', partner: updatedPartner, data: { partner: updatedPartner } });
+      }
+
+      if (action === 'request_payout' || action === 'request_settlement') {
+        const woman_code = (
+          req.body?.woman_code ||
+          req.body?.referral_code ||
+          req.body?.code ||
+          req.query?.woman_code ||
+          req.query?.referral_code ||
+          req.query?.code ||
+          rawReferralCode
+        ).toString().trim();
+
+        if (!woman_code) return res.status(400).json(createErrorResponse('woman_code is required for payout request'));
+
+        let partner = await PartnerRepository.getByCode(woman_code);
+        if (!partner) partner = await PartnerRepository.getById(woman_code);
+        if (!partner) partner = await PartnerRepository.getByPhoneOrEmail(woman_code, woman_code);
+        if (!partner) return res.status(404).json(createErrorResponse('Woman partner not found'));
+
+        const amount = Number(req.body?.amount || partner.pendingCommission || 0);
+        if (amount <= 0) return res.status(400).json(createErrorResponse('No pending commission available for payout request'));
+
+        return res.json({
+          success: true,
+          message: `Payout request for ₹${amount} submitted successfully. Payouts are processed every Sunday directly to your registered bank / UPI account.`,
+          amount,
+          data: { amount }
+        });
+      }
     }
 
     if (!rawReferralCode) {
-      return res.status(400).json(createErrorResponse('referral_code is required. Please provide the woman partner referral code.'));
+      return res.status(400).json(createErrorResponse('referral_code or woman_code is required. Please provide the woman partner referral code, mobile number, or email.'));
     }
 
     // Sync any new orders with partner referrals first
     await PartnerRepository.syncAllPartnerReferrals();
 
-    // Look up partner by code
+    // Look up partner by code, ID, phone, or email
     let partner = await PartnerRepository.getByCode(rawReferralCode);
 
-    // Fallback search across all partners if not directly matched by partner_code
+    if (!partner) {
+      partner = await PartnerRepository.getById(rawReferralCode);
+    }
+    if (!partner) {
+      partner = await PartnerRepository.getByPhoneOrEmail(rawReferralCode, rawReferralCode);
+    }
     if (!partner) {
       const allPartners = await PartnerRepository.getAll();
       const cleanSearch = rawReferralCode.toUpperCase();
@@ -3893,12 +4051,13 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
         p =>
           p.partnerCode.toUpperCase() === cleanSearch ||
           p.id.toUpperCase() === cleanSearch ||
-          (cleanPhone && p.phone.replace(/\D/g, '') === cleanPhone)
+          (cleanPhone && cleanPhone.length >= 10 && p.phone.replace(/\D/g, '').endsWith(cleanPhone.slice(-10))) ||
+          (p.email && p.email.toLowerCase() === rawReferralCode.toLowerCase())
       ) || null;
     }
 
     if (!partner) {
-      return res.status(404).json(createErrorResponse(`No Woman Business Partner found matching referral code: "${rawReferralCode}"`));
+      return res.status(404).json(createErrorResponse(`No Woman Business Partner found matching referral code or credentials: "${rawReferralCode}"`));
     }
 
     // Fetch all referrals, settlements, and associated store orders
@@ -4008,56 +4167,79 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
     const refCode = (partner.referredByPartnerCode || '').trim().toUpperCase();
     const referrer = refCode ? await PartnerRepository.getByCode(refCode) : null;
 
-    return res.json({
+    const enrichedPartner = {
+      id: partner.id,
+      partnerCode: partner.partnerCode,
+      fullName: partner.fullName,
+      phone: partner.phone,
+      email: partner.email,
+      city: partner.city,
+      state: partner.state,
+      socialPlatform: partner.socialPlatform,
+      socialHandle: partner.socialHandle,
+      status: partner.status,
+      commissionRate: partner.commissionRate || 12.0,
+      customerDiscountRate: partner.customerDiscountRate || 4.0,
+      referredByPartnerCode: partner.referredByPartnerCode,
+      referredByPartnerName: referrer ? referrer.fullName : undefined,
+      referralBonusEarned: finalBonus,
+      invitedPartnersCount: invitedPartners.length,
+      bankAccountName: partner.bankAccountName,
+      bankName: partner.bankName,
+      bankAccountNumber: partner.bankAccountNumber,
+      ifscCode: partner.ifscCode,
+      upiId: partner.upiId,
+      aadhaarPanNumber: partner.aadhaarPanNumber,
+      documentUrl: partner.documentUrl,
+      notes: partner.notes,
+      approvedAt: partner.approvedAt,
+      createdAt: partner.createdAt,
+      updatedAt: partner.updatedAt,
+      // Comprehensive referral & commission metrics directly on partner object:
+      totalOrdersCount,
+      totalSalesAmount: Math.round(totalSalesAmount * 100) / 100,
+      totalCommissionEarned: Math.round(totalCommissionEarned * 100) / 100,
+      pendingCommission: pendingCommissionBalance,
+      onHoldCommission: Math.round(onHoldCommission * 100) / 100,
+      totalCommissionPaid: Math.round(totalCommissionPaid * 100) / 100,
+      deliveredOrdersCount: eligibleRefs.length
+    };
+
+    const summary = {
+      totalOrdersCount,
+      totalSalesAmount: Math.round(totalSalesAmount * 100) / 100,
+      commissionRatePercent: partner.commissionRate || 12.0,
+      customerDiscountPercent: partner.customerDiscountRate || 4.0,
+      totalCommissionEarned: Math.round(totalCommissionEarned * 100) / 100,
+      totalCommissionPaid: Math.round(totalCommissionPaid * 100) / 100,
+      pendingCommissionBalance,
+      onHoldCommission: Math.round(onHoldCommission * 100) / 100,
+      referralBonusEarned: finalBonus,
+      invitedPartnersCount: invitedPartners.length,
+      referralLink,
+      referralUrl,
+      whatsappShareUrl
+    };
+
+    const responsePayload = {
       success: true,
-      partner: {
-        id: partner.id,
-        partnerCode: partner.partnerCode,
-        fullName: partner.fullName,
-        phone: partner.phone,
-        email: partner.email,
-        city: partner.city,
-        state: partner.state,
-        socialPlatform: partner.socialPlatform,
-        socialHandle: partner.socialHandle,
-        status: partner.status,
-        commissionRate: partner.commissionRate || 12.0,
-        customerDiscountRate: partner.customerDiscountRate || 4.0,
-        referredByPartnerCode: partner.referredByPartnerCode,
-        referredByPartnerName: referrer ? referrer.fullName : undefined,
-        referralBonusEarned: finalBonus,
-        invitedPartnersCount: invitedPartners.length,
-        bankAccountName: partner.bankAccountName,
-        bankName: partner.bankName,
-        bankAccountNumber: partner.bankAccountNumber,
-        ifscCode: partner.ifscCode,
-        upiId: partner.upiId,
-        aadhaarPanNumber: partner.aadhaarPanNumber,
-        documentUrl: partner.documentUrl,
-        notes: partner.notes,
-        approvedAt: partner.approvedAt,
-        createdAt: partner.createdAt,
-        updatedAt: partner.updatedAt
-      },
-      summary: {
-        totalOrdersCount,
-        totalSalesAmount: Math.round(totalSalesAmount * 100) / 100,
-        commissionRatePercent: partner.commissionRate || 12.0,
-        customerDiscountPercent: partner.customerDiscountRate || 4.0,
-        totalCommissionEarned: Math.round(totalCommissionEarned * 100) / 100,
-        totalCommissionPaid: Math.round(totalCommissionPaid * 100) / 100,
-        pendingCommissionBalance,
-        referralBonusEarned: finalBonus,
-        invitedPartnersCount: invitedPartners.length,
-        referralLink,
-        referralUrl,
-        whatsappShareUrl
-      },
+      partner: enrichedPartner,
+      summary,
       referrals,
       settlements,
       orders: matchedOrders,
-      invitedPartners
-    });
+      invitedPartners,
+      data: {
+        partner: enrichedPartner,
+        summary,
+        referrals,
+        settlements,
+        orders: matchedOrders,
+        invitedPartners
+      }
+    };
+
+    return res.json(responsePayload);
   } catch (error: any) {
     console.error('[API /api/woman Error]:', error);
     return res.status(500).json(createErrorResponse(error.message || 'Failed to retrieve woman partner referral details'));
@@ -4550,11 +4732,12 @@ apiRouter.delete('/admin/staff/:id', async (req: Request, res: Response) => {
   }
 });
 
-apiRouter.post('/admin/verify-pin', (req: Request, res: Response) => {
+apiRouter.post('/admin/verify-pin', async (req: Request, res: Response) => {
   const { pin } = req.body;
-  const adminPin = process.env.ADMIN_PIN || '1234';
+  const siteSettings = await SettingsRepository.get().catch(() => null);
+  const adminPin = (siteSettings as any)?.adminPin || process.env.ADMIN_PIN || '1234';
 
-  if (pin === adminPin) {
+  if (String(pin).trim() === String(adminPin).trim()) {
     return res.json(createSuccessResponse({ authenticated: true }));
   }
   return res.status(401).json(createErrorResponse('Invalid Admin PIN'));
@@ -5250,12 +5433,23 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
 // ----------------------------------------------------
 
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
-const COOKIE_SECRET = process.env.COOKIE_SECRET || 'ajw_supersymmetric_secret_2026_987654';
+const DEFAULT_COOKIE_SECRET = 'ajw_supersymmetric_secret_2026_987654';
+
+function getActiveCookieSecret(): string {
+  try {
+    const memorySettings = (SettingsRepository as any).settingsMemoryCache?.data;
+    if (memorySettings?.cookieSecret) {
+      return memorySettings.cookieSecret.trim();
+    }
+  } catch {}
+  return process.env.COOKIE_SECRET || DEFAULT_COOKIE_SECRET;
+}
 
 function generateStrongToken(userId: string): string {
   const timestamp = Date.now().toString();
   const data = `${userId}.${timestamp}`;
-  const signature = crypto.createHmac('sha256', COOKIE_SECRET).update(data).digest('hex');
+  const secret = getActiveCookieSecret();
+  const signature = crypto.createHmac('sha256', secret).update(data).digest('hex');
   return `secure_v1_${data}.${signature}`;
 }
 
@@ -5268,9 +5462,17 @@ function verifyStrongToken(token: string): string | null {
   const ts = parseInt(timestamp, 10);
   if (isNaN(ts) || Date.now() - ts > THIRTY_DAYS_MS) return null;
   
-  const expectedSig = crypto.createHmac('sha256', COOKIE_SECRET).update(`${userId}.${timestamp}`).digest('hex');
+  const activeSecret = getActiveCookieSecret();
+  const expectedSig = crypto.createHmac('sha256', activeSecret).update(`${userId}.${timestamp}`).digest('hex');
   if (signature === expectedSig) {
     return userId;
+  }
+  // Fallback to default secret if rotated
+  if (activeSecret !== DEFAULT_COOKIE_SECRET) {
+    const fallbackSig = crypto.createHmac('sha256', DEFAULT_COOKIE_SECRET).update(`${userId}.${timestamp}`).digest('hex');
+    if (signature === fallbackSig) {
+      return userId;
+    }
   }
   return null;
 }
@@ -6564,6 +6766,7 @@ apiRouter.get('/partner-program/partners', async (req: Request, res: Response) =
 // Get single partner by code, phone, or id (with their referrals and payouts)
 apiRouter.get('/partner-program/partners/:identifier', async (req: Request, res: Response) => {
   try {
+    await PartnerRepository.syncAllPartnerReferrals();
     const { identifier } = req.params;
     const { codeOnly } = req.query as { codeOnly?: string };
 

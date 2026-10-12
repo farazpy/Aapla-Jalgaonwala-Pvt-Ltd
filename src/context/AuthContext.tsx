@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, UserAddress, Order } from '@/types';
+import { getBootstrapData } from '@/services/bootstrap';
 
 interface AuthContextType {
   user: User | null;
@@ -154,7 +155,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [persistSession, refreshProfile]);
 
   useEffect(() => {
-    refreshProfile();
+    let isMounted = true;
+    getBootstrapData().then((boot) => {
+      if (isMounted && boot?.auth) {
+        if (boot.auth.user) {
+          const fetchedUser = boot.auth.user;
+          const fetchedToken = boot.auth.token || localStorage.getItem(TOKEN_KEY) || `token_${fetchedUser.id}_${Date.now()}`;
+          setUser(fetchedUser);
+          setToken(fetchedToken);
+          localStorage.setItem(USER_KEY, JSON.stringify(fetchedUser));
+          localStorage.setItem(TOKEN_KEY, fetchedToken);
+          if (fetchedUser.addresses) {
+            setAddresses(fetchedUser.addresses);
+          }
+        } else {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem(USER_KEY);
+          localStorage.removeItem(TOKEN_KEY);
+          setAddresses([]);
+          setUserOrders([]);
+        }
+        setIsLoading(false);
+      } else if (isMounted) {
+        refreshProfile();
+      }
+    }).catch(() => {
+      if (isMounted) refreshProfile();
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, [refreshProfile]);
 
   const openAuthModal = (tab: 'login' | 'signup' | 'partner' = 'login') => {

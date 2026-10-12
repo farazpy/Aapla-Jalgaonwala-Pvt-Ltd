@@ -8,8 +8,8 @@ export const AnalyticsTrackerProvider: React.FC<{ children?: React.ReactNode }> 
   const isFirstRender = useRef(true);
 
   useEffect(() => {
-    // Start automated background heartbeat (every 15s to reduce server load)
-    Analytics.startHeartbeat(15000);
+    // Automated background heartbeat (every 60s to minimize VPS server load)
+    Analytics.startHeartbeat(60000);
   }, []);
 
   useEffect(() => {

@@ -5,22 +5,52 @@ import { SectionHeading } from '@/components/ui/SectionHeading';
 import { CategoryCard } from '@/components/category/CategoryCard';
 import { initialCategories } from '@/data/categories';
 import { Category } from '@/types';
+import { getBootstrapData } from '@/services/bootstrap';
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/categories')
-      .then((res) => res.json())
-      .then((res) => {
-        const list = res.data || (Array.isArray(res) ? res : []);
-        if (Array.isArray(list) && list.length > 0) {
-          setCategories(list);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    let isMounted = true;
+    getBootstrapData().then((boot) => {
+      if (isMounted && boot?.categories && Array.isArray(boot.categories) && boot.categories.length > 0) {
+        setCategories(boot.categories);
+        setLoading(false);
+      } else if (isMounted) {
+        fetch('/api/categories')
+          .then((res) => res.json())
+          .then((res) => {
+            const list = res.data || (Array.isArray(res) ? res : []);
+            if (isMounted && Array.isArray(list) && list.length > 0) {
+              setCategories(list);
+            }
+          })
+          .catch(() => {})
+          .finally(() => {
+            if (isMounted) setLoading(false);
+          });
+      }
+    }).catch(() => {
+      if (isMounted) {
+        fetch('/api/categories')
+          .then((res) => res.json())
+          .then((res) => {
+            const list = res.data || (Array.isArray(res) ? res : []);
+            if (isMounted && Array.isArray(list) && list.length > 0) {
+              setCategories(list);
+            }
+          })
+          .catch(() => {})
+          .finally(() => {
+            if (isMounted) setLoading(false);
+          });
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (

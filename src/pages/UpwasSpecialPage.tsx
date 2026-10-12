@@ -5,6 +5,7 @@ import { Container } from '@/components/ui/Container';
 import { ProductGrid } from '@/components/product/ProductGrid';
 import { Product } from '@/types';
 import { initialProducts } from '@/data/products';
+import { getBootstrapData } from '@/services/bootstrap';
 import {
   Sparkles,
   Search,
@@ -36,33 +37,53 @@ export default function UpwasSpecialPage() {
 
   useEffect(() => {
     let isMounted = true;
-    const fetchUpwasProducts = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch('/api/products');
-        const json = await res.json();
-        if (isMounted) {
-          const list = json.data || (Array.isArray(json) ? json : []);
-          if (Array.isArray(list)) {
-            const upwasItems = list.filter(
-              (p: Product) =>
-                p.category === 'upwas-special' ||
-                p.categoryId === 'upwas-special' ||
-                (p.categoryName && /upwas/i.test(p.categoryName)) ||
-                (p.tags && p.tags.some(t => /upwas|farali|fasting|sendha/i.test(t))) ||
-                /upwas|farali|sendha/i.test(p.name)
-            );
-            setProducts(upwasItems);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load upwas special products:', err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
+
+    const filterUpwas = (list: Product[]) => {
+      return list.filter(
+        (p: Product) =>
+          p.category === 'upwas-special' ||
+          p.categoryId === 'upwas-special' ||
+          (p.categoryName && /upwas/i.test(p.categoryName)) ||
+          (p.tags && p.tags.some(t => /upwas|farali|fasting|sendha/i.test(t))) ||
+          /upwas|farali|sendha/i.test(p.name)
+      );
     };
 
-    fetchUpwasProducts();
+    getBootstrapData().then((boot) => {
+      if (isMounted && boot?.products && Array.isArray(boot.products) && boot.products.length > 0) {
+        setProducts(filterUpwas(boot.products));
+        setIsLoading(false);
+      } else if (isMounted) {
+        fetch('/api/products')
+          .then(res => res.json())
+          .then(json => {
+            if (isMounted) {
+              const list = json.data || (Array.isArray(json) ? json : []);
+              if (Array.isArray(list)) {
+                setProducts(filterUpwas(list));
+              }
+            }
+          })
+          .catch(err => console.error('Failed to load upwas special products:', err))
+          .finally(() => { if (isMounted) setIsLoading(false); });
+      }
+    }).catch(() => {
+      if (isMounted) {
+        fetch('/api/products')
+          .then(res => res.json())
+          .then(json => {
+            if (isMounted) {
+              const list = json.data || (Array.isArray(json) ? json : []);
+              if (Array.isArray(list)) {
+                setProducts(filterUpwas(list));
+              }
+            }
+          })
+          .catch(err => console.error('Failed to load upwas special products:', err))
+          .finally(() => { if (isMounted) setIsLoading(false); });
+      }
+    });
+
     return () => {
       isMounted = false;
     };

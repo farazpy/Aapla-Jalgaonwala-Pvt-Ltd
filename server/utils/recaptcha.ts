@@ -1,7 +1,21 @@
+import { SettingsRepository } from '../repositories/SettingsRepository';
+
 export async function verifyRecaptcha(token: string | undefined): Promise<{ success: boolean; score?: number; error?: string }> {
-  const secretKey = process.env.RECAPTCHA_SECRET_KEY || process.env.GOOGLE_RECAPTCHA_SECRET;
+  let secretKey = '';
+  try {
+    const settings = await SettingsRepository.get();
+    if (settings.recaptchaSecretKey) {
+      secretKey = settings.recaptchaSecretKey.trim();
+    }
+  } catch (err) {
+    // Ignore error
+  }
+
+  if (!secretKey) {
+    secretKey = process.env.RECAPTCHA_SECRET_KEY || process.env.GOOGLE_RECAPTCHA_SECRET || '';
+  }
   
-  // If no secret key configured in environment, allow gracefully (development / testing mode)
+  // If no secret key configured in admin settings or environment, allow gracefully (development / testing mode)
   if (!secretKey) {
     return { success: true, score: 1.0 };
   }

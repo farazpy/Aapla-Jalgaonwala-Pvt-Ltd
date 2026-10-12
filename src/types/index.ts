@@ -320,6 +320,7 @@ export interface SiteSettings {
   smtpPass?: string;
   smtpFromEmail?: string;
   smtpFromName?: string;
+  smtpSecure?: boolean;
   enableEmailAlerts?: boolean;
 
   // Telegram Alert Settings
@@ -338,6 +339,11 @@ export interface SiteSettings {
   googleClientId?: string;
   googleClientSecret?: string;
   enableGoogleAuth?: boolean;
+
+  // Security Credentials (Managed in Admin Panel)
+  cookieSecret?: string;
+  recaptchaSecretKey?: string;
+  adminPin?: string;
 
   // Navratri Offer Custom Page Settings
   navratriHeroImageUrl?: string;

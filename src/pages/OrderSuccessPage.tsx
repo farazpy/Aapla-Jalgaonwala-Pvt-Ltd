@@ -7,6 +7,7 @@ import { Container } from '@/components/ui/Container';
 import { Order } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import { getBootstrapData } from '@/services/bootstrap';
 import {
   CheckCircle2,
   Package,
@@ -92,9 +93,14 @@ export function OrderSuccessPage() {
     if (!order || !order.items || order.items.length === 0) return;
     setReordering(true);
     try {
-      const res = await fetch('/api/products');
-      const json = await res.json();
-      const allProducts = json.success && Array.isArray(json.data) ? json.data : [];
+      const boot = await getBootstrapData();
+      let allProducts = boot?.products && Array.isArray(boot.products) ? boot.products : [];
+
+      if (allProducts.length === 0) {
+        const res = await fetch('/api/products');
+        const json = await res.json();
+        allProducts = json.success && Array.isArray(json.data) ? json.data : [];
+      }
 
       for (const item of order.items) {
         const matchedProd = allProducts.find((p: any) => p.id === item.productId || p.name === item.productName);

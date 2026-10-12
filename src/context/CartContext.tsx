@@ -175,6 +175,11 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 2. If no coupon is applied and user hasn't manually removed one, check referral cookie or auto-apply
     if (!manuallyRemoved && !appliedCoupon) {
       const activeRef = getReferralCookie();
+      // Only check auto-apply if user has items in cart or an active partner referral cookie
+      if (!activeRef && (!cart || cart.length === 0 || subtotal <= 0)) {
+        return;
+      }
+
       if (activeRef && activeRef.code) {
         // Automatically apply the Women Partner referral coupon from 15-minute cookie
         fetch('/api/coupons/validate', {

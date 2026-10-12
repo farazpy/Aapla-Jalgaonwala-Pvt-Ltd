@@ -9,6 +9,7 @@ import { initialProducts } from '@/data/products';
 import { useWishlist } from '@/context/WishlistContext';
 import { Product, Category } from '@/types';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { getBootstrapData } from '@/services/bootstrap';
 import {
   Filter,
   SlidersHorizontal,
@@ -61,18 +62,37 @@ function ShopContent() {
     if (q) setSearchQuery(q);
   }, [searchParams]);
 
-  // Fetch real categories from MySQL database
+  // Fetch real categories from bootstrap or MySQL fallback
   useEffect(() => {
     let isMounted = true;
-    fetch('/api/categories')
-      .then(res => res.json())
-      .then(json => {
-        const list = json.data || (Array.isArray(json) ? json : []);
-        if (isMounted && Array.isArray(list) && list.length > 0) {
-          setCategories(list);
-        }
-      })
-      .catch(() => {});
+    getBootstrapData().then((boot) => {
+      if (isMounted && boot?.categories && Array.isArray(boot.categories) && boot.categories.length > 0) {
+        setCategories(boot.categories);
+      } else if (isMounted) {
+        fetch('/api/categories')
+          .then(res => res.json())
+          .then(json => {
+            const list = json.data || (Array.isArray(json) ? json : []);
+            if (isMounted && Array.isArray(list) && list.length > 0) {
+              setCategories(list);
+            }
+          })
+          .catch(() => {});
+      }
+    }).catch(() => {
+      if (isMounted) {
+        fetch('/api/categories')
+          .then(res => res.json())
+          .then(json => {
+            const list = json.data || (Array.isArray(json) ? json : []);
+            if (isMounted && Array.isArray(list) && list.length > 0) {
+              setCategories(list);
+            }
+          })
+          .catch(() => {});
+      }
+    });
+
     return () => {
       isMounted = false;
     };

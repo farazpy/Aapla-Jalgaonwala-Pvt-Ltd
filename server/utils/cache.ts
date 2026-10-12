@@ -31,7 +31,8 @@ class SystemCacheManager {
 
   // Configurable default TTLs in seconds
   private categoryTtls: Record<string, number> = {
-    products: 15,       // 15 seconds fast in-memory cache, instantly flushed on any admin update
+    bootstrap: 60,      // 60 seconds in-memory cache for unified bootstrap core
+    products: 30,       // 30 seconds fast in-memory cache, instantly flushed on any admin update
     categories: 60,     // 1 min
     coupons: 60,        // 1 min
     settings: 60,       // 1 min
@@ -98,8 +99,12 @@ class SystemCacheManager {
       clearedCount = this.cache.size;
       this.cache.clear();
     } else {
+      const targets = new Set([category]);
+      if (category === 'products' || category === 'categories' || category === 'settings') {
+        targets.add('bootstrap');
+      }
       for (const [key, entry] of this.cache.entries()) {
-        if (entry.category === category) {
+        if (targets.has(entry.category)) {
           this.cache.delete(key);
           clearedCount++;
         }

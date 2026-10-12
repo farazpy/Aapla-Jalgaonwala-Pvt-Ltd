@@ -15,6 +15,8 @@ import { ComboPreviewSection } from '@/components/home/ComboPreviewSection';
 import { StoreLocationSection } from '@/components/home/StoreLocationSection';
 import { useSettings } from '@/context/SettingsContext';
 import { Product } from '@/types';
+import { getBootstrapData } from '@/services/bootstrap';
+import { LazyRender } from '@/components/ui/LazyRender';
 
 export function HomePage() {
   const { settings } = useSettings();
@@ -23,20 +25,44 @@ export function HomePage() {
 
   useEffect(() => {
     let isMounted = true;
-    // Fetch live products from MySQL API only
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((json) => {
-        if (isMounted && json.success && Array.isArray(json.data)) {
-          setProducts(json.data);
-        }
-      })
-      .catch((err) => {
-        console.error('Failed to fetch products:', err);
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
+    
+    getBootstrapData().then((boot) => {
+      if (isMounted && boot?.products && Array.isArray(boot.products) && boot.products.length > 0) {
+        setProducts(boot.products);
+        setIsLoading(false);
+      } else if (isMounted) {
+        // Fallback to direct products endpoint if needed
+        fetch('/api/products')
+          .then((res) => res.json())
+          .then((json) => {
+            if (isMounted && json.success && Array.isArray(json.data)) {
+              setProducts(json.data);
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to fetch products:', err);
+          })
+          .finally(() => {
+            if (isMounted) setIsLoading(false);
+          });
+      }
+    }).catch(() => {
+      if (isMounted) {
+        fetch('/api/products')
+          .then((res) => res.json())
+          .then((json) => {
+            if (isMounted && json.success && Array.isArray(json.data)) {
+              setProducts(json.data);
+            }
+          })
+          .catch((err) => {
+            console.error('Failed to fetch products:', err);
+          })
+          .finally(() => {
+            if (isMounted) setIsLoading(false);
+          });
+      }
+    });
 
     return () => {
       isMounted = false;
@@ -56,38 +82,59 @@ export function HomePage() {
       {/* Quick Brand Trust & Value Badges */}
       <USPSection />
 
-      {/* SECTION 1: Banana Chips (10 Flavours @ ₹79) */}
+      {/* SECTION 1: Banana Chips (10 Flavours @ ₹79) - Immediate Top Shelf */}
       <BananaChipShowcase products={products} isLoading={isLoading} />
 
-      {/* SECTION 1B: Regular Banana Chips (200g, 500g, 1kg) */}
-      <RegularBananaChipShowcase products={products} isLoading={isLoading} />
+      {/* Below-the-fold Sections: Deferred until scroll to prevent VPS network spike */}
+      <LazyRender minHeight="380px">
+        {/* SECTION 1B: Regular Banana Chips (200g, 500g, 1kg) */}
+        <RegularBananaChipShowcase products={products} isLoading={isLoading} />
+      </LazyRender>
 
-      {/* SECTION 2: Khandeshi Farsaan (@ ₹70) */}
-      <FarsanShowcase products={products} isLoading={isLoading} />
+      <LazyRender minHeight="380px">
+        {/* SECTION 2: Khandeshi Farsaan (@ ₹70) */}
+        <FarsanShowcase products={products} isLoading={isLoading} />
+      </LazyRender>
 
-      {/* SECTION 3: Kitchen Masalas (@ ₹45) */}
-      <MasalaShowcase products={products} isLoading={isLoading} />
+      <LazyRender minHeight="380px">
+        {/* SECTION 3: Kitchen Masalas (@ ₹45) */}
+        <MasalaShowcase products={products} isLoading={isLoading} />
+      </LazyRender>
 
-      {/* SECTION 4: Potato Chips (Artisanal Potato Wafers) */}
-      <PotatoChipsShowcase products={products} isLoading={isLoading} />
+      <LazyRender minHeight="380px">
+        {/* SECTION 4: Potato Chips (Artisanal Potato Wafers) */}
+        <PotatoChipsShowcase products={products} isLoading={isLoading} />
+      </LazyRender>
 
-      {/* Woman Business Partner Program Unified Showcase Section */}
-      <WomanPartnerShowcaseSection />
+      <LazyRender minHeight="400px">
+        {/* Woman Business Partner Program Unified Showcase Section */}
+        <WomanPartnerShowcaseSection />
+      </LazyRender>
 
-      {/* The Refined Journey of Every Chip & Direct Farm Story */}
-      <FarmerStorySection />
+      <LazyRender minHeight="400px">
+        {/* The Refined Journey of Every Chip & Direct Farm Story */}
+        <FarmerStorySection />
+      </LazyRender>
 
-      {/* Watch Our Story in Action Video Section */}
-      <WatchStorySection />
+      <LazyRender minHeight="420px">
+        {/* Watch Our Story in Action Video Section (also defers /api/media call) */}
+        <WatchStorySection />
+      </LazyRender>
 
-      {/* Combo / Value Bundles Preview */}
-      <ComboPreviewSection products={products} isLoading={isLoading} />
+      <LazyRender minHeight="380px">
+        {/* Combo / Value Bundles Preview */}
+        <ComboPreviewSection products={products} isLoading={isLoading} />
+      </LazyRender>
 
-      {/* Physical Store Location & Experience */}
-      <StoreLocationSection />
+      <LazyRender minHeight="350px">
+        {/* Physical Store Location & Experience */}
+        <StoreLocationSection />
+      </LazyRender>
 
-      {/* Unified Quality Badges & Customer Guarantee */}
-      <TrustCertificationsSection />
+      <LazyRender minHeight="200px">
+        {/* Unified Quality Badges & Customer Guarantee */}
+        <TrustCertificationsSection />
+      </LazyRender>
     </>
   );
 }

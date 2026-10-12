@@ -89,6 +89,9 @@ export default function AdminConfigsPage() {
   const [showGoogleClientSecret, setShowGoogleClientSecret] = useState(false);
   const [showCloudinarySecret, setShowCloudinarySecret] = useState(false);
   const [showTeleCloudApiKey, setShowTeleCloudApiKey] = useState(false);
+  const [showCookieSecret, setShowCookieSecret] = useState(false);
+  const [showRecaptchaSecret, setShowRecaptchaSecret] = useState(false);
+  const [showAdminPin, setShowAdminPin] = useState(false);
 
   // Razorpay test state
   const [isTestingRazorpay, setIsTestingRazorpay] = useState(false);
@@ -136,6 +139,7 @@ export default function AdminConfigsPage() {
     smtpPass: '',
     smtpFromEmail: '',
     smtpFromName: 'Aapla Jalgaonwala',
+    smtpSecure: false,
 
     // Telegram
     enableTelegramAlerts: true,
@@ -152,6 +156,11 @@ export default function AdminConfigsPage() {
     enableGoogleAuth: true,
     googleClientId: '',
     googleClientSecret: '',
+
+    // Security Credentials
+    cookieSecret: '',
+    recaptchaSecretKey: '',
+    adminPin: '1234',
 
     // Google Maps
     googleMapsApiKey: ''
@@ -896,6 +905,22 @@ export default function AdminConfigsPage() {
                     className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-[#9B111E]"
                   />
                 </div>
+
+                <div className="md:col-span-2 flex items-center justify-between p-3.5 bg-stone-50 rounded-xl border border-stone-200">
+                  <div>
+                    <span className="block text-xs font-bold text-stone-800">SSL/TLS Encryption (SMTP_SECURE)</span>
+                    <span className="text-[11px] text-stone-500">Enable for port 465 (Direct SSL/TLS). Leave disabled for port 587 (STARTTLS).</span>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.smtpSecure === true || form.smtpPort === 465}
+                      onChange={(e) => setForm({ ...form, smtpSecure: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-stone-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
               </div>
 
               <div className="mt-6 pt-4 border-t border-stone-100 flex items-center justify-between">
@@ -1311,6 +1336,104 @@ export default function AdminConfigsPage() {
                   <span className="font-medium leading-relaxed">{googleAuthTestResult.message}</span>
                 </div>
               )}
+            </div>
+
+            {/* SECTION 4.6: SECURITY CREDENTIALS, COOKIE SECRET & ANTI-BOT (DATABASE MANAGED) */}
+            <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-6 space-y-6">
+              <div className="flex items-center gap-2.5 pb-4 border-b border-stone-100">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 border border-purple-100 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-4 h-4 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-black text-stone-900 flex items-center gap-2">
+                    <span>Security Credentials, Cookie Secret & Anti-Bot</span>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800">
+                      DB Configured
+                    </span>
+                  </h2>
+                  <p className="text-[11px] text-stone-500">
+                    Manage sensitive keys directly in MySQL without needing environment secrets in AI Studio or VPS .env files.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Cookie & Token Signing Secret <span className="font-mono text-[10px] text-stone-500">(COOKIE_SECRET)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showCookieSecret ? 'text' : 'password'}
+                      value={form.cookieSecret || ''}
+                      onChange={(e) => setForm({ ...form, cookieSecret: e.target.value })}
+                      placeholder="ajw_production_secure_cookie_secret_key_2026"
+                      className="w-full px-3.5 py-2 pr-10 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-purple-600 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCookieSecret(!showCookieSecret)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      {showCookieSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-stone-500">
+                    HMAC-SHA256 signature key for customer session cookies. Defaults to built-in system secret if blank.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Google reCAPTCHA v3 Secret Key <span className="font-mono text-[10px] text-stone-500">(RECAPTCHA_SECRET_KEY)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showRecaptchaSecret ? 'text' : 'password'}
+                      value={form.recaptchaSecretKey || ''}
+                      onChange={(e) => setForm({ ...form, recaptchaSecretKey: e.target.value })}
+                      placeholder="6LeIxAcTAAAAAGG-vFI1Tn..."
+                      className="w-full px-3.5 py-2 pr-10 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-purple-600 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRecaptchaSecret(!showRecaptchaSecret)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      {showRecaptchaSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-stone-500">
+                    Server verification secret key from Google reCAPTCHA console for anti-bot protection.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Admin Quick PIN <span className="font-mono text-[10px] text-stone-500">(ADMIN_PIN)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showAdminPin ? 'text' : 'password'}
+                      value={form.adminPin || '1234'}
+                      onChange={(e) => setForm({ ...form, adminPin: e.target.value })}
+                      placeholder="1234"
+                      maxLength={8}
+                      className="w-full px-3.5 py-2 pr-10 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-purple-600 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPin(!showAdminPin)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      {showAdminPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-[11px] text-stone-500">
+                    4-digit quick security PIN for sensitive admin operations.
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* SECTION 5: GOOGLE MAPS API */}

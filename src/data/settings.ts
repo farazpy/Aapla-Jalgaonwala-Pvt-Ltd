@@ -69,6 +69,10 @@ export const initialSiteSettings: SiteSettings = {
   googleClientId: '',
   googleClientSecret: '',
   googleMapsApiKey: '',
+  smtpSecure: false,
+  cookieSecret: '',
+  recaptchaSecretKey: '',
+  adminPin: '1234',
 
   // Navratri Offer defaults
   navratriHeroImageUrl: 'https://images.unsplash.com/photo-1605000797439-7ab1434893e2?auto=format&fit=crop&w=1200&q=80',

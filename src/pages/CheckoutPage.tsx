@@ -124,7 +124,6 @@ export default function CheckoutPage() {
 
   // Fetch real-time settings on mount with cache: 'no-store'
   useEffect(() => {
-    refreshSettings();
     fetch(`/api/settings?t=${Date.now()}`, {
       cache: 'no-store',
       headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }

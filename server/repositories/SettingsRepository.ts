@@ -55,6 +55,20 @@ export class SettingsRepository {
             result = { ...result, ...rowMap['general_settings'] };
           }
 
+          if (rowMap['security_config']) {
+            const sec = rowMap['security_config'];
+            if (sec.cookieSecret !== undefined) result.cookieSecret = String(sec.cookieSecret || '').trim();
+            if (sec.recaptchaSecretKey !== undefined) result.recaptchaSecretKey = String(sec.recaptchaSecretKey || '').trim();
+            if (sec.adminPin !== undefined) result.adminPin = String(sec.adminPin || '').trim();
+          }
+
+          if (rowMap['telecloud_config']) {
+            const tc = rowMap['telecloud_config'];
+            if (tc.endpoint) result.teleCloudEndpoint = String(tc.endpoint || '').trim();
+            if (tc.apiKey) result.teleCloudApiKey = String(tc.apiKey || '').trim();
+            if (tc.workspaceId !== undefined && tc.workspaceId !== null) result.teleCloudWorkspaceId = tc.workspaceId;
+          }
+
           if (rowMap['google_auth_config']) {
             const googleConf = rowMap['google_auth_config'];
             if (googleConf.googleClientId !== undefined) result.googleClientId = String(googleConf.googleClientId || '').trim();
@@ -80,6 +94,18 @@ export class SettingsRepository {
           }
           if (rowMap['razorpay_key_secret'] !== undefined && rowMap['razorpay_key_secret'] !== null) {
             result.razorpayKeySecret = String(rowMap['razorpay_key_secret'] || '').trim();
+          }
+          if (rowMap['google_maps_api_key'] !== undefined && rowMap['google_maps_api_key'] !== null) {
+            result.googleMapsApiKey = String(rowMap['google_maps_api_key'] || '').trim();
+          }
+          if (rowMap['cookie_secret'] !== undefined && rowMap['cookie_secret'] !== null) {
+            result.cookieSecret = String(rowMap['cookie_secret'] || '').trim();
+          }
+          if (rowMap['recaptcha_secret_key'] !== undefined && rowMap['recaptcha_secret_key'] !== null) {
+            result.recaptchaSecretKey = String(rowMap['recaptcha_secret_key'] || '').trim();
+          }
+          if (rowMap['admin_pin'] !== undefined && rowMap['admin_pin'] !== null) {
+            result.adminPin = String(rowMap['admin_pin'] || '').trim();
           }
         }
       } catch (err: any) {
@@ -128,6 +154,18 @@ export class SettingsRepository {
     if (cleanedSettings.telegramBotToken === '' && current.telegramBotToken) {
       cleanedSettings.telegramBotToken = current.telegramBotToken;
     }
+    if (cleanedSettings.cookieSecret === '' && current.cookieSecret) {
+      cleanedSettings.cookieSecret = current.cookieSecret;
+    }
+    if (cleanedSettings.recaptchaSecretKey === '' && current.recaptchaSecretKey) {
+      cleanedSettings.recaptchaSecretKey = current.recaptchaSecretKey;
+    }
+    if (cleanedSettings.teleCloudApiKey === '' && current.teleCloudApiKey) {
+      cleanedSettings.teleCloudApiKey = current.teleCloudApiKey;
+    }
+    if (cleanedSettings.googleMapsApiKey === '' && current.googleMapsApiKey) {
+      cleanedSettings.googleMapsApiKey = current.googleMapsApiKey;
+    }
 
     const updated = { ...current, ...cleanedSettings };
 
@@ -164,15 +202,31 @@ export class SettingsRepository {
           razorpayKeySecret: (updated.razorpayKeySecret || '').trim(),
           enableRazorpay: updated.enableRazorpay !== false
         });
+        const securityJson = JSON.stringify({
+          cookieSecret: (updated.cookieSecret || '').trim(),
+          recaptchaSecretKey: (updated.recaptchaSecretKey || '').trim(),
+          adminPin: (updated.adminPin || '').trim()
+        });
+        const teleCloudJson = JSON.stringify({
+          endpoint: (updated.teleCloudEndpoint || '').trim(),
+          apiKey: (updated.teleCloudApiKey || '').trim(),
+          workspaceId: updated.teleCloudWorkspaceId || ''
+        });
 
         const itemsToSave: [string, string][] = [
           ['general_settings', generalJson],
           ['google_auth_config', googleAuthJson],
           ['razorpay_config', razorpayJson],
+          ['security_config', securityJson],
+          ['telecloud_config', teleCloudJson],
           ['google_client_id', JSON.stringify((updated.googleClientId || '').trim())],
           ['google_client_secret', JSON.stringify((updated.googleClientSecret || '').trim())],
           ['razorpay_key_id', JSON.stringify((updated.razorpayKeyId || '').trim())],
-          ['razorpay_key_secret', JSON.stringify((updated.razorpayKeySecret || '').trim())]
+          ['razorpay_key_secret', JSON.stringify((updated.razorpayKeySecret || '').trim())],
+          ['google_maps_api_key', JSON.stringify((updated.googleMapsApiKey || '').trim())],
+          ['cookie_secret', JSON.stringify((updated.cookieSecret || '').trim())],
+          ['recaptcha_secret_key', JSON.stringify((updated.recaptchaSecretKey || '').trim())],
+          ['admin_pin', JSON.stringify((updated.adminPin || '').trim())]
         ];
 
         for (const [sKey, sVal] of itemsToSave) {

@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import compression from 'compression';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -48,6 +49,17 @@ function escapeHtml(str: string): string {
 }
 
 const app = express();
+
+// High-performance gzip/brotli compression for API responses and static text
+app.use(compression({
+  threshold: 1024,
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
 
 // Critical Middleware: Intercept and display an elegant full-screen database connection failure error page
 // if there is a startup or persistent connection block to the MySQL Database (except for the /database diagnostics page)
