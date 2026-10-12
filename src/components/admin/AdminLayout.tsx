@@ -36,7 +36,9 @@ import {
   UserCheck,
   Shield,
   Bot,
-  Gift
+  Gift,
+  GitFork,
+  Network
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '@/context/AuthContext';
@@ -470,6 +472,15 @@ export function AdminLayout({
           icon: Users,
           count: null,
           isHighlight: false,
+          permission: 'partners'
+        },
+        {
+          id: 'woman-tree',
+          label: 'Woman Tree',
+          href: '/admin/woman-tree',
+          icon: GitFork,
+          count: null,
+          isHighlight: true,
           permission: 'partners'
         },
         {
@@ -917,7 +928,7 @@ export function AdminLayout({
                 <Link href="/admin" className="text-stone-400 hover:text-stone-800 transition-colors shrink-0 flex items-center gap-1.5">
                   <span>Store Admin</span>
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-600 border border-stone-200/80 leading-none shrink-0" title="Admin Version">
-                    v1.9.7
+                    v1.9.9
                   </span>
                 </Link>
                 <span className="text-stone-300 shrink-0">/</span>

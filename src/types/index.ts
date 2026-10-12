@@ -529,6 +529,7 @@ export interface BusinessPartner {
   paymentAmount?: number;
   paymentDate?: string;
   notes?: string;
+  responseStatus?: 'poor' | 'average' | 'good' | 'excellent' | 'outstanding' | string;
   approvedAt?: string;
   createdAt: string;
   updatedAt?: string;

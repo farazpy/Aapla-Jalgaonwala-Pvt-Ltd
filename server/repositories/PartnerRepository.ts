@@ -2180,6 +2180,14 @@ export class PartnerRepository {
       referredByPartnerCode,
       referralBonusEarned: Number(r.referral_bonus_earned || 0),
       notes: r.notes,
+      responseStatus: (() => {
+        let rs = r.response_status || r.responseStatus;
+        if (!rs && r.notes) {
+          const match = String(r.notes).match(/\[Response:\s*([a-zA-Z]+)\]/i);
+          if (match && match[1]) rs = match[1].toLowerCase().trim();
+        }
+        return rs || undefined;
+      })(),
       approvedAt: r.approved_at,
       createdAt: r.created_at,
       updatedAt: r.updated_at

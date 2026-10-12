@@ -58,6 +58,7 @@ const AdminCachePage = lazy(() => import('@/pages/admin/AdminCachePage'));
 const AdminConfigsPage = lazy(() => import('@/pages/admin/AdminConfigsPage'));
 const AdminReviewsPage = lazy(() => import('@/pages/admin/AdminReviewsPage').then(m => ({ default: m.AdminReviewsPage })));
 const AdminPartnersPage = lazy(() => import('@/pages/admin/AdminPartnersPage'));
+const AdminWomanTreePage = lazy(() => import('@/pages/admin/AdminWomanTreePage').then(m => ({ default: m.AdminWomanTreePage })));
 const AdminCustomersPage = lazy(() => import('@/pages/admin/AdminCustomersPage'));
 const AdminWomanGraphicsPage = lazy(() => import('@/pages/admin/AdminWomanGraphicsPage'));
 const AdminRolesPage = lazy(() => import('@/pages/admin/AdminRolesPage').then(m => ({ default: m.AdminRolesPage })));
@@ -128,6 +129,7 @@ export function App() {
                   <Route path="/admin" element={<AdminDashboardPage />} />
                   <Route path="/admin/customers" element={<AdminCustomersPage />} />
                   <Route path="/admin/partners" element={<AdminPartnersPage />} />
+                  <Route path="/admin/woman-tree" element={<AdminWomanTreePage />} />
                   <Route path="/admin/woman-graphics" element={<AdminWomanGraphicsPage />} />
                   <Route path="/admin/products" element={<AdminProductsPage />} />
                   <Route path="/admin/products/add" element={<AdminAddProductPage />} />
