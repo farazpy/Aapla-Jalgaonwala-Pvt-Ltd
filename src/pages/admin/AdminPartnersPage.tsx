@@ -687,7 +687,8 @@ export default function AdminPartnersPage() {
       ifscCode: partner.ifscCode || '',
       aadhaarPanNumber: partner.aadhaarPanNumber || '',
       documentUrl: partner.documentUrl || '',
-      notes: partner.notes || ''
+      notes: partner.notes || '',
+      referredByPartnerCode: partner.referredByPartnerCode || ''
     });
     setIsEditPartnerModalOpen(true);
   };
@@ -760,7 +761,8 @@ export default function AdminPartnersPage() {
         upiId,
         aadhaarPanNumber: editPartnerForm.aadhaarPanNumber.trim(),
         documentUrl: editPartnerForm.documentUrl.trim(),
-        notes: editPartnerForm.notes.trim()
+        notes: editPartnerForm.notes.trim(),
+        referredByPartnerCode: editPartnerForm.referredByPartnerCode ? editPartnerForm.referredByPartnerCode.trim() : ''
       };
 
       const res = await fetch(`/api/partner-program/partners/${editingPartner.id}`, {
@@ -4603,6 +4605,36 @@ export default function AdminPartnersPage() {
                       onChange={(e) => setEditPartnerForm({ ...editPartnerForm, notes: e.target.value })}
                       className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
                     />
+                  </div>
+                </div>
+
+                {/* SECTION 6: Parent Referrer (Referred By Woman Partner) */}
+                <div className="bg-amber-50/60 p-4 rounded-2xl border border-amber-200/80 space-y-3">
+                  <div className="flex items-center justify-between border-b border-amber-200/60 pb-1.5">
+                    <div className="flex items-center gap-2 text-xs font-bold text-amber-900 uppercase tracking-wider">
+                      <Users className="w-3.5 h-3.5 text-[#9B111E]" />
+                      <span>6. Parent Referrer (Referred By Existing Member)</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
+                      Referral Network
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-stone-700 block">
+                      Assign Existing Referring Woman Partner (Woman B)
+                    </label>
+                    <SearchableSelect
+                      options={partnerCodeSelectOptions.filter(opt => !editingPartner || opt.value !== editingPartner.partnerCode)}
+                      value={editPartnerForm.referredByPartnerCode}
+                      onChange={(val) => setEditPartnerForm({ ...editPartnerForm, referredByPartnerCode: val })}
+                      placeholder="-- None (Direct / Direct Onboarding) --"
+                      searchPlaceholder="Search referring partner by name, code, phone..."
+                      type="partner"
+                    />
+                    <p className="text-[11px] text-stone-500">
+                      Assign this woman partner (e.g. Partner A) as being referred by another existing member (e.g. Partner B).
+                    </p>
                   </div>
                 </div>
 
