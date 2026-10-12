@@ -102,6 +102,16 @@ export default function AdminConfigsPage() {
   const [googleAuthTestResult, setGoogleAuthTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [copiedRedirectUri, setCopiedRedirectUri] = useState(false);
 
+  // Gemini AI Engine test state
+  const [showGeminiApiKey, setShowGeminiApiKey] = useState(false);
+  const [isTestingGemini, setIsTestingGemini] = useState(false);
+  const [geminiTestResult, setGeminiTestResult] = useState<{
+    success: boolean;
+    message: string;
+    modelUsed?: string;
+    responseSample?: string;
+  } | null>(null);
+
   // Video Management State
   const [videoList, setVideoList] = useState<VideoItem[]>([]);
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
@@ -565,6 +575,41 @@ export default function AdminConfigsPage() {
       });
     } finally {
       setIsTestingStorage(false);
+    }
+  };
+
+  const handleTestGemini = async () => {
+    setIsTestingGemini(true);
+    setGeminiTestResult(null);
+    try {
+      const res = await fetch('/api/admin/gemini/test', {
+        method: 'POST',
+        headers: getAdminAuthHeaders(),
+        body: JSON.stringify({ apiKey: form.geminiApiKey })
+      });
+      const data = await res.json().catch(() => ({ success: false, error: 'Failed to parse server response' }));
+      if (res.ok && data.success) {
+        const payload = data.data || {};
+        setGeminiTestResult({
+          success: true,
+          message: payload.message || 'Connection to Gemini 3.1 Flash Lite API successful!',
+          modelUsed: payload.modelUsed || 'gemini-3.1-flash-lite',
+          responseSample: payload.responseSample
+        });
+      } else {
+        const errMsg = data.error || data.message || 'Failed to connect to Gemini API.';
+        setGeminiTestResult({
+          success: false,
+          message: typeof errMsg === 'string' ? errMsg : 'Failed to connect to Gemini API. Please verify your API key.'
+        });
+      }
+    } catch (err: any) {
+      setGeminiTestResult({
+        success: false,
+        message: err?.message || 'Network error while testing Gemini API connection.'
+      });
+    } finally {
+      setIsTestingGemini(false);
     }
   };
 
@@ -1460,6 +1505,107 @@ export default function AdminConfigsPage() {
                 <p className="mt-1.5 text-[11px] text-stone-500">
                   You can also configure <code>VITE_GOOGLE_MAPS_API_KEY</code> in environment variables.
                 </p>
+              </div>
+            </div>
+
+            {/* SECTION 5.1: GEMINI 3.1 FLASH LITE AI ENGINE */}
+            <div className="bg-white rounded-2xl border border-stone-200/80 shadow-xs p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 mb-6 border-b border-stone-100">
+                <div className="flex items-center gap-2.5">
+                  <Sparkles className="w-5 h-5 text-purple-600" />
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-black text-stone-900">Gemini 3.1 Flash Lite AI Key</h2>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200 uppercase tracking-wide">
+                        Gemini 3.1 Flash Lite
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-500">
+                      Overall application Gemini key used for SnackMitra Bot, AI Woman Partner Auto-Extractor, Product Description Enhancer, and Bulk SEO Optimizer.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleTestGemini}
+                  disabled={isTestingGemini}
+                  className={`inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer shadow-xs ${
+                    isTestingGemini
+                      ? 'bg-purple-100 text-purple-400 border border-purple-200 cursor-not-allowed'
+                      : 'bg-purple-600 text-white hover:bg-purple-700 active:scale-95'
+                  }`}
+                  title="Test connection using Gemini 3.1 Flash Lite model"
+                >
+                  {isTestingGemini ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                      <span>Testing 3.1 Flash Lite...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="w-3.5 h-3.5" />
+                      <span>Test Gemini Key</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    Gemini API Key <span className="font-mono text-[10px] text-purple-700">(Stored in DB / site_settings)</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showGeminiApiKey ? 'text' : 'password'}
+                      value={form.geminiApiKey || ''}
+                      onChange={(e) => setForm({ ...form, geminiApiKey: e.target.value })}
+                      placeholder="AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+                      className="w-full px-3.5 py-2 pr-10 rounded-xl border border-stone-200 text-xs font-medium focus:ring-2 focus:ring-purple-600 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowGeminiApiKey(!showGeminiApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
+                    >
+                      {showGeminiApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="mt-1.5 text-[11px] text-stone-500">
+                    Enter your Gemini API key from Google AI Studio. Saved directly into MySQL database (<code>site_settings</code>) and used app-wide.
+                  </p>
+                </div>
+
+                {geminiTestResult && (
+                  <div className={`p-4 rounded-xl border text-xs ${
+                    geminiTestResult.success
+                      ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
+                      : 'bg-rose-50/80 border-rose-200 text-rose-900'
+                  }`}>
+                    <div className="flex items-start gap-2.5">
+                      {geminiTestResult.success ? (
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      )}
+                      <div className="space-y-1">
+                        <p className="font-bold">{geminiTestResult.message}</p>
+                        {geminiTestResult.modelUsed && (
+                          <p className="text-[11px] font-mono text-emerald-700">
+                            Model Tested: <span className="font-bold">{geminiTestResult.modelUsed}</span>
+                          </p>
+                        )}
+                        {geminiTestResult.responseSample && (
+                          <div className="mt-2 p-2 bg-white/80 rounded-lg border border-emerald-200/60 font-mono text-[11px] text-stone-800">
+                            <span className="text-stone-400 font-sans block text-[10px] font-bold mb-0.5">Model Response Sample:</span>
+                            "{geminiTestResult.responseSample}"
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

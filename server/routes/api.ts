@@ -20,7 +20,7 @@ import { AnalyticsRepository } from '../repositories/AnalyticsRepository';
 import { AdminRoleRepository, ALL_PERMISSIONS, ALL_PERMISSION_KEYS } from '../repositories/AdminRoleRepository';
 import { getDbPool, getDbConfig, testDbConnection, resetDbPool } from '../database/connection';
 import { createSuccessResponse, createErrorResponse } from '../utils/apiResponse';
-import { enhanceProductDetails, generateSeoWithGemini, analyzeSeoImprovements, extractPartnerFromBriefMessage } from '../utils/gemini';
+import { enhanceProductDetails, generateSeoWithGemini, analyzeSeoImprovements, extractPartnerFromBriefMessage, testGeminiApiKey } from '../utils/gemini';
 import { handleSupportChat } from '../utils/aiSupportKnowledge';
 import { SnackMitraRepository } from '../repositories/SnackMitraRepository';
 import {
@@ -2956,6 +2956,20 @@ apiRouter.post('/admin/test-telegram', async (req: Request, res: Response) => {
         debugReason: 'An unhandled server exception occurred while calling Telegram API.',
         troubleshooting: 'Check server logs for further exception details.'
       }
+    ));
+  }
+});
+
+apiRouter.post('/admin/gemini/test', async (req: Request, res: Response) => {
+  try {
+    const { apiKey } = req.body || {};
+    const result = await testGeminiApiKey(apiKey);
+    return res.json(createSuccessResponse(result, 'Gemini 3.1 Flash Lite API connection test successful'));
+  } catch (error: any) {
+    console.error('[Gemini API Test Error]:', error?.message || error);
+    return res.status(400).json(createErrorResponse(
+      error?.message || 'Failed to connect to Gemini API. Please verify your Gemini API key.',
+      'GEMINI_TEST_FAILED'
     ));
   }
 });

@@ -1,13 +1,27 @@
 import { GoogleGenAI, Type } from '@google/genai';
+import { SettingsRepository } from '../repositories/SettingsRepository';
 
 // Lazy initialization of GoogleGenAI client with dynamic key detection
 let aiClient: GoogleGenAI | null = null;
 let lastApiKey: string | null = null;
 
-export function getAiClient(): GoogleGenAI {
-  const currentKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_KEY || process.env.VITE_GEMINI_API_KEY || '').trim();
+export async function getGeminiApiKey(overrideKey?: string): Promise<string> {
+  if (overrideKey && overrideKey.trim()) {
+    return overrideKey.trim();
+  }
+  const settings = await SettingsRepository.get().catch(() => null);
+  const dbKey = settings?.geminiApiKey?.trim();
+  if (dbKey) {
+    return dbKey;
+  }
+  const envKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_KEY || process.env.VITE_GEMINI_API_KEY || '').trim();
+  return envKey;
+}
+
+export async function getAiClient(overrideKey?: string): Promise<GoogleGenAI> {
+  const currentKey = await getGeminiApiKey(overrideKey);
   if (!currentKey) {
-    throw new Error('GEMINI_API_KEY environment variable is required but not configured.');
+    throw new Error('Gemini API Key is required but not configured in Admin Settings or environment variables.');
   }
   if (!aiClient || lastApiKey !== currentKey) {
     aiClient = new GoogleGenAI({
@@ -21,6 +35,42 @@ export function getAiClient(): GoogleGenAI {
     lastApiKey = currentKey;
   }
   return aiClient;
+}
+
+/**
+ * Tests Gemini 3.1 Flash Lite connection using the specified or stored Gemini API key
+ */
+export async function testGeminiApiKey(apiKeyToTest?: string): Promise<{ success: boolean; message: string; modelUsed: string; responseSample?: string }> {
+  const keyToUse = (apiKeyToTest && apiKeyToTest.trim()) ? apiKeyToTest.trim() : await getGeminiApiKey();
+  if (!keyToUse) {
+    throw new Error('No Gemini API key provided or found in database settings.');
+  }
+
+  const testClient = new GoogleGenAI({
+    apiKey: keyToUse,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
+    },
+  });
+
+  const response = await testClient.models.generateContent({
+    model: 'gemini-3.1-flash-lite',
+    contents: 'Respond with a concise 5-word confirmation: "Gemini 3.1 Flash Lite connected successfully."',
+  });
+
+  const text = response.text || '';
+  if (!text) {
+    throw new Error('Gemini 3.1 Flash Lite model responded with empty content.');
+  }
+
+  return {
+    success: true,
+    message: 'Connection to Gemini 3.1 Flash Lite API successful!',
+    modelUsed: 'gemini-3.1-flash-lite',
+    responseSample: text.trim(),
+  };
 }
 
 export interface EnhanceProductInput {
@@ -69,7 +119,7 @@ export async function enhanceProductDetails(input: EnhanceProductInput): Promise
     return cached.output;
   }
 
-  const ai = getAiClient();
+  const ai = await getAiClient();
 
   const prompt = `
     You are an expert marketing copywriter and SEO master specializing in gourmet snacks, food, and traditional Indian specialties for our brand "Aapla Jalgaonwala".
@@ -224,7 +274,7 @@ export async function generateSeoWithGemini(params: GenerateSeoParams): Promise<
     return cached.result;
   }
 
-  const ai = getAiClient();
+  const ai = await getAiClient();
 
   const entityName = params.pageName || params.productName || params.pageKey || 'Aapla Jalgaonwala Page';
   const entityType = params.type || 'page';
@@ -467,7 +517,7 @@ export interface SeoAnalysisInput {
  * Scans metadata lengths, keyword positioning, duplicates, and returns structured recommendations.
  */
 export async function analyzeSeoImprovements(input: SeoAnalysisInput): Promise<SeoPerformanceAnalysis> {
-  const ai = getAiClient();
+  const ai = await getAiClient();
 
   const pagesSummary = input.pageSeoList.map(p => ({
     key: p.pageKey,
@@ -633,7 +683,7 @@ export async function extractPartnerFromBriefMessage(briefMessage: string): Prom
     throw new Error('Please provide a message or text snippet to extract details from.');
   }
 
-  const ai = getAiClient();
+  const ai = await getAiClient();
 
   const prompt = `
     You are an intelligent data extraction assistant for "Aapla Jalgaonwala".

@@ -4129,48 +4129,12 @@ export default function AdminPartnersPage() {
                   </div>
                 </div>
 
-                {/* SECTION 2: Social / Community Reach */}
-                <div className="bg-stone-50/70 p-4 rounded-2xl border border-stone-200/70 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-stone-800 uppercase tracking-wider border-b border-stone-200/50 pb-1.5">
-                    <Share2 className="w-3.5 h-3.5 text-[#9B111E]" />
-                    <span>2. Social & Community Reach</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-stone-700 block">Primary Network / Channel</label>
-                      <select
-                        value={addPartnerForm.socialPlatform}
-                        onChange={(e) => setAddPartnerForm({ ...addPartnerForm, socialPlatform: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                      >
-                        <option value="WhatsApp">WhatsApp Community / Family Groups</option>
-                        <option value="Housing Society">Housing Society / Colony Network</option>
-                        <option value="Instagram">Instagram Page / Influencer</option>
-                        <option value="Facebook">Facebook Groups / Marketplace</option>
-                        <option value="Boutique">Local Boutique / Beauty Parlor</option>
-                        <option value="Other">Other Community Reach</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-stone-700 block">Network Handle / Society Name</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Gokuldham Society Group or @sunita_kitchen"
-                        value={addPartnerForm.socialHandle}
-                        onChange={(e) => setAddPartnerForm({ ...addPartnerForm, socialHandle: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* SECTION 3: Commission Settlement Method */}
+                {/* SECTION 2: Commission Settlement Method */}
                 <div className="bg-stone-50/70 p-4 rounded-2xl border border-stone-200/70 space-y-3">
                   <div className="flex items-center justify-between border-b border-stone-200/50 pb-1.5">
                     <div className="flex items-center gap-2 text-xs font-bold text-stone-800 uppercase tracking-wider">
                       <IndianRupee className="w-3.5 h-3.5 text-[#9B111E]" />
-                      <span>3. Payout Settlement Details (Sunday Payout)</span>
+                      <span>2. Payout Settlement Details (Sunday Payout)</span>
                     </div>
                     <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-200">
                       10% Commission
@@ -4178,7 +4142,7 @@ export default function AdminPartnersPage() {
                   </div>
 
                   {/* Payout Tabs */}
-                  <div className="grid grid-cols-3 sm:grid-cols-3 gap-1.5 p-1 bg-stone-200/70 rounded-xl">
+                  <div className="grid grid-cols-2 gap-1.5 p-1 bg-stone-200/70 rounded-xl">
                     <button
                       type="button"
                       onClick={() => setAdminPayoutTab('phonepe')}
@@ -4188,34 +4152,23 @@ export default function AdminPartnersPage() {
                           : 'text-stone-600 hover:text-stone-900'
                       }`}
                     >
-                      PhonePe / GPay
+                      PhonePe / GPay Number
                     </button>
                     <button
                       type="button"
-                      onClick={() => setAdminPayoutTab('bank')}
+                      onClick={() => setAdminPayoutTab('upi')}
                       className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
-                        adminPayoutTab === 'bank'
+                        adminPayoutTab === 'upi'
                           ? 'bg-white text-stone-900 shadow-xs'
                           : 'text-stone-600 hover:text-stone-900'
                       }`}
                     >
-                      Bank Account
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAdminPayoutTab('passbook')}
-                      className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
-                        adminPayoutTab === 'passbook'
-                          ? 'bg-white text-stone-900 shadow-xs'
-                          : 'text-stone-600 hover:text-stone-900'
-                      }`}
-                    >
-                      Passbook URL
+                      UPI ID / VPA
                     </button>
                   </div>
 
                   {/* Tab Contents */}
-                  {adminPayoutTab === 'phonepe' && (
+                  {adminPayoutTab !== 'upi' && (
                     <div className="space-y-1 pt-1">
                       <label className="text-xs font-bold text-stone-700 block">
                         PhonePe / Google Pay Mobile Number (10 Digits) *
@@ -4234,7 +4187,7 @@ export default function AdminPartnersPage() {
                         />
                       </div>
                       <p className="text-[11px] text-stone-500">
-                        Commission is credited directly to this UPI phone number every Sunday night.
+                        Commission is credited directly to this payment mobile number every Sunday night.
                       </p>
                     </div>
                   )}
@@ -4248,64 +4201,6 @@ export default function AdminPartnersPage() {
                         value={addPartnerForm.upiId}
                         onChange={(e) => setAddPartnerForm({ ...addPartnerForm, upiId: e.target.value })}
                         className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-mono font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                      />
-                    </div>
-                  )}
-
-                  {adminPayoutTab === 'bank' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700 block">Account Holder Name</label>
-                        <input
-                          type="text"
-                          placeholder="Name as in bank"
-                          value={addPartnerForm.bankAccountName}
-                          onChange={(e) => setAddPartnerForm({ ...addPartnerForm, bankAccountName: e.target.value })}
-                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700 block">Bank Name</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. SBI, HDFC, Bank of Maharashtra"
-                          value={addPartnerForm.bankName}
-                          onChange={(e) => setAddPartnerForm({ ...addPartnerForm, bankName: e.target.value })}
-                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700 block">Bank Account Number</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. 501002391823"
-                          value={addPartnerForm.bankAccountNumber}
-                          onChange={(e) => setAddPartnerForm({ ...addPartnerForm, bankAccountNumber: e.target.value })}
-                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-mono font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-stone-700 block">IFSC Code</label>
-                        <input
-                          type="text"
-                          placeholder="e.g. SBIN0001234"
-                          value={addPartnerForm.ifscCode}
-                          onChange={(e) => setAddPartnerForm({ ...addPartnerForm, ifscCode: e.target.value.toUpperCase() })}
-                          className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-mono font-medium uppercase focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {adminPayoutTab === 'passbook' && (
-                    <div className="space-y-1 pt-1">
-                      <label className="text-xs font-bold text-stone-700 block">Bank Passbook / QR Document URL</label>
-                      <input
-                        type="url"
-                        placeholder="https://..."
-                        value={addPartnerForm.documentUrl}
-                        onChange={(e) => setAddPartnerForm({ ...addPartnerForm, documentUrl: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
                       />
                     </div>
                   )}
@@ -4529,47 +4424,11 @@ export default function AdminPartnersPage() {
                   </div>
                 </div>
 
-                {/* SECTION 2: Social / Community Reach */}
-                <div className="bg-stone-50/70 p-4 rounded-2xl border border-stone-200/70 space-y-3">
-                  <div className="flex items-center gap-2 text-xs font-bold text-stone-800 uppercase tracking-wider border-b border-stone-200/50 pb-1.5">
-                    <Share2 className="w-3.5 h-3.5 text-[#9B111E]" />
-                    <span>2. Social & Community Reach</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-stone-700 block">Primary Network / Channel</label>
-                      <select
-                        value={editPartnerForm.socialPlatform}
-                        onChange={(e) => setEditPartnerForm({ ...editPartnerForm, socialPlatform: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                      >
-                        <option value="WhatsApp">WhatsApp Community / Family Groups</option>
-                        <option value="Housing Society">Housing Society / Colony Network</option>
-                        <option value="Instagram">Instagram Page / Influencer</option>
-                        <option value="Facebook">Facebook Groups / Marketplace</option>
-                        <option value="Boutique">Local Boutique / Beauty Parlor</option>
-                        <option value="Direct Word-of-Mouth">Direct Word-of-Mouth / Friends & Family</option>
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-stone-700 block">Handle / Group Name (Optional)</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. @sunita_jalgaon or Shivneri Society"
-                        value={editPartnerForm.socialHandle}
-                        onChange={(e) => setEditPartnerForm({ ...editPartnerForm, socialHandle: e.target.value })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* SECTION 3: Account Status & Commission */}
+                {/* SECTION 2: Account Status & Commission */}
                 <div className="bg-stone-50/70 p-4 rounded-2xl border border-stone-200/70 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-stone-800 uppercase tracking-wider border-b border-stone-200/50 pb-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-[#9B111E]" />
-                    <span>3. Account Status & Commission Setup</span>
+                    <span>2. Account Status & Commission Setup</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -4612,55 +4471,37 @@ export default function AdminPartnersPage() {
                   </div>
                 </div>
 
-                {/* SECTION 4: Payout & Bank Account */}
+                {/* SECTION 3: Payout Settlement Details */}
                 <div className="bg-stone-50/70 p-4 rounded-2xl border border-stone-200/70 space-y-3">
                   <div className="flex items-center justify-between border-b border-stone-200/50 pb-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-stone-800 uppercase tracking-wider">
                       <Building2 className="w-3.5 h-3.5 text-[#9B111E]" />
-                      <span>4. Payout & Bank Details</span>
+                      <span>3. Payout Settlement Details</span>
                     </div>
 
                     <div className="flex bg-stone-200/60 p-0.5 rounded-lg text-[10px] font-bold">
                       <button
                         type="button"
                         onClick={() => setEditPartnerTab('phonepe')}
-                        className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                           editPartnerTab === 'phonepe' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'
                         }`}
                       >
-                        PhonePe
+                        PhonePe / GPay Number
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditPartnerTab('upi')}
-                        className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
+                        className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                           editPartnerTab === 'upi' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'
                         }`}
                       >
-                        UPI ID
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditPartnerTab('bank')}
-                        className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
-                          editPartnerTab === 'bank' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'
-                        }`}
-                      >
-                        Bank A/C
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setEditPartnerTab('passbook')}
-                        className={`px-2 py-1 rounded-md transition-all cursor-pointer ${
-                          editPartnerTab === 'passbook' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-600 hover:text-stone-900'
-                        }`}
-                      >
-                        Passbook
+                        UPI ID / VPA
                       </button>
                     </div>
                   </div>
 
-                  {editPartnerTab === 'phonepe' && (
+                  {editPartnerTab !== 'upi' && (
                     <div className="space-y-1">
                       <label className="text-xs font-bold text-stone-700 block">PhonePe / Google Pay Number *</label>
                       <input
@@ -4687,76 +4528,13 @@ export default function AdminPartnersPage() {
                       />
                     </div>
                   )}
-
-                  {editPartnerTab === 'bank' && (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-stone-700 block">Account Holder Name *</label>
-                          <input
-                            type="text"
-                            placeholder="Name as printed in passbook"
-                            value={editPartnerForm.bankAccountName}
-                            onChange={(e) => setEditPartnerForm({ ...editPartnerForm, bankAccountName: e.target.value })}
-                            className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-stone-700 block">Bank Name *</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. State Bank of India"
-                            value={editPartnerForm.bankName}
-                            onChange={(e) => setEditPartnerForm({ ...editPartnerForm, bankName: e.target.value })}
-                            className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-stone-700 block">Bank Account Number *</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. 30894567891"
-                            value={editPartnerForm.bankAccountNumber}
-                            onChange={(e) => setEditPartnerForm({ ...editPartnerForm, bankAccountNumber: e.target.value.trim() })}
-                            className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium font-mono focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-bold text-stone-700 block">IFSC Code *</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. SBIN0000380"
-                            value={editPartnerForm.ifscCode}
-                            onChange={(e) => setEditPartnerForm({ ...editPartnerForm, ifscCode: e.target.value.toUpperCase().trim() })}
-                            className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium font-mono uppercase focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {editPartnerTab === 'passbook' && (
-                    <div className="space-y-1">
-                      <label className="text-xs font-bold text-stone-700 block">Passbook / Cheque Document URL</label>
-                      <input
-                        type="url"
-                        placeholder="https://res.cloudinary.com/..."
-                        value={editPartnerForm.documentUrl}
-                        onChange={(e) => setEditPartnerForm({ ...editPartnerForm, documentUrl: e.target.value.trim() })}
-                        className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium font-mono focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                      />
-                    </div>
-                  )}
                 </div>
 
-                {/* SECTION 5: KYC Verification & Notes */}
+                {/* SECTION 4: KYC Verification & Notes */}
                 <div className="bg-stone-50/70 p-4 rounded-2xl border border-stone-200/70 space-y-3">
                   <div className="flex items-center gap-2 text-xs font-bold text-stone-800 uppercase tracking-wider border-b border-stone-200/50 pb-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#9B111E]" />
-                    <span>5. KYC Verification & Admin Notes</span>
+                    <span>4. KYC Verification & Admin Notes</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -4799,7 +4577,7 @@ export default function AdminPartnersPage() {
                   <div className="flex items-center justify-between border-b border-amber-200/60 pb-1.5">
                     <div className="flex items-center gap-2 text-xs font-bold text-amber-900 uppercase tracking-wider">
                       <Users className="w-3.5 h-3.5 text-[#9B111E]" />
-                      <span>6. Parent Referrer (Referred By Existing Member)</span>
+                      <span>5. Parent Referrer (Referred By Existing Member)</span>
                     </div>
                     <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-200">
                       Referral Network

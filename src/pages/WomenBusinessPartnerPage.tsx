@@ -438,7 +438,12 @@ export default function WomenBusinessPartnerPage() {
     // Payout Validation - Any one payout method required
     const cleanPhonePe = formData.phonePeNumber.replace(/\D/g, '');
     
-    if (bankDetailMethod === 'phonepe') {
+    if (bankDetailMethod === 'upi') {
+      if (!formData.upiId.trim() || formData.upiId.trim().length < 3) {
+        setRegError('Please enter a valid UPI ID (e.g. 9822455890@paytm or yourname@okhdfcbank).');
+        return;
+      }
+    } else {
       if (!cleanPhonePe) {
         setRegError('Please enter your 10-digit PhonePe / Google Pay mobile number.');
         return;
@@ -447,44 +452,6 @@ export default function WomenBusinessPartnerPage() {
         setRegError(`PhonePe / Google Pay number must be exactly 10 digits (currently ${cleanPhonePe.length} digits).`);
         return;
       }
-    } else if (bankDetailMethod === 'upi') {
-      if (!formData.upiId.trim() || formData.upiId.trim().length < 3) {
-        setRegError('Please enter a valid UPI ID (e.g. 9822455890@paytm or yourname@okhdfcbank).');
-        return;
-      }
-    } else if (bankDetailMethod === 'manual') {
-      if (!formData.bankAccountName.trim()) {
-        setRegError('Please enter the Account Holder Name as per bank records.');
-        return;
-      }
-      if (!formData.bankName.trim()) {
-        setRegError('Please select or enter your Bank Name.');
-        return;
-      }
-      if (!formData.bankAccountNumber.trim()) {
-        setRegError('Please enter your Bank Account Number.');
-        return;
-      }
-      if (!formData.ifscCode.trim()) {
-        setRegError('Please enter your Bank IFSC Code.');
-        return;
-      }
-    } else if (bankDetailMethod === 'passbook') {
-      if (!formData.documentUrl.trim()) {
-        setRegError('Please upload a photo or PDF of your bank passbook front page.');
-        return;
-      }
-    }
-
-    // Overall check that at least one payout method is valid
-    const hasValidPhonePe = cleanPhonePe.length === 10;
-    const hasValidUpi = Boolean(formData.upiId.trim() && formData.upiId.trim().length >= 3);
-    const hasValidBank = Boolean(formData.bankAccountNumber.trim() && formData.ifscCode.trim());
-    const hasValidPassbook = Boolean(formData.documentUrl.trim());
-
-    if (!hasValidPhonePe && !hasValidUpi && !hasValidBank && !hasValidPassbook) {
-      setRegError('Please provide at least one payout method (PhonePe/GPay 10-digit number, UPI ID, Bank Account details, or Passbook photo) for your Sunday commission settlements.');
-      return;
     }
 
     if (!formData.termsAccepted) {
@@ -1008,58 +975,18 @@ export default function WomenBusinessPartnerPage() {
                   </div>
                 </div>
 
-                {/* Section 2: Promotion Channels */}
-                <div className="space-y-4 pt-2">
-                  <h3 className="text-sm font-black text-stone-900 uppercase tracking-wider border-b border-stone-100 pb-2 flex items-center gap-2">
-                    <Instagram className="w-4 h-4 text-[#D9531E]" />
-                    <span>2. Promotion Channels & Social Reach</span>
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label htmlFor="form-channel" className="text-xs font-bold text-stone-700">Primary Channel</label>
-                      <select
-                        id="form-channel"
-                        name="socialPlatform"
-                        value={formData.socialPlatform}
-                        onChange={handleInputChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-[#9B111E] focus:outline-none bg-white focus:bg-white active:bg-white font-medium cursor-pointer shadow-2xs"
-                      >
-                        <option value="WhatsApp">WhatsApp (Status, Housing Society & Family Groups)</option>
-                        <option value="Instagram">Instagram (Stories, Reels & Bio Link)</option>
-                        <option value="Facebook">Facebook (Profile & Community Groups)</option>
-                        <option value="YouTube">YouTube (Vlogs & Shorts)</option>
-                        <option value="Word of Mouth">Word of Mouth & Local Community</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label htmlFor="form-handle" className="text-xs font-bold text-stone-700">Profile / Handle / Society Details (Optional)</label>
-                      <input
-                        id="form-handle"
-                        type="text"
-                        name="socialHandle"
-                        placeholder="e.g. @pooja_pune or 300+ Flat Society"
-                        value={formData.socialHandle}
-                        onChange={handleInputChange}
-                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-[#9B111E] focus:outline-none bg-white focus:bg-white active:bg-white text-stone-900 transition-colors shadow-2xs"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: Payout Settlement Details */}
+                {/* Section 2: Payout Settlement Details */}
                 <div className="space-y-4 pt-2">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-stone-100 pb-2">
                     <div>
                       <h3 className="text-sm font-black text-stone-900 uppercase tracking-wider flex items-center gap-2">
                         <Building2 className="w-4 h-4 text-emerald-600" />
-                        <span>3. Commission Payout Details (Sunday Transfers)</span>
+                        <span>2. Commission Payout Details (Sunday Transfers)</span>
                       </h3>
-                      <p className="text-[11px] text-stone-500 mt-0.5">Select your preferred payout method (Any one required).</p>
+                      <p className="text-[11px] text-stone-500 mt-0.5">Provide your PhonePe/GPay mobile number or UPI ID for direct commission payouts.</p>
                     </div>
 
-                    {/* Mode Toggle Tabs: PhonePe/GPay First, Bank Account, Passbook */}
+                    {/* Mode Toggle Tabs */}
                     <div className="flex flex-wrap items-center gap-1 p-1 bg-stone-100/80 rounded-xl shrink-0">
                       <button
                         type="button"
@@ -1075,42 +1002,30 @@ export default function WomenBusinessPartnerPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setBankDetailMethod('manual')}
+                        onClick={() => setBankDetailMethod('upi')}
                         className={`py-1.5 px-2.5 sm:px-3 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                          bankDetailMethod === 'manual'
+                          bankDetailMethod === 'upi'
                             ? 'bg-[#9B111E] text-white shadow-sm'
                             : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
                         }`}
                       >
-                        <Building2 className="w-3.5 h-3.5" />
-                        <span>Bank Account</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBankDetailMethod('passbook')}
-                        className={`py-1.5 px-2.5 sm:px-3 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                          bankDetailMethod === 'passbook'
-                            ? 'bg-[#9B111E] text-white shadow-sm'
-                            : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/60'
-                        }`}
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>Upload Passbook</span>
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>UPI ID / VPA</span>
                       </button>
                     </div>
                   </div>
 
-                  {/* Option 1: PhonePe / Google Pay Number (Default & Top Recommended) */}
-                  {bankDetailMethod === 'phonepe' && (
+                  {/* Option 1: PhonePe / Google Pay Number */}
+                  {bankDetailMethod !== 'upi' && (
                     <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-rose-50/70 via-stone-50/80 to-amber-50/50 border border-rose-200/80 space-y-3">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                         <div>
                           <label htmlFor="form-phonepe" className="text-xs font-bold text-stone-900 flex items-center gap-2">
                             <Smartphone className="w-4 h-4 text-[#9B111E]" />
-                            <span>PhonePe / Google Pay 10-Digit Mobile Number *</span>
+                            <span>PhonePe / Google Pay / Paytm 10-Digit Mobile Number *</span>
                           </label>
                           <p className="text-[11px] text-stone-600 mt-0.5">
-                            Your 12% weekly commission earnings will be credited directly to this registered number every Sunday.
+                            Your weekly 12% commission earnings will be credited directly to this registered payment mobile number every Sunday.
                           </p>
                         </div>
                         {formData.phone && (
@@ -1165,10 +1080,10 @@ export default function WomenBusinessPartnerPage() {
                         </span>
                         <button
                           type="button"
-                          onClick={() => setBankDetailMethod('manual')}
+                          onClick={() => setBankDetailMethod('upi')}
                           className="text-[#9B111E] font-bold hover:underline cursor-pointer"
                         >
-                          Want to enter Bank IFSC & Account instead?
+                          Want to enter custom UPI ID instead?
                         </button>
                       </div>
                     </div>
@@ -1198,232 +1113,13 @@ export default function WomenBusinessPartnerPage() {
                       />
                     </div>
                   )}
-
-                  {/* Option 3: Manual Bank Account Details */}
-                  {bankDetailMethod === 'manual' && (
-                    <div className="p-4 sm:p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                          <label htmlFor="form-acc-holder" className="text-xs font-bold text-stone-700">Account Holder Name *</label>
-                          <input
-                            id="form-acc-holder"
-                            type="text"
-                            name="bankAccountName"
-                            placeholder="As on Bank Account"
-                            value={formData.bankAccountName}
-                            onChange={handleInputChange}
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs focus:ring-2 focus:ring-[#9B111E] focus:outline-none bg-white transition-colors"
-                          />
-                        </div>
-
-                        {/* Searchable Bank Dropdown with Other Bank Option */}
-                        <div className="space-y-1 relative" ref={bankDropdownRef}>
-                          <label className="text-xs font-bold text-stone-700 block">Bank Name *</label>
-                          <div
-                            onClick={() => setIsBankDropdownOpen(!isBankDropdownOpen)}
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs flex justify-between items-center cursor-pointer bg-white hover:border-stone-400 focus-within:ring-2 focus-within:ring-[#9B111E] select-none"
-                          >
-                            <span className={formData.bankName ? "text-stone-900 font-semibold truncate" : "text-stone-400"}>
-                              {formData.bankName || "Select Bank Name..."}
-                            </span>
-                            <ChevronDown className="w-4 h-4 text-stone-500 shrink-0" />
-                          </div>
-
-                          {isBankDropdownOpen && (
-                            <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-stone-200 rounded-2xl shadow-2xl overflow-hidden max-h-64 flex flex-col">
-                              <div className="p-2.5 border-b border-stone-100 flex items-center gap-2 bg-stone-50">
-                                <Search className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                                <input
-                                  type="text"
-                                  placeholder="Search major Indian banks or type name..."
-                                  value={bankSearchTerm}
-                                  onChange={(e) => setBankSearchTerm(e.target.value)}
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="w-full bg-transparent text-xs focus:outline-none py-1 text-stone-800 font-medium"
-                                  autoFocus
-                                />
-                              </div>
-
-                              {/* Option to use typed text directly as custom bank */}
-                              {bankSearchTerm.trim() && (
-                                <div
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const customName = bankSearchTerm.trim();
-                                    setFormData(prev => ({ ...prev, bankName: customName }));
-                                    setCustomBankInput(customName);
-                                    setIsOtherBankSelected(true);
-                                    setIsBankDropdownOpen(false);
-                                    setBankSearchTerm('');
-                                  }}
-                                  className="px-3.5 py-2.5 text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 font-bold border-b border-amber-200 cursor-pointer flex items-center gap-2 transition-colors"
-                                >
-                                  <Sparkles className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                                  <span>Use &ldquo;{bankSearchTerm.trim()}&rdquo; as Bank Name</span>
-                                </div>
-                              )}
-
-                              <div className="overflow-y-auto flex-1 divide-y divide-stone-50">
-                                {INDIAN_BANKS.filter(bank => bank.toLowerCase().includes(bankSearchTerm.toLowerCase())).map((bank) => (
-                                  <div
-                                    key={bank}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (bank.includes('Other Bank')) {
-                                        setIsOtherBankSelected(true);
-                                        setFormData(prev => ({ ...prev, bankName: customBankInput || '' }));
-                                      } else {
-                                        setIsOtherBankSelected(false);
-                                        setFormData(prev => ({ ...prev, bankName: bank }));
-                                      }
-                                      setIsBankDropdownOpen(false);
-                                      setBankSearchTerm('');
-                                    }}
-                                    className={`px-3.5 py-2.5 text-xs hover:bg-amber-50/70 cursor-pointer text-stone-700 font-semibold transition-colors flex items-center justify-between ${
-                                      bank.includes('Other Bank') ? 'bg-stone-50 font-bold text-[#9B111E]' : ''
-                                    }`}
-                                  >
-                                    <span>{bank}</span>
-                                    {formData.bankName === bank && <Check className="w-4 h-4 text-[#9B111E]" />}
-                                  </div>
-                                ))}
-                                {INDIAN_BANKS.filter(bank => bank.toLowerCase().includes(bankSearchTerm.toLowerCase())).length === 0 && !bankSearchTerm.trim() && (
-                                  <div className="px-3.5 py-4 text-xs text-stone-400 text-center">No matching banks found</div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Custom Bank Name Input when Other Bank is selected */}
-                        {isOtherBankSelected && (
-                          <div className="space-y-1 sm:col-span-2 bg-amber-50/60 p-3 rounded-2xl border border-amber-200">
-                            <label htmlFor="form-custom-bank" className="text-xs font-bold text-amber-950 block">Enter Custom Bank Name *</label>
-                            <input
-                              id="form-custom-bank"
-                              type="text"
-                              required
-                              placeholder="e.g. Nashik District Central Co-op Bank or Citizen Credit Co-op Bank"
-                              value={formData.bankName}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                setCustomBankInput(val);
-                                setFormData(prev => ({ ...prev, bankName: val }));
-                              }}
-                              className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 text-xs focus:ring-2 focus:ring-[#9B111E] focus:outline-none bg-white font-medium"
-                            />
-                          </div>
-                        )}
-
-                        <div className="space-y-1">
-                          <label htmlFor="form-acc-num" className="text-xs font-bold text-stone-700">Account Number *</label>
-                          <input
-                            id="form-acc-num"
-                            type="text"
-                            name="bankAccountNumber"
-                            placeholder="e.g. 50100492817462"
-                            value={formData.bankAccountNumber}
-                            onChange={handleInputChange}
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-mono focus:ring-2 focus:ring-[#9B111E] focus:outline-none bg-white transition-colors"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
-                          <label htmlFor="form-ifsc" className="text-xs font-bold text-stone-700">IFSC Code *</label>
-                          <input
-                            id="form-ifsc"
-                            type="text"
-                            name="ifscCode"
-                            placeholder="e.g. HDFC0001248"
-                            value={formData.ifscCode}
-                            onChange={handleInputChange}
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-mono uppercase focus:ring-2 focus:ring-[#9B111E] focus:outline-none bg-white transition-colors"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Option 4: Upload Passbook */}
-                  {bankDetailMethod === 'passbook' && (
-                    <div className="p-4 sm:p-5 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
-                      <label className="text-xs font-bold text-stone-700 block">Bank Passbook Front Page (Photo or PDF) *</label>
-                      <p className="text-[11px] text-stone-500 leading-relaxed">
-                        Upload a clear picture or PDF of your bank passbook front page displaying your Account Number, IFSC Code, and Name.
-                      </p>
-
-                      {!formData.documentUrl ? (
-                        <div className="relative border-2 border-dashed border-stone-300 hover:border-[#9B111E] rounded-2xl p-7 transition-all bg-white flex flex-col items-center justify-center text-center group cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*,application/pdf"
-                            onChange={handlePassbookUpload}
-                            disabled={isUploadingPassbook}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                          />
-                          {isUploadingPassbook ? (
-                            <div className="space-y-2">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#9B111E] mx-auto" />
-                              <span className="text-xs font-semibold text-stone-600 block">Uploading securely to Cloudinary...</span>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <Upload className="w-8 h-8 text-stone-400 group-hover:text-[#9B111E] mx-auto transition-colors" />
-                              <div className="text-xs">
-                                <span className="text-[#9B111E] font-bold group-hover:underline">Click to upload</span> or drag and drop
-                              </div>
-                              <span className="text-[10px] text-stone-400 block">Accepts image files (PNG, JPG, WEBP) or PDFs up to 10MB</span>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between p-4 rounded-2xl border border-stone-200 bg-emerald-50/50">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="p-2.5 rounded-xl bg-emerald-100 text-emerald-800 shrink-0">
-                              {formData.documentUrl.toLowerCase().endsWith('.pdf') ? (
-                                <FileText className="w-5 h-5" />
-                              ) : (
-                                <ImageIcon className="w-5 h-5" />
-                              )}
-                            </div>
-                            <div className="min-w-0">
-                              <span className="text-xs font-bold text-stone-800 block truncate">Passbook Document Uploaded</span>
-                              <a
-                                href={formData.documentUrl}
-                                target="_blank"
-                                referrerPolicy="no-referrer"
-                                rel="noreferrer"
-                                className="text-[11px] text-emerald-700 hover:underline font-semibold flex items-center gap-1 mt-0.5"
-                              >
-                                View uploaded file <ExternalLink className="w-3 h-3" />
-                              </a>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, documentUrl: '' }))}
-                            className="text-xs text-rose-600 hover:text-rose-800 font-bold px-3 py-1.5 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      )}
-
-                      {uploadError && (
-                        <p className="text-xs font-semibold text-rose-600 flex items-center gap-1.5 pt-1">
-                          <AlertCircle className="w-4 h-4 shrink-0" />
-                          <span>{uploadError}</span>
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
 
-                {/* Section 4: Aadhaar Verification */}
+                {/* Section 3: Aadhaar Verification */}
                 <div className="space-y-4 pt-2">
                   <h3 className="text-sm font-black text-stone-900 uppercase tracking-wider border-b border-stone-100 pb-2 flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-[#9B111E]" />
-                    <span>4. Identity Verification</span>
+                    <span>3. Identity Verification</span>
                   </h3>
 
                   <div className="space-y-1 max-w-md">

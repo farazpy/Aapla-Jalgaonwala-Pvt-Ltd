@@ -69,6 +69,7 @@ export const initialSiteSettings: SiteSettings = {
   googleClientId: '',
   googleClientSecret: '',
   googleMapsApiKey: '',
+  geminiApiKey: '',
   smtpSecure: false,
   cookieSecret: '',
   recaptchaSecretKey: '',

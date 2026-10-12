@@ -6,7 +6,7 @@ import { SettingsRepository } from '../repositories/SettingsRepository';
 import { OrderRepository } from '../repositories/OrderRepository';
 import { SnackMitraRepository } from '../repositories/SnackMitraRepository';
 import { SnackMitraConfig } from '@/types';
-import { getAiClient } from './gemini';
+import { getAiClient, getGeminiApiKey } from './gemini';
 
 // --- In-Memory Response Caching (0 Tokens on Repeated Queries) ---
 interface CachedResponse {
@@ -541,7 +541,7 @@ export async function handleSupportChat(
   const systemInstruction = await getDynamicSystemInstruction(query, config);
 
   // 7. Check for API key
-  const apiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_KEY || process.env.VITE_GEMINI_API_KEY || '').trim();
+  const apiKey = await getGeminiApiKey();
 
   if (!apiKey) {
     console.warn('GEMINI_API_KEY is not set. Using intelligent fallback responder.');
@@ -578,7 +578,7 @@ export async function handleSupportChat(
   }
 
   try {
-    const ai = getAiClient();
+    const ai = await getAiClient();
 
     // Concise conversation history (only last 2 turns, max 80 chars each)
     let conversationHistory = '';

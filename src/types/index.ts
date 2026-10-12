@@ -336,6 +336,7 @@ export interface SiteSettings {
 
   // Google OAuth & API Keys
   googleMapsApiKey?: string;
+  geminiApiKey?: string;
   googleClientId?: string;
   googleClientSecret?: string;
   enableGoogleAuth?: boolean;

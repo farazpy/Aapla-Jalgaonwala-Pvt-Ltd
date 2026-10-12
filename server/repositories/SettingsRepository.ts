@@ -97,6 +97,9 @@ export class SettingsRepository {
           if (rowMap['google_maps_api_key'] !== undefined && rowMap['google_maps_api_key'] !== null) {
             result.googleMapsApiKey = String(rowMap['google_maps_api_key'] || '').trim();
           }
+          if (rowMap['gemini_api_key'] !== undefined && rowMap['gemini_api_key'] !== null) {
+            result.geminiApiKey = String(rowMap['gemini_api_key'] || '').trim();
+          }
           if (rowMap['cookie_secret'] !== undefined && rowMap['cookie_secret'] !== null) {
             result.cookieSecret = String(rowMap['cookie_secret'] || '').trim();
           }
@@ -144,6 +147,9 @@ export class SettingsRepository {
     }
     if (!result.razorpayKeySecret && process.env.RAZORPAY_KEY_SECRET) {
       result.razorpayKeySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+    }
+    if (!result.geminiApiKey && (process.env.GEMINI_API_KEY || process.env.GEMINI_KEY || process.env.VITE_GEMINI_API_KEY)) {
+      result.geminiApiKey = (process.env.GEMINI_API_KEY || process.env.GEMINI_KEY || process.env.VITE_GEMINI_API_KEY || '').trim();
     }
 
     // Purge any legacy Cloudinary URLs completely to maintain clean production state
@@ -213,6 +219,9 @@ export class SettingsRepository {
     if (cleanedSettings.googleMapsApiKey === '' && current.googleMapsApiKey) {
       cleanedSettings.googleMapsApiKey = current.googleMapsApiKey;
     }
+    if (cleanedSettings.geminiApiKey === '' && current.geminiApiKey) {
+      cleanedSettings.geminiApiKey = current.geminiApiKey;
+    }
 
     cleanedSettings.cloudinaryCloudName = '';
     cleanedSettings.cloudinaryApiKey = '';
@@ -270,6 +279,7 @@ export class SettingsRepository {
           ['razorpay_key_id', JSON.stringify((updated.razorpayKeyId || '').trim())],
           ['razorpay_key_secret', JSON.stringify((updated.razorpayKeySecret || '').trim())],
           ['google_maps_api_key', JSON.stringify((updated.googleMapsApiKey || '').trim())],
+          ['gemini_api_key', JSON.stringify((updated.geminiApiKey || '').trim())],
           ['cookie_secret', JSON.stringify((updated.cookieSecret || '').trim())],
           ['recaptcha_secret_key', JSON.stringify((updated.recaptchaSecretKey || '').trim())],
           ['admin_pin', JSON.stringify((updated.adminPin || '').trim())],
