@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
+import { SearchableSelect, SelectOption } from '@/components/admin/SearchableSelect';
 import { BusinessPartner, PartnerOrderReferral, PartnerSettlement, PartnerDashboardStats } from '@/types';
 import { formatDisplayName } from '@/utils/transliterate';
 import {
@@ -125,6 +126,34 @@ export default function AdminPartnersPage() {
 
   // Image Zoom Lightbox Modal
   const [zoomedImageUrl, setZoomedImageUrl] = useState<string | null>(null);
+
+  // Memoized options for SearchableSelect partner dropdowns
+  const partnerSelectOptions: SelectOption[] = useMemo(() => {
+    return partners.map((p) => ({
+      value: p.id,
+      label: `${p.fullName} (${p.partnerCode})`,
+      subtitle: `${p.city || p.state || 'Maharashtra'} | Current Pending: ₹${(p.pendingCommission || 0).toLocaleString('en-IN')} | Phone: ${p.phone}`,
+      badge: p.status === 'active' ? 'Active' : p.status,
+      keywords: [p.fullName, p.partnerCode, p.phone, p.email, p.city, p.state].filter(Boolean) as string[]
+    }));
+  }, [partners]);
+
+  const partnerCodeSelectOptions: SelectOption[] = useMemo(() => {
+    return [
+      {
+        value: '',
+        label: 'None (Direct / Direct Onboarding)',
+        subtitle: 'No referring parent woman partner'
+      },
+      ...partners.map((p) => ({
+        value: p.partnerCode,
+        label: `${p.fullName} (${p.partnerCode})`,
+        subtitle: `${p.city || p.state || 'Maharashtra'} | Phone: ${p.phone}`,
+        badge: p.partnerCode,
+        keywords: [p.fullName, p.partnerCode, p.phone, p.email, p.city, p.state].filter(Boolean) as string[]
+      }))
+    ];
+  }, [partners]);
 
   // Settlement Creation Modal State
   const [isSettlementModalOpen, setIsSettlementModalOpen] = useState(false);
@@ -3330,10 +3359,11 @@ export default function AdminPartnersPage() {
                     </span>
                   )}
                 </label>
-                <select
+                <SearchableSelect
+                  options={partnerSelectOptions}
                   value={customFundPartner?.id || ''}
-                  onChange={(e) => {
-                    const found = partners.find((p) => p.id === e.target.value);
+                  onChange={(val) => {
+                    const found = partners.find((p) => p.id === val);
                     if (found) {
                       setCustomFundPartner(found);
                       fetchCustomFundPartnerReferrals(found.partnerCode);
@@ -3342,15 +3372,10 @@ export default function AdminPartnersPage() {
                       }
                     }
                   }}
-                  required
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 text-xs font-bold text-stone-800 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                >
-                  {partners.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.fullName} ({p.partnerCode}) — {p.city} | Current Pending: ₹{(p.pendingCommission || 0).toLocaleString('en-IN')}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="-- Search or Select Woman Business Partner --"
+                  searchPlaceholder="Search by name, AJW code, phone, city..."
+                  type="partner"
+                />
 
                 {customFundPartner && (
                   <div className="bg-stone-50 p-3 rounded-xl border border-stone-200 text-xs text-stone-600 flex flex-wrap items-center justify-between gap-2">
@@ -4038,18 +4063,14 @@ export default function AdminPartnersPage() {
                     <label className="text-xs font-bold text-stone-700 block">
                       Select Referring Woman Partner (Parent Referrer)
                     </label>
-                    <select
+                    <SearchableSelect
+                      options={partnerCodeSelectOptions}
                       value={addPartnerForm.referredByPartnerCode}
-                      onChange={(e) => setAddPartnerForm({ ...addPartnerForm, referredByPartnerCode: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 text-xs font-medium focus:ring-2 focus:ring-[#9B111E] focus:outline-none"
-                    >
-                      <option value="">None (Direct / Direct Onboarding)</option>
-                      {partners.map((p) => (
-                        <option key={p.id} value={p.partnerCode}>
-                          {p.fullName} ({p.partnerCode}) - {p.city || p.state} [{p.phone}]
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => setAddPartnerForm({ ...addPartnerForm, referredByPartnerCode: val })}
+                      placeholder="-- None (Direct / Direct Onboarding) --"
+                      searchPlaceholder="Search referring partner by name, code, phone..."
+                      type="partner"
+                    />
                     <p className="text-[11px] text-stone-500">
                       If another woman partner (e.g. Partner A) referred this woman (Partner B), select Partner A here. Partner A will automatically receive the ₹200 invite reward linked directly to her partner account.
                     </p>

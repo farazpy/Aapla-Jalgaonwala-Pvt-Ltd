@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Sparkles,
   Calendar,
@@ -16,6 +16,7 @@ import {
   PackageCheck
 } from 'lucide-react';
 import { BusinessPartner } from '@/types';
+import { SearchableSelect, SelectOption } from './SearchableSelect';
 
 interface OrderSimulationModalProps {
   isOpen: boolean;
@@ -59,6 +60,16 @@ export const OrderSimulationModal: React.FC<OrderSimulationModalProps> = ({
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const simulationPartnerOptions: SelectOption[] = useMemo(() => {
+    return partnersList.map((p) => ({
+      value: p.partnerCode,
+      label: `${p.fullName} (${p.partnerCode})`,
+      subtitle: `${p.city || 'Maharashtra'} | Phone: ${p.phone}`,
+      badge: p.partnerCode,
+      keywords: [p.fullName, p.partnerCode, p.phone, p.city].filter(Boolean) as string[]
+    }));
+  }, [partnersList]);
 
   useEffect(() => {
     if (partnersList.length > 0 && !specificPartnerCode) {
@@ -390,21 +401,18 @@ export const OrderSimulationModal: React.FC<OrderSimulationModalProps> = ({
             </div>
 
             {referralMode === 'specific_partner' && (
-              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200">
+              <div className="p-3 bg-stone-50 rounded-xl border border-stone-200 space-y-1">
                 <label className="block text-[11px] font-bold text-stone-700 mb-1">
                   Select Woman Partner ({partnersList.length} registered)
                 </label>
-                <select
+                <SearchableSelect
+                  options={simulationPartnerOptions}
                   value={specificPartnerCode}
-                  onChange={(e) => setSpecificPartnerCode(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs font-bold text-stone-800"
-                >
-                  {partnersList.map((p) => (
-                    <option key={p.id} value={p.partnerCode}>
-                      {p.partnerCode} — {p.fullName} ({p.city || 'Maharashtra'})
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => setSpecificPartnerCode(val)}
+                  placeholder="-- Search or Select Woman Partner --"
+                  searchPlaceholder="Search by name, code, city, phone..."
+                  type="partner"
+                />
               </div>
             )}
           </div>

@@ -6,6 +6,7 @@ import { DEFAULT_HEADER_LOGO, DEFAULT_HERO_IMAGE } from '@/data/settings';
 import { Image as ImageIcon, Save, Check, RefreshCw, Upload, Sparkles, Globe, Phone, Mail, MapPin, MessageSquare, CreditCard, Truck, Trash2, Eye, EyeOff, PlusCircle } from 'lucide-react';
 import { CloudinaryUpload } from './CloudinaryUpload';
 import { FaviconSuiteManager } from './FaviconSuiteManager';
+import { S3DomainReplacer } from './S3DomainReplacer';
 
 export const BrandingTab: React.FC<{ showToast: (msg: string) => void }> = ({ showToast }) => {
   const [settings, setSettings] = useState<SiteSettings | null>(null);
@@ -974,6 +975,9 @@ export const BrandingTab: React.FC<{ showToast: (msg: string) => void }> = ({ sh
           </div>
         </div>
       </div>
+
+      {/* 11. S3 DOMAIN REPLACEMENT TOOL */}
+      <S3DomainReplacer showToast={showToast} />
 
       {/* SAVE BUTTON BAR */}
       <div className="flex justify-end pt-4">

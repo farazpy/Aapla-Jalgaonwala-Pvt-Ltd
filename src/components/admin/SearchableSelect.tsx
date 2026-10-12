@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, ChevronDown, Check, X, Package, Tag } from 'lucide-react';
+import { Search, ChevronDown, Check, X, Package, Tag, Users } from 'lucide-react';
 
 export interface SelectOption {
   value: string;
@@ -21,7 +21,7 @@ interface SearchableSelectProps {
   label?: string;
   disabled?: boolean;
   className?: string;
-  type?: 'product' | 'category' | 'generic';
+  type?: 'product' | 'category' | 'partner' | 'generic';
 }
 
 export const SearchableSelect: React.FC<SearchableSelectProps> = ({
@@ -183,7 +183,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 />
               ) : (
                 <div className="w-6 h-6 rounded-md bg-stone-200 text-stone-500 flex items-center justify-center flex-shrink-0">
-                  {type === 'category' ? <Tag className="w-3.5 h-3.5" /> : <Package className="w-3.5 h-3.5" />}
+                  {type === 'category' ? <Tag className="w-3.5 h-3.5" /> : type === 'partner' ? <Users className="w-3.5 h-3.5 text-rose-700" /> : <Package className="w-3.5 h-3.5" />}
                 </div>
               )}
               <div className="min-w-0 flex-1">
@@ -195,7 +195,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
             </>
           ) : (
             <div className="flex items-center gap-2 text-stone-400 text-xs font-medium">
-              {type === 'category' ? <Tag className="w-3.5 h-3.5" /> : <Package className="w-3.5 h-3.5" />}
+              {type === 'category' ? <Tag className="w-3.5 h-3.5" /> : type === 'partner' ? <Users className="w-3.5 h-3.5 text-rose-600" /> : <Package className="w-3.5 h-3.5" />}
               <span className="truncate">{placeholder}</span>
             </div>
           )}
@@ -295,7 +295,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                             isSelected ? 'bg-white/20 text-white' : 'bg-stone-100 text-stone-500'
                           }`}
                         >
-                          {type === 'category' ? <Tag className="w-3.5 h-3.5" /> : <Package className="w-3.5 h-3.5" />}
+                          {type === 'category' ? <Tag className="w-3.5 h-3.5" /> : type === 'partner' ? <Users className="w-3.5 h-3.5" /> : <Package className="w-3.5 h-3.5" />}
                         </div>
                       )}
                       <div className="min-w-0 flex-1">

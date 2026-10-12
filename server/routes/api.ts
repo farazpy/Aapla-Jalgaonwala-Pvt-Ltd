@@ -46,6 +46,7 @@ import { safeUploadMiddleware, uploadMiddleware, processAndSaveImage } from '../
 import { uploadToCloudinary, isCloudinaryConfigured, isCloudinaryConfiguredAsync, addCloudinaryOriginalFlag } from '../utils/cloudinary';
 import { uploadToTeleCloud, isTeleCloudConfiguredAsync, testTeleCloudConnection } from '../utils/telecloud';
 import { CloudinaryMigrationService } from '../services/CloudinaryMigrationService';
+import { S3DomainReplacementService } from '../services/S3DomainReplacementService';
 import { initialProducts } from '@/data/products';
 import { initialCategories } from '@/data/categories';
 import { initialSiteSettings } from '@/data/settings';
@@ -5427,6 +5428,33 @@ apiRouter.post('/admin/storage/migrate-all-cloudinary', async (_req: Request, re
   } catch (error: any) {
     console.error('[Migration] Error migrating all assets:', error);
     return res.status(500).json(createErrorResponse(error.message || 'Error occurred during full migration'));
+  }
+});
+
+// S3 Storage Domain Replacement: 1. Scan All Tables and Files
+apiRouter.post('/admin/storage/s3-domain-scan', async (req: Request, res: Response) => {
+  try {
+    const { currentDomain } = req.body || {};
+    const result = await S3DomainReplacementService.scanDomain(currentDomain);
+    return res.json(createSuccessResponse(result));
+  } catch (error: any) {
+    console.error('[Storage API] Scan domain failed:', error);
+    return res.status(500).json(createErrorResponse(error.message || 'Failed to scan S3 domain'));
+  }
+});
+
+// S3 Storage Domain Replacement: 2. Replace All Occurrences in MySQL & Storage
+apiRouter.post('/admin/storage/s3-domain-replace', async (req: Request, res: Response) => {
+  try {
+    const { currentDomain, newDomain, updateUploadEndpoint } = req.body || {};
+    if (!newDomain || typeof newDomain !== 'string' || !newDomain.trim()) {
+      return res.status(400).json(createErrorResponse('New replacement domain is required (e.g. https://cdn.example.com or https://s3.customhost.in)'));
+    }
+    const result = await S3DomainReplacementService.replaceDomain(currentDomain, newDomain, { updateUploadEndpoint });
+    return res.json(createSuccessResponse(result, result.message));
+  } catch (error: any) {
+    console.error('[Storage API] Replace domain failed:', error);
+    return res.status(400).json(createErrorResponse(error.message || 'Failed to replace S3 domain'));
   }
 });
 

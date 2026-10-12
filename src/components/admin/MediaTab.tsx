@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { CloudinaryUpload } from './CloudinaryUpload';
 import { SearchableSelect, SelectOption } from './SearchableSelect';
+import { S3DomainReplacer } from './S3DomainReplacer';
 
 export interface CloudinaryAsset {
   id: string;
@@ -1159,6 +1160,8 @@ export const MediaTab: React.FC<{
       {/* ========================================================================= */}
       {activeSubTab === 'cloudinary' && (
         <div className="space-y-6">
+          {/* S3 DOMAIN REPLACEMENT TOOL */}
+          <S3DomainReplacer showToast={showToast} onSuccess={() => fetchCloudinaryAssets()} />
           {/* Upload Center & Cloud Sync Bar */}
           <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
