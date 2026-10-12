@@ -99,7 +99,7 @@ export async function enhanceProductDetails(input: EnhanceProductInput): Promise
   `;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-flash-lite',
+    model: 'gemini-3.8-flash',
     contents: prompt,
     config: {
       temperature: 0.7,
@@ -262,7 +262,7 @@ export async function generateSeoWithGemini(params: GenerateSeoParams): Promise<
   `;
 
   const response = await ai.models.generateContent({
-    model: 'gemini-3.1-flash-lite',
+    model: 'gemini-3.8-flash',
     contents: prompt,
     config: {
       temperature: 0.4,
