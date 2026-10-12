@@ -90,7 +90,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const headers: Record<string, string> = {
-        Authorization: `Bearer ${activeToken}`
+        Authorization: `Bearer ${activeToken}`,
+        app_auth_token: activeToken,
+        'x-auth-token': activeToken
       };
 
       const res = await fetch('/api/auth/me', {
@@ -130,6 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const headers: Record<string, string> = {};
       if (activeToken) {
         headers['Authorization'] = `Bearer ${activeToken}`;
+        headers['app_auth_token'] = activeToken;
       }
 
       const res = await fetch('/api/auth/orders', {
@@ -233,7 +236,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const json = await res.json();
       if (json.success && json.data?.user && json.data?.token) {
         persistSession(json.data.user, json.data.token);
-        closeAuthModal();
         return { success: true };
       }
       return { success: false, message: json.error?.message || 'Login failed' };
@@ -259,7 +261,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const json = await res.json();
       if (json.success && json.data?.user && json.data?.token) {
         persistSession(json.data.user, json.data.token);
-        closeAuthModal();
         return { success: true };
       }
       return { success: false, message: json.error?.message || 'Signup failed' };
@@ -291,7 +292,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const json = await res.json();
       if (json.success && json.data?.user && json.data?.token) {
         persistSession(json.data.user, json.data.token);
-        closeAuthModal();
         return { success: true };
       }
       return { success: false, message: json.error?.message || 'Google login failed' };

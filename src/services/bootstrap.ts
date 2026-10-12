@@ -35,6 +35,8 @@ export async function getBootstrapData(forceRefresh = false): Promise<BootstrapD
       };
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+        headers['app_auth_token'] = token;
+        headers['x-auth-token'] = token;
       }
 
       const res = await fetch('/api/bootstrap', {

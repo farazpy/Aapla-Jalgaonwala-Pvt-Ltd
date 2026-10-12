@@ -5616,8 +5616,10 @@ apiRouter.post('/auth/signup', async (req: Request, res: Response) => {
       return res.status(400).json(createErrorResponse('An account with this email already exists'));
     }
 
-    const token = crypto.randomBytes(32).toString('hex');
+    const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const token = generateStrongToken(userId);
     const user = await UserRepository.create({
+      id: userId,
       name: name.trim(),
       email: email.trim().toLowerCase(),
       phone: phone ? phone.trim() : undefined,
@@ -5714,7 +5716,7 @@ apiRouter.post('/auth/login', async (req: Request, res: Response) => {
       return res.status(401).json(createErrorResponse('Invalid password. Please try again or reset your password.'));
     }
 
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = generateStrongToken(user.id);
     await UserRepository.update(user.id, { appAuthToken: token, ...(user.passwordHash ? {} : { passwordHash: expectedPassword }) });
     user.appAuthToken = token;
     
