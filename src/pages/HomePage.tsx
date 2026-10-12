@@ -7,6 +7,7 @@ import { RegularBananaChipShowcase } from '@/components/home/RegularBananaChipSh
 import { FarsanShowcase } from '@/components/home/FarsanShowcase';
 import { MasalaShowcase } from '@/components/home/MasalaShowcase';
 import { PotatoChipsShowcase } from '@/components/home/PotatoChipsShowcase';
+import { KhandeshiChutneyShowcase } from '@/components/home/KhandeshiChutneyShowcase';
 import { WomanPartnerShowcaseSection } from '@/components/home/WomanPartnerShowcaseSection';
 import { FarmerStorySection } from '@/components/home/FarmerStorySection';
 import { WatchStorySection } from '@/components/common/WatchStorySection';
@@ -104,6 +105,11 @@ export function HomePage() {
       <LazyRender minHeight="380px">
         {/* SECTION 4: Potato Chips (Artisanal Potato Wafers) */}
         <PotatoChipsShowcase products={products} isLoading={isLoading} />
+      </LazyRender>
+
+      <LazyRender minHeight="380px">
+        {/* SECTION 4B: Khandeshi Chutney (Category ID: 6) */}
+        <KhandeshiChutneyShowcase products={products} isLoading={isLoading} />
       </LazyRender>
 
       <LazyRender minHeight="400px">

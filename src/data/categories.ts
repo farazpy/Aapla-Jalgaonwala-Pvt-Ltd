@@ -47,6 +47,15 @@ export const initialCategories: Category[] = [
     productCount: 4
   },
   {
+    id: '6',
+    slug: 'khandeshi-chutney',
+    name: 'Khandeshi Chutney',
+    tagline: 'Authentic Shengdana, Lasun & Dry Spice Chutneys',
+    description: 'Traditional handcrafted Maharashtrian chutneys pounded with roasted peanuts, fried garlic, and aromatic spices.',
+    image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=600&q=80',
+    productCount: 4
+  },
+  {
     id: 'upwas-special',
     slug: 'upwas-special',
     name: 'Upwas Special',

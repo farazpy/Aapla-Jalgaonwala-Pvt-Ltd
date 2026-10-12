@@ -2,6 +2,7 @@ import { Category } from '@/types';
 import { getDbPool, setLastDbError } from '../database/connection';
 import { initialCategories } from '@/data/categories';
 import { addCloudinaryOriginalFlag } from '../utils/cloudinary';
+import { readJson, writeJson } from '../utils/jsonStorage';
 
 const FILE_NAME = 'categories.json';
 const SEED_MARKER = '.categories_initialized.json';
@@ -31,17 +32,20 @@ export class CategoryRepository {
 
     const pool = getDbPool();
     if (!pool) {
-      const err = new Error('Database connection failed. No MySQL connection pool available.');
-      setLastDbError(err);
-      throw err;
+      const fileCats = await readJson<Category[]>(FILE_NAME, initialCategories);
+      cachedCategories = { data: fileCats, timestamp: Date.now() };
+      return fileCats;
     }
 
     try {
       const [rows]: any = await pool.query('SELECT * FROM categories ORDER BY id ASC');
       if (Array.isArray(rows)) {
-        if (rows.length === 0) {
-          // Auto-seed initial categories into MySQL ONCE if table is completely empty
-          for (const cat of initialCategories) {
+        // Auto-seed or insert any missing initial categories (such as category id '6') into MySQL
+        let missingCategoryInDb = false;
+        for (const cat of initialCategories) {
+          const exists = rows.some((r: any) => String(r.id) === String(cat.id) || r.slug === cat.slug);
+          if (!exists) {
+            missingCategoryInDb = true;
             await pool.query(
               `INSERT INTO categories (id, slug, name, tagline, description, image, product_count)
                VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -49,9 +53,12 @@ export class CategoryRepository {
               [cat.id, cat.slug, cat.name, cat.tagline || cat.description, cat.description, cat.image || '', cat.productCount || 0]
             ).catch(() => {});
           }
-          const [seededRows]: any = await pool.query('SELECT * FROM categories ORDER BY id ASC');
-          if (Array.isArray(seededRows)) {
-            rows.push(...seededRows);
+        }
+        if (missingCategoryInDb) {
+          const [reFetched]: any = await pool.query('SELECT * FROM categories ORDER BY id ASC');
+          if (Array.isArray(reFetched)) {
+            rows.length = 0;
+            rows.push(...reFetched);
           }
         }
 
@@ -91,8 +98,10 @@ export class CategoryRepository {
       return [];
     } catch (err: any) {
       setLastDbError(err);
-      console.warn('[CategoryRepo] MySQL query failed:', err);
-      throw err;
+      console.warn('[CategoryRepo] MySQL query failed, falling back to JSON storage:', err);
+      const fileCats = await readJson<Category[]>(FILE_NAME, initialCategories);
+      cachedCategories = { data: fileCats, timestamp: Date.now() };
+      return fileCats;
     }
   }
 
