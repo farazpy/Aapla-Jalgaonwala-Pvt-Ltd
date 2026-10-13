@@ -192,18 +192,35 @@ export class OrderRepository {
     return enrichedOrders;
   }
 
+  static async getByOrderNumber(orderNumber: string): Promise<Order | null> {
+    if (!orderNumber || typeof orderNumber !== 'string') return null;
+    return this.getById(orderNumber);
+  }
+
   static async getById(id: string): Promise<Order | null> {
+    if (!id || typeof id !== 'string') return null;
+    const target = id.trim();
+    const targetUpper = target.toUpperCase();
+
+    // 1. Check in-memory cache first
     if (orderMemoryCache && (Date.now() - orderMemoryCache.timestamp < CACHE_TTL_MS)) {
-      const match = orderMemoryCache.data.find(o => o.id === id || o.orderNumber === id);
+      const match = orderMemoryCache.data.find(
+        o => o && (
+          String(o.id) === target || 
+          String(o.id).toLowerCase() === target.toLowerCase() || 
+          (o.orderNumber && o.orderNumber.trim().toUpperCase() === targetUpper)
+        )
+      );
       if (match) return match;
     }
 
+    // 2. Query MySQL directly for instant single order lookup
     const pool = getDbPool();
     if (pool) {
       try {
         const [rows]: any = await pool.query(
-          'SELECT * FROM orders WHERE id = ? OR order_number = ? LIMIT 1',
-          [id, id]
+          'SELECT * FROM orders WHERE id = ? OR UPPER(order_number) = ? OR order_number = ? LIMIT 1',
+          [target, targetUpper, target]
         );
         if (Array.isArray(rows) && rows.length > 0) {
           const row = rows[0];
@@ -212,13 +229,35 @@ export class OrderRepository {
             [row.id]
           );
           const itemsMap = new Map<string, any[]>([[String(row.id), Array.isArray(itemRows) ? itemRows : []]]);
-          return this.mapSingleOrder(row, itemsMap);
+          const mapped = this.mapSingleOrder(row, itemsMap);
+          if (mapped) return mapped;
         }
-      } catch (_) {}
+      } catch (err) {
+        console.warn('[OrderRepo] MySQL getById query warning:', err);
+      }
     }
 
-    const orders = await this.getAll();
-    return orders.find(o => o.id === id || o.orderNumber === id) || null;
+    // 3. Force-bypass stale memory cache and search fresh from file storage
+    this.clearCache();
+    const orders = await readJson<Order[]>(FILE_NAME, []);
+    const matchJson = orders.find(
+      o => o && (
+        String(o.id) === target || 
+        String(o.id).toLowerCase() === target.toLowerCase() || 
+        (o.orderNumber && o.orderNumber.trim().toUpperCase() === targetUpper)
+      )
+    );
+    if (matchJson) return matchJson;
+
+    // 4. Fallback to getAll() enrichment
+    const enriched = await this.getAll(true);
+    return enriched.find(
+      o => o && (
+        String(o.id) === target || 
+        String(o.id).toLowerCase() === target.toLowerCase() || 
+        (o.orderNumber && o.orderNumber.trim().toUpperCase() === targetUpper)
+      )
+    ) || null;
   }
 
   static async getByUser(identifier: { userId?: string; email?: string; phone?: string }): Promise<Order[]> {
@@ -395,6 +434,7 @@ export class OrderRepository {
     const orders = await readJson<Order[]>(FILE_NAME, []);
     orders.unshift(order);
     await writeJson(FILE_NAME, orders);
+    this.clearCache();
     return order;
   }
 

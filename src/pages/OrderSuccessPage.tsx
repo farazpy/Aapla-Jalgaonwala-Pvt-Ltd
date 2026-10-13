@@ -57,24 +57,47 @@ export function OrderSuccessPage() {
 
   useEffect(() => {
     if (!id) return;
-    const fetchOrder = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch(`/api/orders/${id}`);
-        const json = await res.json();
-        if (json.success && json.data) {
-          setOrder(json.data);
-        } else {
-          setOrder(null);
+    let isMounted = true;
+
+    const fetchOrderWithRetry = async () => {
+      if (isMounted) setIsLoading(true);
+
+      const tryFetch = async (): Promise<boolean> => {
+        try {
+          const cleanId = encodeURIComponent(id.trim());
+          const res = await fetch(`/api/orders/${cleanId}`);
+          const json = await res.json();
+          if (json.success && json.data && isMounted) {
+            setOrder(json.data);
+            return true;
+          }
+        } catch (err) {
+          console.error('Error fetching order:', err);
         }
-      } catch (err) {
-        console.error('Error loading order details:', err);
-      } finally {
+        return false;
+      };
+
+      let success = await tryFetch();
+
+      // Auto-retry after 1 second if DB is finalizing order creation
+      if (!success && isMounted) {
+        await new Promise(r => setTimeout(r, 1000));
+        success = await tryFetch();
+      }
+
+      if (!success && isMounted) {
+        setOrder(null);
+      }
+      if (isMounted) {
         setIsLoading(false);
       }
     };
 
-    fetchOrder();
+    fetchOrderWithRetry();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   const handleDownloadInvoice = () => {
@@ -153,16 +176,27 @@ export function OrderSuccessPage() {
     return (
       <div className="py-20 bg-[#FAF6ED] min-h-screen text-center flex items-center">
         <Container size="md">
-          <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-stone-200/80 shadow-xs">
-            <div className="w-14 h-14 bg-stone-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-stone-400">
+          <div className="max-w-md mx-auto bg-white p-8 rounded-3xl border border-stone-200/80 shadow-xs space-y-4">
+            <div className="w-14 h-14 bg-amber-50 text-amber-700 rounded-2xl flex items-center justify-center mx-auto text-[#9B111E] border border-amber-200">
               <Package className="w-7 h-7" />
             </div>
-            <h2 className="text-xl font-bold text-stone-900 mb-2">Order Not Found</h2>
-            <p className="text-xs text-stone-500 mb-6">We couldn&apos;t locate an order with ID &ldquo;{id}&rdquo;.</p>
-            <Link href="/shop" className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-2xl bg-[#9B111E] text-white font-bold text-xs shadow-sm hover:bg-[#800A14] transition-colors">
-              <ShoppingBag className="w-4 h-4 text-amber-300" />
-              <span>Return to Shop</span>
-            </Link>
+            <h2 className="text-xl font-extrabold text-stone-900">Locating Order Receipt</h2>
+            <p className="text-xs text-stone-600 leading-relaxed">
+              Your payment was received. If your order receipt is finalizing, please click below to refresh or check your account history.
+            </p>
+            <div className="pt-2 space-y-2.5">
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-2xl bg-[#9B111E] text-white font-bold text-xs shadow-sm hover:bg-[#800A14] transition-colors cursor-pointer"
+              >
+                <RefreshCw className="w-4 h-4 text-amber-300" />
+                <span>Refresh Order Receipt</span>
+              </button>
+              <Link href="/account" className="inline-flex items-center justify-center gap-2 w-full px-6 py-3.5 rounded-2xl bg-stone-100 text-stone-700 font-bold text-xs hover:bg-stone-200 transition-colors">
+                <span>View Order History in Account</span>
+              </Link>
+            </div>
           </div>
         </Container>
       </div>
