@@ -36,6 +36,39 @@ import { AddressAutocompleteInput } from '@/components/common/AddressAutocomplet
 import { getReferralCookie, setReferralCookie, clearReferralCookie } from '@/utils/referralCookie';
 import { Analytics } from '@/services/analyticsTracker';
 
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if ((window as any).Razorpay) return resolve(true);
+
+    const existing = document.querySelector('script[src*="checkout.razorpay.com"]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(true), { once: true });
+      existing.addEventListener('error', () => resolve(false), { once: true });
+      let elapsed = 0;
+      const interval = setInterval(() => {
+        elapsed += 100;
+        if ((window as any).Razorpay) {
+          clearInterval(interval);
+          resolve(true);
+        } else if (elapsed >= 3500) {
+          clearInterval(interval);
+          resolve(Boolean((window as any).Razorpay));
+        }
+      }, 100);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+    setTimeout(() => resolve(Boolean((window as any).Razorpay)), 3500);
+  });
+};
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const {
@@ -462,6 +495,8 @@ export default function CheckoutPage() {
         }).catch(err => console.warn('Could not auto-save address:', err));
       }
 
+      let activeCreatedOrder: any = null;
+
       // 2. Post Order to Backend (Status set as Pending)
       const response = await fetch('/api/orders', {
         method: 'POST',
@@ -476,6 +511,7 @@ export default function CheckoutPage() {
       }
 
       const dbOrder = orderResult.data;
+      activeCreatedOrder = dbOrder;
 
       // Auto-login user if account was created/linked and token returned
       if (dbOrder.authUser && dbOrder.authToken) {
@@ -536,14 +572,15 @@ export default function CheckoutPage() {
 
       const razorpayOrder = payResult.data;
 
-      // Ensure Razorpay SDK is available
-      if (typeof window === 'undefined' || !(window as any).Razorpay) {
+      // Ensure Razorpay SDK is available (wait if in flight)
+      const isSdkReady = await loadRazorpayScript();
+      if (!isSdkReady && !(window as any).Razorpay) {
         await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason: 'Razorpay SDK script not loaded on client browser' })
+          body: JSON.stringify({ reason: 'Payment Failed: Razorpay SDK script failed to load in browser' })
         }).catch(() => {});
-        throw new Error('Razorpay payment gateway script is still loading. Please try placing your order again in a moment.');
+        throw new Error('Razorpay payment gateway script could not be loaded. Please check your internet connection and try placing your order again.');
       }
 
       let paymentCompletedSuccessfully = false;
@@ -552,7 +589,7 @@ export default function CheckoutPage() {
       const options = {
         key: razorpayOrder.key,
         amount: razorpayOrder.amount,
-        currency: razorpayOrder.currency,
+        currency: razorpayOrder.currency || 'INR',
         name: 'Aapla Jalgaonwala',
         description: isTestMode
           ? `Live Test Order (₹1) for Order #${dbOrder.orderNumber}`
@@ -634,9 +671,9 @@ export default function CheckoutPage() {
           }
         },
         prefill: {
-          name: fullName,
-          email: email,
-          contact: phone
+          name: fullName.trim(),
+          email: email.trim(),
+          contact: phone.replace(/\D/g, '').slice(-10)
         },
         theme: {
           color: '#9B111E'
@@ -653,12 +690,12 @@ export default function CheckoutPage() {
                 return;
               }
               setIsSubmitting(false);
-              setFormError('Payment was cancelled or closed before completion. Your order was not placed.');
+              setFormError('Payment was cancelled or closed before completion. Your order was recorded as payment cancelled.');
               try {
                 await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ reason: 'Razorpay payment modal closed by customer' })
+                  body: JSON.stringify({ reason: 'Razorpay payment window closed before completion by customer' })
                 });
               } catch (cancelErr) {
                 console.warn('[Checkout] Failed to report payment cancellation:', cancelErr);
@@ -675,13 +712,13 @@ export default function CheckoutPage() {
           return;
         }
         setIsSubmitting(false);
-        const failReason = failedResponse?.error?.description || 'Payment transaction failed or declined';
-        setFormError(`Payment failed: ${failReason}. Your order was not placed.`);
+        const failReason = failedResponse?.error?.description || failedResponse?.error?.reason || 'Payment transaction failed or declined';
+        setFormError(`Payment failed: ${failReason}. Your order was recorded as payment failed.`);
         try {
           await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: `Razorpay payment failed: ${failReason}` })
+            body: JSON.stringify({ reason: `Payment Failed: ${failReason}` })
           });
         } catch (cancelErr) {
           console.warn('[Checkout] Failed to report payment failure:', cancelErr);
@@ -692,8 +729,16 @@ export default function CheckoutPage() {
 
     } catch (err: any) {
       console.error('Checkout failed:', err);
-      setFormError(err.message || 'An error occurred while processing checkout. Please try again.');
+      const errMsg = err.message || 'An error occurred while processing checkout. Please try again.';
+      setFormError(errMsg);
       setIsSubmitting(false);
+      if (activeCreatedOrder?.id) {
+        fetch(`/api/orders/${activeCreatedOrder.id}/cancel-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: `Payment initialization error: ${errMsg}` })
+        }).catch(() => {});
+      }
     }
   };
 

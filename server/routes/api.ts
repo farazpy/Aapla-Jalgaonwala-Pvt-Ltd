@@ -3725,19 +3725,15 @@ apiRouter.post('/orders/:id/cancel-payment', async (req: Request, res: Response)
       return res.json(createSuccessResponse({ cancelled: false, status: existing.status, message: 'Order is already confirmed or paid.' }));
     }
 
-    if (currentStatus === 'pending' || currentStatus === 'payment pending') {
-      const isExplicitFail = Boolean(reason && /fail|declined|error|invalid|reject/i.test(reason));
-      const newStatus = isExplicitFail ? 'Payment Failed' : 'Cancelled';
-      const updated = await OrderRepository.update(id, {
-        status: newStatus,
-        paymentStatus: 'Failed',
-        notes: reason || 'Payment cancelled or failed before completion by customer'
-      });
-      PartnerRepository.syncOrderStatusToReferral(existing.orderNumber, newStatus, 'Failed').catch(() => {});
-      return res.json(createSuccessResponse({ cancelled: true, order: updated }));
-    }
-
-    return res.json(createSuccessResponse({ cancelled: false, status: existing.status }));
+    const isExplicitFail = Boolean(reason && /fail|declined|error|invalid|reject|window|closed|timeout|abort/i.test(reason));
+    const newStatus = isExplicitFail ? 'Payment Failed' : 'Cancelled';
+    const updated = await OrderRepository.update(id, {
+      status: newStatus,
+      paymentStatus: 'Failed',
+      notes: reason || 'Payment cancelled or failed before completion by customer'
+    });
+    PartnerRepository.syncOrderStatusToReferral(existing.orderNumber, newStatus, 'Failed').catch(() => {});
+    return res.json(createSuccessResponse({ cancelled: true, order: updated }));
   } catch (error: any) {
     console.error('[Order Cancel Payment] Error:', error);
     return res.status(500).json(createErrorResponse(error.message || 'Failed to cancel order payment'));

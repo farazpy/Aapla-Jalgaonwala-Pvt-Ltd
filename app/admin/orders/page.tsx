@@ -235,24 +235,14 @@ export default function AdminOrdersPage() {
   }, [orders]);
 
   const filteredOrders = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
     return orders.filter((o) => {
-      const matchSearch =
-        o.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.customer?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.customer?.phone?.includes(searchQuery) ||
-        o.customer?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.referralPartnerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.referralPartnerCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.couponCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.paymentStatus?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.status?.toLowerCase().includes(searchQuery.toLowerCase());
-
       const s = String(o.status || '').toLowerCase();
       const ps = String(o.paymentStatus || '').toLowerCase();
 
       let matchStatus = true;
       if (statusFilter === 'all') {
-        matchStatus = true; // Show EVERY order made on checkout page
+        matchStatus = true; // Show EVERY order made on checkout page, including failed orders
       } else if (statusFilter === 'failed') {
         matchStatus = ps === 'failed' || s === 'payment failed' || s === 'failed';
       } else if (statusFilter === 'cancelled') {
@@ -263,7 +253,21 @@ export default function AdminOrdersPage() {
         matchStatus = s === statusFilter.toLowerCase();
       }
 
-      return matchSearch && matchStatus;
+      if (!matchStatus) return false;
+      if (!query) return true;
+
+      return Boolean(
+        o.orderNumber?.toLowerCase().includes(query) ||
+        o.customer?.name?.toLowerCase().includes(query) ||
+        o.customer?.phone?.includes(query) ||
+        o.customer?.email?.toLowerCase().includes(query) ||
+        o.referralPartnerName?.toLowerCase().includes(query) ||
+        o.referralPartnerCode?.toLowerCase().includes(query) ||
+        o.couponCode?.toLowerCase().includes(query) ||
+        o.paymentStatus?.toLowerCase().includes(query) ||
+        o.notes?.toLowerCase().includes(query) ||
+        o.status?.toLowerCase().includes(query)
+      );
     });
   }, [orders, searchQuery, statusFilter]);
 
@@ -1437,8 +1441,8 @@ export default function AdminOrdersPage() {
                               <option value="Cancelled">Cancelled</option>
                             </select>
 
-                            {/* Small direct button to delete cancelled order with Yes/No confirmation */}
-                            {String(o.status || '').toLowerCase() === 'cancelled' && (
+                            {/* Small direct button to delete cancelled/failed order with confirmation */}
+                            {(String(o.status || '').toLowerCase() === 'cancelled' || String(o.status || '').toLowerCase() === 'payment failed' || String(o.paymentStatus || '').toLowerCase() === 'failed') && (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -1446,7 +1450,7 @@ export default function AdminOrdersPage() {
                                   setShowDeleteModal(true);
                                 }}
                                 className="px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 hover:text-rose-900 border border-rose-200 rounded-lg text-xs font-bold inline-flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
-                                title="Delete this cancelled order"
+                                title="Delete this order"
                               >
                                 <Trash2 className="w-3 h-3 text-rose-600" />
                                 <span>Delete</span>
