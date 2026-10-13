@@ -1,1 +1,202 @@
-[]
+[
+  {
+    "id": "ord_1791884059210_gc48v",
+    "orderNumber": "AJW-059210-8563",
+    "customer": {
+      "name": "Direct Test",
+      "email": "direct@test.com",
+      "phone": "9876543210"
+    },
+    "shippingAddress": {
+      "fullName": "Direct Test",
+      "phone": "9876543210",
+      "addressLine1": "Test St",
+      "city": "Jalgaon",
+      "state": "Maharashtra",
+      "pincode": "425001"
+    },
+    "items": [
+      {
+        "id": "item_1791884062713_0",
+        "productId": "1",
+        "productName": "Chips",
+        "quantity": 1,
+        "price": 100,
+        "profit": 35,
+        "image": "https://s3.htknetwork.in/f/K?v=1789736375000"
+      }
+    ],
+    "subtotal": 100,
+    "discount": 0,
+    "shippingFee": 40,
+    "totalAmount": 1,
+    "status": "Pending",
+    "paymentStatus": "Payment Pending",
+    "paymentMethod": "Razorpay",
+    "codAdvanceFeePaid": 0,
+    "codRemainingBalance": 0,
+    "is_fake": 0,
+    "createdAt": "2026-10-13T09:34:22.713Z",
+    "updatedAt": "2026-10-13T09:34:22.713Z"
+  },
+  {
+    "id": "ord_1791883968308_8ugn4",
+    "orderNumber": "AJW-968308-8508",
+    "customer": {
+      "name": "Faraz",
+      "email": "faraz@test.com",
+      "phone": "9876543210"
+    },
+    "shippingAddress": {
+      "fullName": "Faraz",
+      "phone": "9876543210",
+      "addressLine1": "Test",
+      "city": "Jalgaon",
+      "state": "Maharashtra",
+      "pincode": "425001"
+    },
+    "items": [
+      {
+        "id": "item_1791883970578_0",
+        "productId": "1",
+        "productName": "Chips",
+        "quantity": 1,
+        "price": 100,
+        "profit": 35,
+        "image": "https://s3.htknetwork.in/f/K?v=1789736375000"
+      }
+    ],
+    "subtotal": 100,
+    "discount": 0,
+    "shippingFee": 40,
+    "totalAmount": 1,
+    "status": "Pending",
+    "paymentStatus": "Payment Pending",
+    "paymentMethod": "Razorpay",
+    "codAdvanceFeePaid": 0,
+    "codRemainingBalance": 0,
+    "is_fake": 0,
+    "createdAt": "2026-10-13T09:32:50.578Z",
+    "updatedAt": "2026-10-13T09:32:50.578Z"
+  },
+  {
+    "id": "ord_1791883852058_to9nb",
+    "orderNumber": "AJW-852058-6616",
+    "customer": {
+      "id": "usr_1786900688379_gn030",
+      "name": "Htklabs LLP (Suhani Operational)",
+      "email": "farazk0792@gmail.com",
+      "phone": "9766596553"
+    },
+    "shippingAddress": {
+      "fullName": "Htklabs LLP",
+      "phone": "9766596553",
+      "addressLine1": "Test Address",
+      "city": "Jalgaon",
+      "state": "Maharashtra",
+      "pincode": "425001"
+    },
+    "items": [
+      {
+        "id": "item_1791883852059_0",
+        "productId": "1",
+        "productName": "Banana Chips",
+        "quantity": 1,
+        "price": 100,
+        "profit": 35,
+        "image": "https://s3.htknetwork.in/f/K?v=1789736375000"
+      }
+    ],
+    "subtotal": 100,
+    "discount": 0,
+    "shippingFee": 0,
+    "totalAmount": 1,
+    "status": "Pending",
+    "paymentStatus": "Payment Pending",
+    "paymentMethod": "Razorpay",
+    "codAdvanceFeePaid": 0,
+    "codRemainingBalance": 0,
+    "notes": "[TEST MODE ?test=1: Real Order Total ₹1 Recorded] | Awaiting full online payment via Razorpay",
+    "is_fake": 0,
+    "createdAt": "2026-10-13T09:30:52.059Z",
+    "updatedAt": "2026-10-13T09:30:52.059Z"
+  },
+  {
+    "id": "ord_1791883562960_tavdd",
+    "orderNumber": "AJW-562960-3128",
+    "customer": {
+      "name": "Faraz",
+      "email": "faraz@test.com",
+      "phone": "9876543210"
+    },
+    "shippingAddress": {
+      "fullName": "Faraz",
+      "phone": "9876543210",
+      "addressLine1": "Test",
+      "city": "Jalgaon",
+      "state": "Maharashtra",
+      "pincode": "425001"
+    },
+    "items": [
+      {
+        "id": "item_1791883565194_0",
+        "productId": "p1",
+        "productName": "Chips",
+        "quantity": 1,
+        "price": 100,
+        "profit": 0
+      }
+    ],
+    "subtotal": 100,
+    "discount": 0,
+    "shippingFee": 40,
+    "totalAmount": 1,
+    "status": "Pending",
+    "paymentStatus": "Payment Pending",
+    "paymentMethod": "Razorpay",
+    "codAdvanceFeePaid": 0,
+    "codRemainingBalance": 0,
+    "is_fake": 0,
+    "createdAt": "2026-10-13T09:26:05.195Z",
+    "updatedAt": "2026-10-13T09:26:05.195Z"
+  },
+  {
+    "id": "ord_1791883461916_j7bg2",
+    "orderNumber": "AJW-461916-9535",
+    "customer": {
+      "name": "Test Customer",
+      "email": "test@example.com",
+      "phone": "9876543210"
+    },
+    "shippingAddress": {
+      "fullName": "Test Customer",
+      "phone": "9876543210",
+      "addressLine1": "Test St",
+      "city": "Jalgaon",
+      "state": "Maharashtra",
+      "pincode": "425001"
+    },
+    "items": [
+      {
+        "id": "it_1",
+        "productId": "p1",
+        "productName": "Banana Chips",
+        "quantity": 1,
+        "price": 100,
+        "profit": 0
+      }
+    ],
+    "subtotal": 100,
+    "discount": 0,
+    "shippingFee": 40,
+    "totalAmount": 1,
+    "status": "Pending",
+    "paymentStatus": "Payment Pending",
+    "paymentMethod": "Razorpay",
+    "codAdvanceFeePaid": 0,
+    "codRemainingBalance": 0,
+    "is_fake": 0,
+    "createdAt": "2026-10-13T09:24:24.168Z",
+    "updatedAt": "2026-10-13T09:24:24.168Z"
+  }
+]

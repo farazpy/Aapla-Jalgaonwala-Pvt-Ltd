@@ -215,6 +215,16 @@ export default function AdminOrdersPage() {
       return (s === 'pending' || s === 'processing') && ps !== 'failed';
     }).length;
 
+    const confirmed = orders.filter((o) => String(o.status || '').toLowerCase() === 'confirmed').length;
+
+    const processing = orders.filter((o) => {
+      const s = String(o.status || '').toLowerCase();
+      const ps = String(o.paymentStatus || '').toLowerCase();
+      return s === 'processing' && ps !== 'failed';
+    }).length;
+
+    const shipped = orders.filter((o) => String(o.status || '').toLowerCase() === 'shipped').length;
+
     const delivered = orders.filter((o) => {
       const s = String(o.status || '').toLowerCase();
       return s === 'delivered' || s === 'completed';
@@ -231,7 +241,7 @@ export default function AdminOrdersPage() {
       return s === 'payment failed' || s === 'failed' || ps === 'failed';
     }).length;
 
-    return { total, totalRevenue, pending, delivered, cancelled, failed };
+    return { total, totalRevenue, pending, confirmed, processing, shipped, delivered, cancelled, failed };
   }, [orders]);
 
   const filteredOrders = useMemo(() => {
@@ -242,7 +252,7 @@ export default function AdminOrdersPage() {
 
       let matchStatus = true;
       if (statusFilter === 'all') {
-        matchStatus = true; // Show EVERY order made on checkout page, including failed orders
+        matchStatus = true; // Show EVERY order made on checkout page, including failed and test orders
       } else if (statusFilter === 'failed') {
         matchStatus = ps === 'failed' || s === 'payment failed' || s === 'failed';
       } else if (statusFilter === 'cancelled') {
@@ -258,6 +268,9 @@ export default function AdminOrdersPage() {
 
       return Boolean(
         o.orderNumber?.toLowerCase().includes(query) ||
+        o.id?.toLowerCase().includes(query) ||
+        String(o.totalAmount).includes(query) ||
+        o.paymentMethod?.toLowerCase().includes(query) ||
         o.customer?.name?.toLowerCase().includes(query) ||
         o.customer?.phone?.includes(query) ||
         o.customer?.email?.toLowerCase().includes(query) ||
@@ -1048,13 +1061,21 @@ export default function AdminOrdersPage() {
                       : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                   }`}
                 >
-                  {st === 'all' 
-                    ? `All (${stats.total})` 
-                    : st === 'cancelled' 
-                      ? `Cancelled (${stats.cancelled})` 
-                      : st === 'failed'
-                      ? `Failed (${stats.failed})`
-                      : st}
+                  {st === 'all'
+                    ? `All (${stats.total})`
+                    : st === 'pending'
+                    ? `Pending (${stats.pending})`
+                    : st === 'confirmed'
+                    ? `Confirmed (${stats.confirmed})`
+                    : st === 'processing'
+                    ? `Processing (${stats.processing})`
+                    : st === 'shipped'
+                    ? `Shipped (${stats.shipped})`
+                    : st === 'delivered'
+                    ? `Delivered (${stats.delivered})`
+                    : st === 'failed'
+                    ? `Failed (${stats.failed})`
+                    : `Cancelled (${stats.cancelled})`}
                 </button>
               ))}
 
@@ -1081,7 +1102,7 @@ export default function AdminOrdersPage() {
             <div className="flex items-center gap-2 text-rose-950">
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
               <span className="font-semibold">
-                Showing {filteredOrders.length} Cancelled Order(s). Cancelled orders are hidden by default from the All orders view.
+                Showing {filteredOrders.length} Cancelled Order(s). (All orders including cancelled and failed are also accessible under the "All" tab).
               </span>
             </div>
             {stats.cancelled > 0 && (
@@ -1253,8 +1274,13 @@ export default function AdminOrdersPage() {
                         </td>
 
                         <td className="p-4 font-bold text-stone-900">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             <span>#{o.orderNumber || o.id.substring(0, 8)}</span>
+                            {(Number(o.totalAmount) === 1 || Boolean(o.notes && /test mode|\?test=1/i.test(o.notes))) && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-violet-100 text-violet-800 border border-violet-200">
+                                ₹1 Test
+                              </span>
+                            )}
                           </div>
                           <span className="text-[10px] text-stone-400 font-normal block mt-0.5">
                             {o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'Recent'}
