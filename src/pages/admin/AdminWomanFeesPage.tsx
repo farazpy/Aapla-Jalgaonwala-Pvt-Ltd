@@ -280,6 +280,8 @@ export function AdminWomanFeesPage() {
           partnerId: payTargetPartner.id,
           partnerCode: payTargetPartner.partnerCode,
           partnerName: payTargetPartner.fullName,
+          email: payTargetPartner.email || '',
+          phone: payTargetPartner.phone || '',
           amount: Number(payAmount),
           paymentMethod: payMethod,
           accountOrUpi: payTargetPartner.upiId || payTargetPartner.phone || '',

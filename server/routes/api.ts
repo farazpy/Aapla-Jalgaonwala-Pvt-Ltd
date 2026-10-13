@@ -1487,10 +1487,17 @@ apiRouter.post('/admin/orders/simulate', handleSimulateOrders);
 
 apiRouter.get('/orders/:id', async (req: Request, res: Response) => {
   try {
-    const { id } = req.params;
-    let order = await OrderRepository.getById(id);
+    const rawId = req.params.id || '';
+    const cleanId = decodeURIComponent(rawId).trim();
+    let order = await OrderRepository.getById(cleanId);
+    if (!order && cleanId !== rawId) {
+      order = await OrderRepository.getById(rawId.trim());
+    }
     if (!order) {
-      order = await OrderRepository.getByOrderNumber(id);
+      order = await OrderRepository.getByOrderNumber(cleanId);
+    }
+    if (!order && cleanId !== rawId) {
+      order = await OrderRepository.getByOrderNumber(rawId.trim());
     }
 
     if (!order) {
@@ -3705,18 +3712,28 @@ apiRouter.post('/orders/:id/cancel-payment', async (req: Request, res: Response)
     const currentStatus = String(existing.status || '').toLowerCase();
     const currentPayStatus = String(existing.paymentStatus || '').toLowerCase();
 
-    // CRITICAL: NEVER cancel an order that was already paid or confirmed!
-    if (currentPayStatus === 'paid' || currentPayStatus === 'partial paid' || currentStatus === 'confirmed' || currentStatus === 'processing' || currentStatus === 'shipped' || currentStatus === 'delivered') {
+    // CRITICAL: NEVER cancel an order that was already paid, confirmed, or has payment transaction ID!
+    if (
+      currentPayStatus === 'paid' || 
+      currentPayStatus === 'partial paid' || 
+      currentStatus === 'confirmed' || 
+      currentStatus === 'processing' || 
+      currentStatus === 'shipped' || 
+      currentStatus === 'delivered' ||
+      Boolean(existing.paymentDetails?.transactionId)
+    ) {
       return res.json(createSuccessResponse({ cancelled: false, status: existing.status, message: 'Order is already confirmed or paid.' }));
     }
 
     if (currentStatus === 'pending' || currentStatus === 'payment pending') {
+      const isExplicitFail = Boolean(reason && /fail|declined|error|invalid|reject/i.test(reason));
+      const newStatus = isExplicitFail ? 'Payment Failed' : 'Cancelled';
       const updated = await OrderRepository.update(id, {
-        status: 'Cancelled',
+        status: newStatus,
         paymentStatus: 'Failed',
-        notes: reason || 'Payment cancelled or closed before completion by customer'
+        notes: reason || 'Payment cancelled or failed before completion by customer'
       });
-      PartnerRepository.syncOrderStatusToReferral(existing.orderNumber, 'Cancelled', 'Failed').catch(() => {});
+      PartnerRepository.syncOrderStatusToReferral(existing.orderNumber, newStatus, 'Failed').catch(() => {});
       return res.json(createSuccessResponse({ cancelled: true, order: updated }));
     }
 

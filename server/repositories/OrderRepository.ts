@@ -5,6 +5,17 @@ import { ProductRepository } from './ProductRepository';
 
 const FILE_NAME = 'orders.json';
 
+function safeIsoDate(val: any): string {
+  if (!val) return new Date().toISOString();
+  try {
+    const d = typeof val === 'string' ? new Date(val) : val;
+    if (isNaN(d.getTime())) return new Date().toISOString();
+    return d.toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
 let orderMemoryCache: { data: Order[]; timestamp: number } | null = null;
 const CACHE_TTL_MS = 15000; // 15 seconds fast read cache (instant invalidation on any create/update)
 
@@ -97,8 +108,8 @@ export class OrderRepository {
       paymentDetails: paymentDetails || undefined,
       notes: row.notes || undefined,
       is_fake: (row.is_fake === 1 || row.is_fake === true || row.is_fake === '1') ? 1 : 0,
-      createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
-      updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined
+      createdAt: safeIsoDate(row.created_at),
+      updatedAt: row.updated_at ? safeIsoDate(row.updated_at) : undefined
     };
   }
 

@@ -526,6 +526,11 @@ export default function CheckoutPage() {
 
       const payResult = await payResponse.json();
       if (!payResult.success || !payResult.data) {
+        await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: `Payment Gateway Error: ${payResult.error?.message || 'Failed to initialize payment gateway'}` })
+        }).catch(() => {});
         throw new Error(payResult.error?.message || 'Failed to initialize payment gateway.');
       }
 
@@ -533,10 +538,16 @@ export default function CheckoutPage() {
 
       // Ensure Razorpay SDK is available
       if (typeof window === 'undefined' || !(window as any).Razorpay) {
+        await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reason: 'Razorpay SDK script not loaded on client browser' })
+        }).catch(() => {});
         throw new Error('Razorpay payment gateway script is still loading. Please try placing your order again in a moment.');
       }
 
       let paymentCompletedSuccessfully = false;
+      let paymentHandlerInvoked = false;
 
       const options = {
         key: razorpayOrder.key,
@@ -551,6 +562,7 @@ export default function CheckoutPage() {
         image: '/favicon.ico',
         order_id: razorpayOrder.id,
         handler: async function (response: any) {
+          paymentHandlerInvoked = true;
           paymentCompletedSuccessfully = true;
           try {
             setIsSubmitting(true);
@@ -604,11 +616,21 @@ export default function CheckoutPage() {
             } else {
               setFormError('Payment verification failed. Please contact our support team.');
               setIsSubmitting(false);
+              await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason: `Payment verification failed: ${verifyResult.error?.message || 'Invalid signature'}` })
+              }).catch(() => {});
             }
           } catch (verifyErr) {
             console.error('Payment verification request failed:', verifyErr);
             setFormError('Signature verification failed. Please contact support.');
             setIsSubmitting(false);
+            await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ reason: 'Payment verification exception / network failure' })
+            }).catch(() => {});
           }
         },
         prefill: {
@@ -621,20 +643,27 @@ export default function CheckoutPage() {
         },
         modal: {
           ondismiss: async function () {
-            if (paymentCompletedSuccessfully) {
-              return; // Do nothing if payment was captured
+            // Check immediately
+            if (paymentCompletedSuccessfully || paymentHandlerInvoked) {
+              return; // Do nothing if payment was captured or handler invoked
             }
-            setIsSubmitting(false);
-            setFormError('Payment was cancelled or closed before completion. Your order was not placed.');
-            try {
-              await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reason: 'Razorpay payment modal closed by customer' })
-              });
-            } catch (cancelErr) {
-              console.warn('[Checkout] Failed to report payment cancellation:', cancelErr);
-            }
+            // Delay 1.5 seconds to guarantee asynchronous payment handler wasn't in flight
+            setTimeout(async () => {
+              if (paymentCompletedSuccessfully || paymentHandlerInvoked) {
+                return;
+              }
+              setIsSubmitting(false);
+              setFormError('Payment was cancelled or closed before completion. Your order was not placed.');
+              try {
+                await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ reason: 'Razorpay payment modal closed by customer' })
+                });
+              } catch (cancelErr) {
+                console.warn('[Checkout] Failed to report payment cancellation:', cancelErr);
+              }
+            }, 1500);
           }
         }
       };
@@ -642,7 +671,7 @@ export default function CheckoutPage() {
       const rzp = new (window as any).Razorpay(options);
 
       rzp.on('payment.failed', async function (failedResponse: any) {
-        if (paymentCompletedSuccessfully) {
+        if (paymentCompletedSuccessfully || paymentHandlerInvoked) {
           return;
         }
         setIsSubmitting(false);

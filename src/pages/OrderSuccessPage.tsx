@@ -114,17 +114,17 @@ export function OrderSuccessPage() {
       }
 
       if (!success && isMounted) {
-        // Fallback to local storage if available before giving up
+        // Fallback to client storage or preserve already-hydrated order before giving up
         try {
-          const fallbackStr = localStorage.getItem(`ajw_order_${id.trim()}`) || sessionStorage.getItem('ajw_latest_order');
+          const fallbackStr = localStorage.getItem(`ajw_order_${id.trim()}`) || 
+                              localStorage.getItem(`ajw_order_${cleanId}`) ||
+                              sessionStorage.getItem('ajw_latest_order');
           if (fallbackStr) {
             const fallback = JSON.parse(fallbackStr);
-            setOrder(fallback);
-          } else {
-            setOrder(null);
+            setOrder((prev) => prev || fallback);
           }
         } catch {
-          setOrder(null);
+          // Keep already hydrated order state if present
         }
       }
 
@@ -246,11 +246,13 @@ export function OrderSuccessPage() {
   // Determine actual lifecycle state
   const statusStr = (order.status || '').toLowerCase().trim();
   const paymentStatusStr = (order.paymentStatus || '').toLowerCase().trim();
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const isExplicitPaymentSuccess = searchParams.get('payment') === 'success' || searchParams.get('status') === 'success';
 
-  const isCancelled = statusStr === 'cancelled' || paymentStatusStr === 'cancelled';
-  const isFailed = paymentStatusStr === 'failed' || statusStr === 'failed';
+  const isCancelled = !isExplicitPaymentSuccess && (statusStr === 'cancelled' || paymentStatusStr === 'cancelled');
+  const isFailed = !isExplicitPaymentSuccess && (paymentStatusStr === 'failed' || statusStr === 'failed');
   const isRefunded = statusStr === 'refunded' || paymentStatusStr === 'refunded';
-  const isPaymentPending = (statusStr === 'pending' || paymentStatusStr === 'payment pending' || paymentStatusStr === 'pending') && !isCancelled && !isFailed;
+  const isPaymentPending = !isExplicitPaymentSuccess && (statusStr === 'pending' || paymentStatusStr === 'payment pending' || paymentStatusStr === 'pending') && !isCancelled && !isFailed;
   const isDelivered = statusStr === 'delivered';
   const isShipped = statusStr === 'shipped' || statusStr === 'out for delivery' || Boolean(order.awbNumber);
 

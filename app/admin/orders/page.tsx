@@ -200,23 +200,38 @@ export default function AdminOrdersPage() {
 
   const stats = useMemo(() => {
     const total = orders.length;
-    // Exclude cancelled orders from total revenue calculations
+    // Exclude cancelled and failed orders from total revenue calculations
     const totalRevenue = orders
-      .filter((o) => String(o.status || '').toLowerCase() !== 'cancelled')
+      .filter((o) => {
+        const s = String(o.status || '').toLowerCase();
+        const ps = String(o.paymentStatus || '').toLowerCase();
+        return s !== 'cancelled' && s !== 'payment failed' && ps !== 'failed';
+      })
       .reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+
     const pending = orders.filter((o) => {
       const s = String(o.status || '').toLowerCase();
-      return s === 'pending' || s === 'processing';
+      const ps = String(o.paymentStatus || '').toLowerCase();
+      return (s === 'pending' || s === 'processing') && ps !== 'failed';
     }).length;
+
     const delivered = orders.filter((o) => {
       const s = String(o.status || '').toLowerCase();
       return s === 'delivered' || s === 'completed';
     }).length;
+
     const cancelled = orders.filter((o) => {
       const s = String(o.status || '').toLowerCase();
       return s === 'cancelled';
     }).length;
-    return { total, totalRevenue, pending, delivered, cancelled };
+
+    const failed = orders.filter((o) => {
+      const s = String(o.status || '').toLowerCase();
+      const ps = String(o.paymentStatus || '').toLowerCase();
+      return s === 'payment failed' || s === 'failed' || ps === 'failed';
+    }).length;
+
+    return { total, totalRevenue, pending, delivered, cancelled, failed };
   }, [orders]);
 
   const filteredOrders = useMemo(() => {
@@ -228,9 +243,26 @@ export default function AdminOrdersPage() {
         o.customer?.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.referralPartnerName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         o.referralPartnerCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        o.couponCode?.toLowerCase().includes(searchQuery.toLowerCase());
+        o.couponCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.paymentStatus?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        o.status?.toLowerCase().includes(searchQuery.toLowerCase());
+
       const s = String(o.status || '').toLowerCase();
-      const matchStatus = statusFilter === 'all' || s === statusFilter.toLowerCase();
+      const ps = String(o.paymentStatus || '').toLowerCase();
+
+      let matchStatus = true;
+      if (statusFilter === 'all') {
+        matchStatus = true; // Show EVERY order made on checkout page
+      } else if (statusFilter === 'failed') {
+        matchStatus = ps === 'failed' || s === 'payment failed' || s === 'failed';
+      } else if (statusFilter === 'cancelled') {
+        matchStatus = s === 'cancelled';
+      } else if (statusFilter === 'pending') {
+        matchStatus = (s === 'pending' || s === 'processing') && ps !== 'failed';
+      } else {
+        matchStatus = s === statusFilter.toLowerCase();
+      }
+
       return matchSearch && matchStatus;
     });
   }, [orders, searchQuery, statusFilter]);
@@ -862,19 +894,27 @@ export default function AdminOrdersPage() {
 
       <div className="space-y-6">
         {/* KPI Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
-          <div className="bg-white p-4 rounded-xl border border-[#e1e3e5] shadow-xs flex items-center justify-between">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3.5">
+          <button
+            type="button"
+            onClick={() => setStatusFilter('all')}
+            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+              statusFilter === 'all'
+                ? 'bg-stone-50 border-stone-400 ring-2 ring-stone-500/20'
+                : 'bg-white border-[#e1e3e5] hover:border-stone-300'
+            }`}
+          >
             <div>
               <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-wider">Total Orders</p>
               <h3 className="text-xl font-bold text-stone-900 mt-0.5">{stats.total}</h3>
               <span className="text-[10px] text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded font-bold border border-stone-200 mt-1 inline-block">
-                All-time registered
+                All checkout orders
               </span>
             </div>
             <div className="w-9 h-9 bg-[#e1e3e5]/40 rounded-lg flex items-center justify-center text-stone-700">
               <ShoppingBag className="w-4 h-4" />
             </div>
-          </div>
+          </button>
 
           <div className="bg-white p-4 rounded-xl border border-[#e1e3e5] shadow-xs flex items-center justify-between">
             <div>
@@ -889,7 +929,15 @@ export default function AdminOrdersPage() {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-xl border border-[#e1e3e5] shadow-xs flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setStatusFilter('pending')}
+            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+              statusFilter === 'pending'
+                ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-500/20'
+                : 'bg-white border-[#e1e3e5] hover:border-amber-200'
+            }`}
+          >
             <div>
               <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-wider">Pending Orders</p>
               <h3 className="text-xl font-bold text-amber-600 mt-0.5">{stats.pending}</h3>
@@ -900,9 +948,17 @@ export default function AdminOrdersPage() {
             <div className="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600 border border-amber-100">
               <Clock className="w-4 h-4" />
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white p-4 rounded-xl border border-[#e1e3e5] shadow-xs flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setStatusFilter('delivered')}
+            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+              statusFilter === 'delivered'
+                ? 'bg-emerald-50 border-emerald-300 ring-2 ring-emerald-500/20'
+                : 'bg-white border-[#e1e3e5] hover:border-emerald-200'
+            }`}
+          >
             <div>
               <p className="text-[10px] font-extrabold text-stone-400 uppercase tracking-wider">Delivered / Complete</p>
               <h3 className="text-xl font-bold text-emerald-600 mt-0.5">{stats.delivered}</h3>
@@ -913,7 +969,28 @@ export default function AdminOrdersPage() {
             <div className="w-9 h-9 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600 border border-emerald-100">
               <CheckCircle className="w-4 h-4" />
             </div>
-          </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setStatusFilter('failed')}
+            className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+              statusFilter === 'failed'
+                ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-500/20'
+                : 'bg-white border-[#e1e3e5] hover:border-amber-200'
+            }`}
+          >
+            <div>
+              <p className="text-[10px] font-extrabold text-amber-700 uppercase tracking-wider">Payment Failed</p>
+              <h3 className="text-xl font-bold text-amber-800 mt-0.5">{stats.failed}</h3>
+              <span className="text-[10px] text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded font-bold border border-amber-200 mt-1 inline-block">
+                Failed checkout
+              </span>
+            </div>
+            <div className="w-9 h-9 bg-amber-100 rounded-lg flex items-center justify-center text-amber-700 border border-amber-200">
+              <AlertTriangle className="w-4 h-4" />
+            </div>
+          </button>
 
           <button
             type="button"
@@ -952,7 +1029,7 @@ export default function AdminOrdersPage() {
             </div>
 
             <div className="flex items-center gap-1.5 w-full md:w-auto overflow-x-auto no-scrollbar mask-edges-right pb-1 md:pb-0">
-              {(['all', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'] as const).map((st) => (
+              {(['all', 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'failed', 'cancelled'] as const).map((st) => (
                 <button
                   key={st}
                   type="button"
@@ -961,14 +1038,18 @@ export default function AdminOrdersPage() {
                     statusFilter === st
                       ? st === 'cancelled'
                         ? 'bg-rose-700 text-white shadow-2xs'
+                        : st === 'failed'
+                        ? 'bg-amber-700 text-white shadow-2xs'
                         : 'bg-[#9B111E] text-white shadow-2xs'
                       : 'bg-stone-100 text-stone-600 hover:bg-stone-200'
                   }`}
                 >
                   {st === 'all' 
-                    ? `All (${stats.activeCount})` 
+                    ? `All (${stats.total})` 
                     : st === 'cancelled' 
                       ? `Cancelled (${stats.cancelled})` 
+                      : st === 'failed'
+                      ? `Failed (${stats.failed})`
                       : st}
                 </button>
               ))}
@@ -1290,11 +1371,16 @@ export default function AdminOrdersPage() {
                             <span className={`px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase border ${
                               o.paymentStatus === 'Paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
                               o.paymentStatus === 'Partial Paid' ? 'bg-blue-50 text-blue-800 border-blue-200' :
-                              o.paymentStatus === 'Failed' || o.paymentStatus === 'Cancelled' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                              o.paymentStatus === 'Failed' || o.status === 'Payment Failed' || o.paymentStatus === 'Cancelled' ? 'bg-rose-50 text-rose-800 border-rose-200' :
                               'bg-amber-50 text-amber-800 border-amber-200'
                             }`}>
-                              {o.paymentStatus || (o.status === 'Cancelled' ? 'Cancelled' : 'Payment Pending')}
+                              {o.paymentStatus || (o.status === 'Cancelled' ? 'Cancelled' : o.status === 'Payment Failed' ? 'Failed' : 'Payment Pending')}
                             </span>
+                            {(o.paymentStatus === 'Failed' || o.status === 'Payment Failed') && o.notes && (
+                              <span className="text-[9.5px] text-rose-600 line-clamp-1 max-w-[130px] font-medium" title={o.notes}>
+                                {o.notes}
+                              </span>
+                            )}
                             {advancePaid > 0 && (
                               <span className="text-[10px] font-bold text-emerald-700">
                                 Paid: ₹{advancePaid}
@@ -1347,6 +1433,7 @@ export default function AdminOrdersPage() {
                               <option value="Processing">Processing</option>
                               <option value="Shipped">Shipped</option>
                               <option value="Delivered">Delivered</option>
+                              <option value="Payment Failed">Payment Failed</option>
                               <option value="Cancelled">Cancelled</option>
                             </select>
 

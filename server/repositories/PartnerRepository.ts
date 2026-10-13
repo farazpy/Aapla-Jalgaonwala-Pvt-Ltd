@@ -1988,19 +1988,51 @@ export class PartnerRepository {
     return all;
   }
 
-  static async createSettlement(settlementData: Partial<PartnerSettlement>): Promise<PartnerSettlement> {
+  static async createSettlement(settlementData: Partial<PartnerSettlement> & { email?: string; phone?: string }): Promise<PartnerSettlement> {
     const id = settlementData.id || `stl_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const now = new Date();
     const formattedDate = settlementData.settlementDate || now.toISOString().split('T')[0];
     const formattedWeek = settlementData.settlementWeek || `Week Ending ${now.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
-    // Resolve partner details first
-    const partner = (settlementData.partnerId ? await this.getById(settlementData.partnerId) : null) || 
-                    (settlementData.partnerCode ? await this.getByCode(settlementData.partnerCode) : null);
+    let pool = getDbPool();
+    if (!pool) {
+      try {
+        const { initDatabase } = await import('../database/connection');
+        pool = await initDatabase();
+      } catch (poolErr) {
+        console.warn('[PartnerRepo] Could not re-init DB pool:', poolErr);
+      }
+    }
+
+    // Resolve partner details first (try memory, code, ID, and direct SQL)
+    let partner = (settlementData.partnerId ? await this.getById(settlementData.partnerId) : null) || 
+                  (settlementData.partnerCode ? await this.getByCode(settlementData.partnerCode) : null);
+
+    if (!partner && pool) {
+      try {
+        const targetId = settlementData.partnerId || '';
+        const targetCode = (settlementData.partnerCode || '').trim().toUpperCase();
+        const [rows]: any = await pool.query(
+          'SELECT * FROM business_partners WHERE id = ? OR UPPER(partner_code) = ? OR partner_code = ? LIMIT 1',
+          [targetId, targetCode, targetCode]
+        );
+        if (Array.isArray(rows) && rows.length > 0) {
+          partner = this.mapDbToPartner(rows[0]);
+        }
+      } catch (findErr) {
+        console.warn('[PartnerRepo] SQL partner lookup warning:', findErr);
+      }
+    }
+
+    // If partner email was provided in settlement payload, ensure partner object has it
+    if (settlementData.email && partner && !partner.email) {
+      partner.email = settlementData.email.trim();
+    }
 
     const partnerId = partner ? partner.id : (settlementData.partnerId || '');
     const partnerCode = partner ? partner.partnerCode.toUpperCase() : (settlementData.partnerCode || '').toUpperCase();
     const partnerName = partner ? partner.fullName : (settlementData.partnerName || 'Business Partner');
+    const partnerEmail = settlementData.email || partner?.email || '';
     const accountOrUpi = settlementData.accountOrUpi || partner?.upiId || partner?.phone || 'PhonePe';
     const amount = Number(settlementData.amount || 0);
 
@@ -2021,22 +2053,13 @@ export class PartnerRepository {
       createdAt: now.toISOString()
     };
 
-    let pool = getDbPool();
-    if (!pool) {
-      try {
-        const { initDatabase } = await import('../database/connection');
-        pool = await initDatabase();
-      } catch (poolErr) {
-        console.warn('[PartnerRepo] Could not re-init DB pool:', poolErr);
-      }
-    }
-
     if (pool) {
       try {
         const sqlCreatedAt = toSqlDateTime(now);
         const safeAccountOrUpi = accountOrUpi && accountOrUpi.trim() ? accountOrUpi.trim() : (partner?.phone || partner?.upiId || 'PhonePe');
         const safeTxnRef = (settlementData.transactionReference || `TXN${Date.now()}`).trim();
 
+        // 1. Insert settlement record into partner_settlements in MySQL
         await pool.query(
           `INSERT INTO partner_settlements (
             id, partner_id, partner_code, partner_name, settlement_date,
@@ -2061,46 +2084,63 @@ export class PartnerRepository {
             sqlCreatedAt
           ]
         );
-        console.log(`[PartnerRepo] ✅ Successfully saved settlement ${newSettlement.id} to MySQL partner_settlements table`);
+        console.log(`[PartnerRepo] ✅ Successfully saved settlement ${newSettlement.id} (₹${amount}) to MySQL partner_settlements table`);
 
-        // Update Partner Paid Balance directly in MySQL
+        // 2. Update Partner Paid Balance directly in MySQL
+        let newPaid = amount;
+        let newPending = 0;
         if (partner) {
           const currentPaid = Number(partner.totalCommissionPaid || 0);
           const currentEarned = Number(partner.totalCommissionEarned || 0) + Number(partner.referralBonusEarned || 0);
-          const newPaid = currentPaid + amount;
-          const newPending = Math.max(0, Math.round((currentEarned - newPaid) * 100) / 100);
+          newPaid = currentPaid + amount;
+          newPending = Math.max(0, Math.round((currentEarned - newPaid) * 100) / 100);
 
           await pool.query(
             `UPDATE business_partners 
              SET total_commission_paid = ?, 
                  pending_commission = ?,
                  updated_at = NOW() 
-             WHERE id = ? OR partner_code = ?`,
-            [newPaid, newPending, partner.id, partner.partnerCode]
+             WHERE id = ? OR UPPER(partner_code) = ?`,
+            [newPaid, newPending, partner.id, partner.partnerCode.toUpperCase()]
           );
+        } else if (partnerCode) {
+          await pool.query(
+            `UPDATE business_partners 
+             SET total_commission_paid = total_commission_paid + ?, 
+                 pending_commission = GREATEST(0, pending_commission - ?),
+                 updated_at = NOW() 
+             WHERE UPPER(partner_code) = ?`,
+            [amount, amount, partnerCode]
+          );
+        }
 
-          // Mark eligible referrals as settled in MySQL
+        // 3. Mark eligible referrals as settled in MySQL
+        if (partnerCode) {
           await pool.query(
             `UPDATE partner_referrals 
              SET status = 'settled', settlement_id = ? 
-             WHERE partner_code = ? AND status = 'eligible'`,
-            [newSettlement.id, partner.partnerCode]
+             WHERE UPPER(partner_code) = ? AND (status = 'eligible' OR is_delivered = 1)`,
+            [newSettlement.id, partnerCode]
           ).catch((e) => console.warn('[PartnerRepo] Error settling referrals:', e));
-
-          // Log payment transaction into MySQL app_logs table
-          await pool.query(
-            `INSERT INTO app_logs (id, level, error_type, message, module, status_code, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, NOW())`,
-            [
-              `log_pay_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
-              'info',
-              'WOMAN_COMMISSION_PAYMENT_LOGGED',
-              `Payment of ₹${amount} recorded for Woman Partner ${partner.fullName} (${partner.partnerCode}). TxnRef: ${safeTxnRef}. Method: ${newSettlement.paymentMethod}`,
-              'PartnerRepository',
-              200
-            ]
-          ).catch((e) => console.warn('[PartnerRepo] Error writing to app_logs:', e));
         }
+
+        // 4. Log payment transaction into MySQL app_logs table
+        const paymentLogId = `log_pay_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+        await pool.query(
+          `INSERT INTO app_logs (id, level, error_type, message, module, function_name, status_code, metadata, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+          [
+            paymentLogId,
+            'info',
+            'WOMAN_COMMISSION_PAYMENT_LOGGED',
+            `Payment of ₹${amount} recorded for Woman Partner ${partnerName} (${partnerCode}). TxnRef: ${safeTxnRef}. Method: ${newSettlement.paymentMethod}. Email: ${partnerEmail || 'N/A'}`,
+            'PartnerRepository',
+            'createSettlement',
+            200,
+            JSON.stringify({ settlementId: newSettlement.id, amount, partnerCode, partnerName, txnRef: safeTxnRef, partnerEmail })
+          ]
+        ).catch((e) => console.warn('[PartnerRepo] Error writing to app_logs:', e));
+
       } catch (err: any) {
         console.error('[PartnerRepo] MySQL insert settlement error:', err);
         throw new Error(`Failed to save payment in MySQL database: ${err.message}`);
@@ -2131,15 +2171,56 @@ export class PartnerRepository {
 
       // Recalculate metrics to keep all totals strictly in sync
       await this.recalculatePartnerMetrics(partner.partnerCode).catch(() => {});
+    }
 
-      // Send payment email notification to partner
-      if (partner.email) {
-        try {
-          const { sendPartnerPaymentReceivedEmail } = await import('../utils/mailer');
-          const sent = await sendPartnerPaymentReceivedEmail(partner, newSettlement);
-          console.log(`[PartnerRepo] Payment notification email sent to ${partner.email}:`, sent);
-        } catch (emailErr) {
-          console.error('[PartnerRepo] Error sending partner payment email:', emailErr);
+    // Send payment email notification to partner
+    const targetEmail = partnerEmail || partner?.email;
+    if (targetEmail) {
+      try {
+        const { sendPartnerPaymentReceivedEmail } = await import('../utils/mailer');
+        const partnerForEmail = partner || {
+          fullName: partnerName,
+          partnerCode,
+          email: targetEmail
+        };
+        const emailSent = await sendPartnerPaymentReceivedEmail(partnerForEmail, newSettlement);
+        console.log(`[PartnerRepo] Payment notification email sent to ${targetEmail}:`, emailSent);
+
+        if (pool) {
+          await pool.query(
+            `INSERT INTO app_logs (id, level, error_type, message, module, function_name, status_code, metadata, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [
+              `log_email_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+              emailSent ? 'info' : 'warn',
+              emailSent ? 'WOMAN_COMMISSION_EMAIL_SENT' : 'WOMAN_COMMISSION_EMAIL_FAILED',
+              emailSent 
+                ? `Payout confirmation email successfully dispatched to ${targetEmail} for settlement ${newSettlement.id} (₹${amount})`
+                : `Payout email dispatch skipped or unconfirmed for ${targetEmail}`,
+              'PartnerRepository',
+              'createSettlement',
+              emailSent ? 200 : 500,
+              JSON.stringify({ settlementId: newSettlement.id, email: targetEmail, success: emailSent })
+            ]
+          ).catch(() => {});
+        }
+      } catch (emailErr: any) {
+        console.error('[PartnerRepo] Error sending partner payment email:', emailErr);
+        if (pool) {
+          await pool.query(
+            `INSERT INTO app_logs (id, level, error_type, message, module, function_name, status_code, metadata, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [
+              `log_email_err_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+              'error',
+              'WOMAN_COMMISSION_EMAIL_ERROR',
+              `Error sending settlement email to ${targetEmail}: ${emailErr?.message || emailErr}`,
+              'PartnerRepository',
+              'createSettlement',
+              500,
+              JSON.stringify({ error: emailErr?.message || String(emailErr) })
+            ]
+          ).catch(() => {});
         }
       }
     }
