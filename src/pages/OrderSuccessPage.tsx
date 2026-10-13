@@ -59,13 +59,28 @@ export function OrderSuccessPage() {
     if (!id) return;
     let isMounted = true;
 
+    // 1. Instant hydration from client storage if placed in current session
+    try {
+      const localDirect = localStorage.getItem(`ajw_order_${id.trim()}`);
+      const sessionLatest = sessionStorage.getItem('ajw_latest_order');
+      const candidateStr = localDirect || sessionLatest;
+      if (candidateStr) {
+        const candidate = JSON.parse(candidateStr);
+        if (candidate && (candidate.id === id.trim() || candidate.orderNumber === id.trim() || !id.trim())) {
+          setOrder(candidate);
+          setIsLoading(false);
+        }
+      }
+    } catch (_) {}
+
     const fetchOrderWithRetry = async () => {
-      if (isMounted) setIsLoading(true);
+      const cleanId = encodeURIComponent(id.trim());
 
       const tryFetch = async (): Promise<boolean> => {
         try {
-          const cleanId = encodeURIComponent(id.trim());
-          const res = await fetch(`/api/orders/${cleanId}`);
+          const res = await fetch(`/api/orders/${cleanId}?t=${Date.now()}`, {
+            headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' }
+          });
           const json = await res.json();
           if (json.success && json.data && isMounted) {
             setOrder(json.data);
@@ -77,17 +92,42 @@ export function OrderSuccessPage() {
         return false;
       };
 
+      // Attempt 1: Immediate fetch
       let success = await tryFetch();
 
-      // Auto-retry after 1 second if DB is finalizing order creation
+      // Attempt 2: After 800ms
       if (!success && isMounted) {
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 800));
+        success = await tryFetch();
+      }
+
+      // Attempt 3: After 1500ms
+      if (!success && isMounted) {
+        await new Promise(r => setTimeout(r, 1500));
+        success = await tryFetch();
+      }
+
+      // Attempt 4: After 2500ms
+      if (!success && isMounted) {
+        await new Promise(r => setTimeout(r, 2500));
         success = await tryFetch();
       }
 
       if (!success && isMounted) {
-        setOrder(null);
+        // Fallback to local storage if available before giving up
+        try {
+          const fallbackStr = localStorage.getItem(`ajw_order_${id.trim()}`) || sessionStorage.getItem('ajw_latest_order');
+          if (fallbackStr) {
+            const fallback = JSON.parse(fallbackStr);
+            setOrder(fallback);
+          } else {
+            setOrder(null);
+          }
+        } catch {
+          setOrder(null);
+        }
       }
+
       if (isMounted) {
         setIsLoading(false);
       }

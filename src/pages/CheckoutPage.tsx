@@ -257,11 +257,19 @@ export default function CheckoutPage() {
     setCodeMessage('Coupon removed.');
   };
 
-  const estimatedTotal = finalTotal;
+  // 1-Rupee Test Mode (?test=1): Set overall order total to ₹1 for live Razorpay testing
+  const isTestMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const searchParams = new URLSearchParams(window.location.search);
+    return searchParams.get('test') === '1' || searchParams.get('testMode') === '1';
+  }, []);
+
+  const estimatedTotal = isTestMode ? 1 : finalTotal;
 
   const effectiveSettings = siteSettings || globalSettings;
-  const isCodEnabled = effectiveSettings ? effectiveSettings.enableCod !== false : true;
+  const isCodEnabled = isTestMode ? false : (effectiveSettings ? effectiveSettings.enableCod !== false : true);
   const isCodAdvanceEnabled = Boolean(
+    !isTestMode &&
     isCodEnabled &&
     effectiveSettings?.codAdvanceFeeEnabled === true &&
     Number(effectiveSettings?.codAdvanceFeeAmount || 0) > 0
@@ -269,12 +277,12 @@ export default function CheckoutPage() {
   const codFeeAmountSetting = Number(effectiveSettings?.codAdvanceFeeAmount || 50);
   const codFeeTypeSetting = effectiveSettings?.codAdvanceFeeType || 'fixed';
 
-  // Fallback check: If COD is disabled, ensure paymentMethod is ONLINE
+  // Fallback check: If COD is disabled or in test mode, ensure paymentMethod is ONLINE
   useEffect(() => {
-    if (!isCodEnabled && paymentMethod === 'COD') {
+    if ((!isCodEnabled || isTestMode) && paymentMethod === 'COD') {
       setPaymentMethod('ONLINE');
     }
-  }, [isCodEnabled, paymentMethod]);
+  }, [isCodEnabled, isTestMode, paymentMethod]);
 
   let codAdvanceFee = 0;
   let codRemainingBalance = estimatedTotal;
@@ -420,17 +428,20 @@ export default function CheckoutPage() {
           variantInfo: item.selectedVariant ? item.selectedVariant.weight : item.product.netQuantity,
           image: item.product.images[0]?.url || undefined
         })),
-        paymentMethod: paymentMethod === 'COD' ? 'COD' : 'Razorpay',
+        paymentMethod: isTestMode ? 'Razorpay' : (paymentMethod === 'COD' ? 'COD' : 'Razorpay'),
         subtotal: subtotal,
         discount: discountAmount || 0,
         discountAmount: discountAmount || 0,
-        shippingFee: shippingFee,
-        totalAmount: estimatedTotal,
+        shippingFee: isTestMode ? 0 : shippingFee,
+        totalAmount: isTestMode ? 1 : estimatedTotal,
+        isTestOrder: isTestMode,
         codAdvanceFeePaid: 0,
-        codRemainingBalance: paymentMethod === 'COD' ? (codAdvanceFee > 0 ? codRemainingBalance : estimatedTotal) : 0,
+        codRemainingBalance: isTestMode ? 0 : (paymentMethod === 'COD' ? (codAdvanceFee > 0 ? codRemainingBalance : estimatedTotal) : 0),
         couponCode: appliedCoupon?.code || undefined,
         referralPartnerCode: (appliedCoupon?.isPartnerCode ? appliedCoupon.code : referralPartnerCode) || undefined,
-        notes: (appliedCoupon?.isPartnerCode && (appliedCoupon.partnerName || partnerDiscountInfo?.partnerName))
+        notes: isTestMode
+          ? `[TEST MODE ?test=1: Real ₹1 Payment Recorded on Razorpay & MySQL]${notes.trim() ? ` | ${notes.trim()}` : ''}`
+          : (appliedCoupon?.isPartnerCode && (appliedCoupon.partnerName || partnerDiscountInfo?.partnerName))
           ? `Discount from ${appliedCoupon.partnerName || partnerDiscountInfo?.partnerName} (${appliedCoupon.code})${notes.trim() ? ` | ${notes.trim()}` : ''}`
           : (notes.trim() || undefined)
       };
@@ -471,8 +482,15 @@ export default function CheckoutPage() {
         setSession(dbOrder.authUser, dbOrder.authToken);
       }
 
+      // Cache placed order in client session immediately
+      try {
+        sessionStorage.setItem('ajw_latest_order', JSON.stringify(dbOrder));
+        localStorage.setItem(`ajw_order_${dbOrder.id}`, JSON.stringify(dbOrder));
+        localStorage.setItem(`ajw_order_${dbOrder.orderNumber}`, JSON.stringify(dbOrder));
+      } catch (_) {}
+
       // 3. Handle Cash on Delivery Flow without Advance Fee
-      if (paymentMethod === 'COD' && codAdvanceFee === 0) {
+      if (paymentMethod === 'COD' && codAdvanceFee === 0 && !isTestMode) {
         Analytics.trackPurchaseComplete({
           orderId: dbOrder.id,
           totalAmount: estimatedTotal,
@@ -485,18 +503,20 @@ export default function CheckoutPage() {
         return;
       }
 
-      // 4. Handle Razorpay Gateway Flow (either Full Payment or COD Advance Fee)
-      const targetChargeAmount = paymentMethod === 'COD' ? codAdvanceFee : estimatedTotal;
-      const isCodAdvanceCharge = paymentMethod === 'COD' && codAdvanceFee > 0;
+      // 4. Handle Razorpay Gateway Flow (either Full Payment, COD Advance Fee, or 1rs Test Mode)
+      const targetChargeAmount = isTestMode ? 1 : (paymentMethod === 'COD' ? codAdvanceFee : estimatedTotal);
+      const isCodAdvanceCharge = !isTestMode && paymentMethod === 'COD' && codAdvanceFee > 0;
 
       const payResponse = await fetch('/api/payment/razorpay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: targetChargeAmount,
+          isTestMode: isTestMode,
           receipt: dbOrder.orderNumber,
           notes: {
             orderId: dbOrder.id,
+            isTestMode: isTestMode ? 'true' : 'false',
             isCodAdvance: isCodAdvanceCharge ? 'true' : 'false',
             advanceFee: codAdvanceFee,
             remainingBalance: codRemainingBalance
@@ -516,17 +536,22 @@ export default function CheckoutPage() {
         throw new Error('Razorpay payment gateway script is still loading. Please try placing your order again in a moment.');
       }
 
+      let paymentCompletedSuccessfully = false;
+
       const options = {
         key: razorpayOrder.key,
         amount: razorpayOrder.amount,
         currency: razorpayOrder.currency,
         name: 'Aapla Jalgaonwala',
-        description: isCodAdvanceCharge
+        description: isTestMode
+          ? `Live Test Order (₹1) for Order #${dbOrder.orderNumber}`
+          : isCodAdvanceCharge
           ? `COD Advance Deposit for Order ${dbOrder.orderNumber}`
           : `Full Payment for Order ${dbOrder.orderNumber}`,
         image: '/favicon.ico',
         order_id: razorpayOrder.id,
         handler: async function (response: any) {
+          paymentCompletedSuccessfully = true;
           try {
             setIsSubmitting(true);
             const verifyRes = await fetch('/api/payment/razorpay/verify', {
@@ -539,7 +564,8 @@ export default function CheckoutPage() {
                 razorpay_signature: response.razorpay_signature,
                 isCodAdvance: isCodAdvanceCharge,
                 advanceFeePaid: codAdvanceFee,
-                remainingBalance: codRemainingBalance
+                remainingBalance: codRemainingBalance,
+                isTestOrder: isTestMode
               })
             });
 
@@ -547,11 +573,32 @@ export default function CheckoutPage() {
             if (verifyResult.success) {
               Analytics.trackPurchaseComplete({
                 orderId: dbOrder.id,
-                totalAmount: estimatedTotal,
+                totalAmount: isTestMode ? 1 : estimatedTotal,
                 paymentMethod: isCodAdvanceCharge ? 'COD_ADVANCE' : 'ONLINE_RAZORPAY',
                 itemsCount: totalItems,
                 referralCode: referralPartnerCode || undefined
               });
+
+              // Cache completed order locally so OrderSuccessPage never shows "Order not found"
+              try {
+                const completeLocalOrder = {
+                  ...dbOrder,
+                  status: 'Confirmed',
+                  paymentStatus: isCodAdvanceCharge ? 'Partial Paid' : 'Paid',
+                  totalAmount: isTestMode ? 1 : (dbOrder.totalAmount || estimatedTotal),
+                  paymentMethod: isCodAdvanceCharge ? 'COD' : 'Razorpay',
+                  paymentDetails: {
+                    method: isCodAdvanceCharge ? 'COD Deposit (Razorpay)' : 'Razorpay',
+                    transactionId: response.razorpay_payment_id,
+                    razorpayOrderId: response.razorpay_order_id,
+                    paidAt: new Date().toISOString()
+                  }
+                };
+                sessionStorage.setItem('ajw_latest_order', JSON.stringify(completeLocalOrder));
+                localStorage.setItem(`ajw_order_${dbOrder.id}`, JSON.stringify(completeLocalOrder));
+                localStorage.setItem(`ajw_order_${dbOrder.orderNumber}`, JSON.stringify(completeLocalOrder));
+              } catch (_) {}
+
               clearCart();
               navigate(`/order/${dbOrder.id}?${isCodAdvanceCharge ? 'status=success&codAdvance=true' : 'payment=success'}`);
             } else {
@@ -574,6 +621,9 @@ export default function CheckoutPage() {
         },
         modal: {
           ondismiss: async function () {
+            if (paymentCompletedSuccessfully) {
+              return; // Do nothing if payment was captured
+            }
             setIsSubmitting(false);
             setFormError('Payment was cancelled or closed before completion. Your order was not placed.');
             try {
@@ -592,6 +642,9 @@ export default function CheckoutPage() {
       const rzp = new (window as any).Razorpay(options);
 
       rzp.on('payment.failed', async function (failedResponse: any) {
+        if (paymentCompletedSuccessfully) {
+          return;
+        }
         setIsSubmitting(false);
         const failReason = failedResponse?.error?.description || 'Payment transaction failed or declined';
         setFormError(`Payment failed: ${failReason}. Your order was not placed.`);
@@ -637,6 +690,23 @@ export default function CheckoutPage() {
           <div className="p-4 mb-6 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-red-700 text-xs font-semibold">
             <AlertCircle className="w-5 h-5 shrink-0 text-red-600 mt-0.5" />
             <span>{formError}</span>
+          </div>
+        )}
+
+        {isTestMode && (
+          <div className="p-4 mb-6 bg-emerald-50 border-2 border-emerald-500/40 rounded-2xl flex items-start gap-3.5 text-emerald-950 shadow-xs">
+            <span className="text-2xl shrink-0">🧪</span>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-black text-sm text-emerald-950 tracking-tight">Razorpay Live Test Mode Active (?test=1)</span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-black uppercase tracking-wider">
+                  ₹1 Test Order
+                </span>
+              </div>
+              <p className="text-xs text-emerald-800 leading-relaxed font-medium">
+                Overall order total is set to <strong>₹1.00</strong> on Razorpay and in the database for our testing. A real order will be placed and recorded with <strong>₹1</strong> received as order total in the database.
+              </p>
+            </div>
           </div>
         )}
 

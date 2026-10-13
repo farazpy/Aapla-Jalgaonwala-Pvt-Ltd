@@ -1357,6 +1357,16 @@ apiRouter.post('/orders', async (req: Request, res: Response) => {
       orderData.customer.id = user.id;
     }
 
+    // Handle test=1 testing mode (?test=1): Set overall order total to ₹1 in database and for Razorpay
+    const isTestOrder = Boolean(orderData.isTestOrder || orderData.testMode || req.query.test === '1');
+    if (isTestOrder) {
+      orderData.totalAmount = 1;
+      orderData.shippingFee = 0;
+      orderData.notes = orderData.notes
+        ? `${orderData.notes} | [TEST MODE ?test=1: Real Order Total ₹1 Recorded]`
+        : `[TEST MODE ?test=1: Real Order Total ₹1 Recorded]`;
+    }
+
     // Determine if payment is required BEFORE order confirmation
     const siteSettings = await SettingsRepository.get();
 
@@ -3588,8 +3598,13 @@ const handleRazorpayCreateOrder = async (req: Request, res: Response) => {
       key_secret: keySecret
     });
 
+    let finalPaise = Math.round(Number(amount) * 100);
+    if (req.body.isTestMode || notes?.isTestMode === 'true' || Number(amount) === 1) {
+      finalPaise = 100; // ₹1 for test mode
+    }
+
     const order = await instance.orders.create({
-      amount: Math.round(Number(amount) * 100), // amount in paise
+      amount: finalPaise, // amount in paise
       currency,
       receipt: receipt || `rcpt_${Date.now()}`,
       notes: notes || {}
@@ -3613,7 +3628,7 @@ apiRouter.post('/payment/razorpay/create-order', handleRazorpayCreateOrder);
 
 apiRouter.post('/payment/razorpay/verify', async (req: Request, res: Response) => {
   try {
-    const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature, isCodAdvance, advanceFeePaid, remainingBalance } = req.body;
+    const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature, isCodAdvance, advanceFeePaid, remainingBalance, isTestOrder } = req.body;
 
     const siteSettings = await SettingsRepository.get();
     const keySecret = (siteSettings.razorpayKeySecret || '').trim() || process.env.RAZORPAY_KEY_SECRET;
@@ -3637,35 +3652,31 @@ apiRouter.post('/payment/razorpay/verify', async (req: Request, res: Response) =
     }
 
     if (orderId) {
+      const orderUpdates: any = {
+        status: 'Confirmed',
+        paymentStatus: isCodAdvance ? 'Partial Paid' : 'Paid',
+        paymentMethod: isCodAdvance ? 'COD' : 'Razorpay',
+        paymentDetails: {
+          method: isCodAdvance ? 'COD Deposit (Razorpay)' : 'Razorpay',
+          transactionId: razorpay_payment_id,
+          razorpayOrderId: razorpay_order_id,
+          advanceFeePaid: isCodAdvance ? Number(advanceFeePaid || 0) : undefined,
+          remainingBalance: isCodAdvance ? Number(remainingBalance || 0) : 0,
+          paidAt: new Date().toISOString()
+        }
+      };
+
       if (isCodAdvance) {
-        await OrderRepository.update(orderId, {
-          status: 'Confirmed',
-          paymentStatus: 'Partial Paid',
-          paymentMethod: 'COD',
-          codAdvanceFeePaid: Number(advanceFeePaid || 0),
-          codRemainingBalance: Number(remainingBalance || 0),
-          paymentDetails: {
-            method: 'COD Deposit (Razorpay)',
-            transactionId: razorpay_payment_id,
-            razorpayOrderId: razorpay_order_id,
-            advanceFeePaid: Number(advanceFeePaid || 0),
-            remainingBalance: Number(remainingBalance || 0),
-            paidAt: new Date().toISOString()
-          }
-        });
-      } else {
-        await OrderRepository.update(orderId, {
-          status: 'Confirmed',
-          paymentStatus: 'Paid',
-          paymentMethod: 'Razorpay',
-          paymentDetails: {
-            method: 'Razorpay',
-            transactionId: razorpay_payment_id,
-            razorpayOrderId: razorpay_order_id,
-            paidAt: new Date().toISOString()
-          }
-        });
+        orderUpdates.codAdvanceFeePaid = Number(advanceFeePaid || 0);
+        orderUpdates.codRemainingBalance = Number(remainingBalance || 0);
       }
+
+      if (isTestOrder) {
+        orderUpdates.totalAmount = 1;
+        orderUpdates.notes = `[TEST MODE ?test=1: Real ₹1 Payment Captured on Razorpay (${razorpay_payment_id})]`;
+      }
+
+      await OrderRepository.update(orderId, orderUpdates);
 
       // Fetch complete updated order and dispatch confirmation emails & alerts now that payment is captured
       const updatedOrder = await OrderRepository.getById(orderId);
@@ -3692,6 +3703,13 @@ apiRouter.post('/orders/:id/cancel-payment', async (req: Request, res: Response)
     }
 
     const currentStatus = String(existing.status || '').toLowerCase();
+    const currentPayStatus = String(existing.paymentStatus || '').toLowerCase();
+
+    // CRITICAL: NEVER cancel an order that was already paid or confirmed!
+    if (currentPayStatus === 'paid' || currentPayStatus === 'partial paid' || currentStatus === 'confirmed' || currentStatus === 'processing' || currentStatus === 'shipped' || currentStatus === 'delivered') {
+      return res.json(createSuccessResponse({ cancelled: false, status: existing.status, message: 'Order is already confirmed or paid.' }));
+    }
+
     if (currentStatus === 'pending' || currentStatus === 'payment pending') {
       const updated = await OrderRepository.update(id, {
         status: 'Cancelled',

@@ -84,29 +84,39 @@ export function AdminWomanFeesPage() {
   };
 
   // Fetch all partner, referral, and settlement records
-  const loadData = async (silent = false) => {
+  const loadData = async (silent = false): Promise<{ partners?: BusinessPartner[]; referrals?: PartnerOrderReferral[]; settlements?: PartnerSettlement[] }> => {
     if (!silent) setIsLoading(true);
     else setIsRefreshing(true);
 
     try {
       const [pRes, rRes, sRes] = await Promise.all([
-        fetch('/api/partner-program/partners').then(r => r.json()).catch(() => ({ success: false })),
-        fetch('/api/partner-program/referrals').then(r => r.json()).catch(() => ({ success: false })),
-        fetch('/api/partner-program/settlements').then(r => r.json()).catch(() => ({ success: false }))
+        fetch(`/api/partner-program/partners?t=${Date.now()}`).then(r => r.json()).catch(() => ({ success: false })),
+        fetch(`/api/partner-program/referrals?t=${Date.now()}`).then(r => r.json()).catch(() => ({ success: false })),
+        fetch(`/api/partner-program/settlements?t=${Date.now()}`).then(r => r.json()).catch(() => ({ success: false }))
       ]);
 
+      let loadedPartners: BusinessPartner[] = [];
+      let loadedReferrals: PartnerOrderReferral[] = [];
+      let loadedSettlements: PartnerSettlement[] = [];
+
       if (pRes.success && Array.isArray(pRes.data)) {
+        loadedPartners = pRes.data;
         setPartners(pRes.data);
       }
       if (rRes.success && Array.isArray(rRes.data)) {
+        loadedReferrals = rRes.data;
         setReferrals(rRes.data);
       }
       if (sRes.success && Array.isArray(sRes.data)) {
+        loadedSettlements = sRes.data;
         setSettlements(sRes.data);
       }
+
+      return { partners: loadedPartners, referrals: loadedReferrals, settlements: loadedSettlements };
     } catch (err) {
       console.error('Failed to load woman fees data:', err);
       showToast('Error loading fees ledger');
+      return {};
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -281,12 +291,12 @@ export function AdminWomanFeesPage() {
 
       const json = await response.json();
       if (json.success) {
-        showToast(`₹${payAmount.toLocaleString('en-IN')} paid successfully to ${payTargetPartner.fullName}!`);
+        showToast(`₹${payAmount.toLocaleString('en-IN')} paid successfully to ${payTargetPartner.fullName}! Payment recorded in MySQL and email notification dispatched.`);
         setIsPayModalOpen(false);
         // Reload fresh data from backend
-        await loadData(true);
-        if (inspectPartner && inspectPartner.id === payTargetPartner.id) {
-          const updated = partners.find(p => p.id === payTargetPartner.id);
+        const fresh = await loadData(true);
+        if (inspectPartner && fresh?.partners) {
+          const updated = fresh.partners.find(p => p.id === payTargetPartner.id || p.partnerCode === payTargetPartner.partnerCode);
           if (updated) setInspectPartner(updated);
         }
       } else {

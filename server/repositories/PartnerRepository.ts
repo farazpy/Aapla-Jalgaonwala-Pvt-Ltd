@@ -2021,17 +2021,29 @@ export class PartnerRepository {
       createdAt: now.toISOString()
     };
 
-    const pool = getDbPool();
+    let pool = getDbPool();
+    if (!pool) {
+      try {
+        const { initDatabase } = await import('../database/connection');
+        pool = await initDatabase();
+      } catch (poolErr) {
+        console.warn('[PartnerRepo] Could not re-init DB pool:', poolErr);
+      }
+    }
+
     if (pool) {
       try {
         const sqlCreatedAt = toSqlDateTime(now);
+        const safeAccountOrUpi = accountOrUpi && accountOrUpi.trim() ? accountOrUpi.trim() : (partner?.phone || partner?.upiId || 'PhonePe');
+        const safeTxnRef = (settlementData.transactionReference || `TXN${Date.now()}`).trim();
+
         await pool.query(
           `INSERT INTO partner_settlements (
             id, partner_id, partner_code, partner_name, settlement_date,
             settlement_week, amount, payment_method, account_or_upi,
             transaction_reference, orders_count, notes, status, created_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE amount=VALUES(amount), status=VALUES(status)`,
+          ON DUPLICATE KEY UPDATE amount=VALUES(amount), status=VALUES(status), transaction_reference=VALUES(transaction_reference)`,
           [
             newSettlement.id,
             newSettlement.partnerId,
@@ -2041,22 +2053,22 @@ export class PartnerRepository {
             newSettlement.settlementWeek,
             newSettlement.amount,
             newSettlement.paymentMethod,
-            newSettlement.accountOrUpi,
-            newSettlement.transactionReference,
-            newSettlement.ordersCount,
+            safeAccountOrUpi,
+            safeTxnRef,
+            newSettlement.ordersCount || 0,
             newSettlement.notes,
             newSettlement.status,
             sqlCreatedAt
           ]
         );
-        console.log(`[PartnerRepo] ✅ Successfully saved settlement ${newSettlement.id} to MySQL partner_settlements`);
+        console.log(`[PartnerRepo] ✅ Successfully saved settlement ${newSettlement.id} to MySQL partner_settlements table`);
 
         // Update Partner Paid Balance directly in MySQL
         if (partner) {
           const currentPaid = Number(partner.totalCommissionPaid || 0);
           const currentEarned = Number(partner.totalCommissionEarned || 0) + Number(partner.referralBonusEarned || 0);
           const newPaid = currentPaid + amount;
-          const newPending = Math.max(0, currentEarned - newPaid);
+          const newPending = Math.max(0, Math.round((currentEarned - newPaid) * 100) / 100);
 
           await pool.query(
             `UPDATE business_partners 
@@ -2067,18 +2079,34 @@ export class PartnerRepository {
             [newPaid, newPending, partner.id, partner.partnerCode]
           );
 
-          // Mark eligible referrals as settled
+          // Mark eligible referrals as settled in MySQL
           await pool.query(
             `UPDATE partner_referrals 
              SET status = 'settled', settlement_id = ? 
              WHERE partner_code = ? AND status = 'eligible'`,
             [newSettlement.id, partner.partnerCode]
-          ).catch(() => {});
+          ).catch((e) => console.warn('[PartnerRepo] Error settling referrals:', e));
+
+          // Log payment transaction into MySQL app_logs table
+          await pool.query(
+            `INSERT INTO app_logs (id, level, error_type, message, module, status_code, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, NOW())`,
+            [
+              `log_pay_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+              'info',
+              'WOMAN_COMMISSION_PAYMENT_LOGGED',
+              `Payment of ₹${amount} recorded for Woman Partner ${partner.fullName} (${partner.partnerCode}). TxnRef: ${safeTxnRef}. Method: ${newSettlement.paymentMethod}`,
+              'PartnerRepository',
+              200
+            ]
+          ).catch((e) => console.warn('[PartnerRepo] Error writing to app_logs:', e));
         }
       } catch (err: any) {
         console.error('[PartnerRepo] MySQL insert settlement error:', err);
         throw new Error(`Failed to save payment in MySQL database: ${err.message}`);
       }
+    } else {
+      throw new Error('MySQL Database connection is not available to log the payment. Please verify database connectivity.');
     }
 
     // Save JSON fallback & clear cache
@@ -2100,6 +2128,9 @@ export class PartnerRepository {
         totalCommissionPaid: newPaid,
         pendingCommission: newPending
       }).catch(() => {});
+
+      // Recalculate metrics to keep all totals strictly in sync
+      await this.recalculatePartnerMetrics(partner.partnerCode).catch(() => {});
 
       // Send payment email notification to partner
       if (partner.email) {
