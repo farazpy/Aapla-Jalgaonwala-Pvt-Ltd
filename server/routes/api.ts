@@ -1230,17 +1230,28 @@ async function dispatchOrderConfirmationNotifications(order: any) {
   }
 }
 
+let cachedPartnersRef: { partners: any[]; referrals: any[]; timestamp: number } | null = null;
+const PARTNER_REF_CACHE_TTL = 60000;
+
 apiRouter.get('/orders', async (req: Request, res: Response) => {
   try {
-    const orders = await OrderRepository.getAll();
+    const bypassCache = req.query.fresh === '1' || req.query.bypassCache === '1';
+    const orders = await OrderRepository.getAll(bypassCache);
     let partners: any[] = [];
     let referrals: any[] = [];
-    try {
-      [partners, referrals] = await Promise.all([
-        PartnerRepository.getAll(),
-        PartnerRepository.getReferrals()
-      ]);
-    } catch (_) {}
+
+    if (!bypassCache && cachedPartnersRef && (Date.now() - cachedPartnersRef.timestamp < PARTNER_REF_CACHE_TTL)) {
+      partners = cachedPartnersRef.partners;
+      referrals = cachedPartnersRef.referrals;
+    } else {
+      try {
+        [partners, referrals] = await Promise.all([
+          PartnerRepository.getAll(true),
+          PartnerRepository.getReferrals()
+        ]);
+        cachedPartnersRef = { partners, referrals, timestamp: Date.now() };
+      } catch (_) {}
+    }
 
     const partnerByCode = new Map(partners.map(p => [(p.partnerCode || '').trim().toUpperCase(), p]));
     const referralByOrderId = new Map(referrals.map(r => [String(r.orderId), r]));

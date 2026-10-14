@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 import { Order, BusinessPartner } from '@/types';
 import {
   ShoppingBag,
@@ -162,7 +162,7 @@ export default function AdminOrdersPage() {
   const fetchOrders = useCallback(async (showLoadingState = false) => {
     if (showLoadingState) setIsLoading(true);
     try {
-      const res = await fetch('/api/orders');
+      const res = await fetch('/api/orders?fresh=1');
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         setOrders(json.data);
@@ -176,27 +176,12 @@ export default function AdminOrdersPage() {
   }, []);
 
   useEffect(() => {
-    let ignore = false;
-    const load = async () => {
-      try {
-        const res = await fetch('/api/orders');
-        const json = await res.json();
-        if (!ignore && json.success && Array.isArray(json.data)) {
-          setOrders(json.data);
-        }
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-      } finally {
-        if (!ignore) {
-          setIsLoading(false);
-        }
-      }
-    };
-    load();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+    fetchOrders(true);
+    const interval = setInterval(() => {
+      fetchOrders(false);
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [fetchOrders]);
 
   const stats = useMemo(() => {
     const total = orders.length;
@@ -1538,7 +1523,7 @@ export default function AdminOrdersPage() {
                             </button>
 
                             <Link
-                              href={`/order/${o.id}`}
+                              to={`/order/${o.id}`}
                               target="_blank"
                               className="p-1.5 text-stone-600 hover:text-[#9B111E] rounded-lg hover:bg-stone-100 border border-stone-200 inline-flex items-center gap-1 transition-colors text-xs font-bold"
                               title="View Order Details & Invoice"

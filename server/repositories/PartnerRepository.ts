@@ -113,8 +113,10 @@ export class PartnerRepository {
   // PARTNERS (CRUD & Queries)
   // ----------------------------------------------------
 
-  static async getAll(): Promise<BusinessPartner[]> {
-    await this.syncAllPartnerReferrals();
+  static async getAll(skipSync: boolean = false): Promise<BusinessPartner[]> {
+    if (!skipSync) {
+      await this.syncAllPartnerReferrals();
+    }
 
     if (partnerMemoryCache && (Date.now() - partnerMemoryCache.timestamp < CACHE_TTL_MS)) {
       return partnerMemoryCache.data;

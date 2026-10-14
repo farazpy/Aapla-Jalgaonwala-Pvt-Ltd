@@ -113,8 +113,8 @@ export class OrderRepository {
     };
   }
 
-  static async getAll(): Promise<Order[]> {
-    if (orderMemoryCache && (Date.now() - orderMemoryCache.timestamp < CACHE_TTL_MS)) {
+  static async getAll(bypassCache: boolean = false): Promise<Order[]> {
+    if (!bypassCache && orderMemoryCache && (Date.now() - orderMemoryCache.timestamp < CACHE_TTL_MS)) {
       return orderMemoryCache.data;
     }
 
@@ -128,7 +128,6 @@ export class OrderRepository {
           const orderIds = rows.map((r: any) => r.id);
           const itemsMap = new Map<string, any[]>();
 
-          // Batch fetch ALL order_items in 1 single query instead of N serial queries
           if (orderIds.length > 0) {
             try {
               const [itemRows]: any = await pool.query(
@@ -144,9 +143,7 @@ export class OrderRepository {
                   itemsMap.get(oid)!.push(item);
                 }
               }
-            } catch (_) {
-              // Ignore batch item query error
-            }
+            } catch (_) {}
           }
 
           rawOrders = rows.map((r: any) => this.mapSingleOrder(r, itemsMap));
@@ -156,14 +153,86 @@ export class OrderRepository {
       }
     }
 
-    if (rawOrders.length === 0) {
-      rawOrders = await readJson<Order[]>(FILE_NAME, []);
+    // Always merge fallback orders stored in orders.json and auto-sync missing orders to MySQL
+    const jsonOrders = await readJson<Order[]>(FILE_NAME, []);
+    if (jsonOrders.length > 0) {
+      const mysqlIdSet = new Set(rawOrders.map(o => String(o.id)));
+      const mysqlNumSet = new Set(rawOrders.map(o => (o.orderNumber || '').trim().toUpperCase()));
+
+      const missingFromJson: Order[] = [];
+      for (const jOrder of jsonOrders) {
+        if (!jOrder) continue;
+        const jId = String(jOrder.id);
+        const jNum = (jOrder.orderNumber || '').trim().toUpperCase();
+
+        if (!mysqlIdSet.has(jId) && (!jNum || !mysqlNumSet.has(jNum))) {
+          rawOrders.push(jOrder);
+          missingFromJson.push(jOrder);
+        }
+      }
+
+      if (pool && missingFromJson.length > 0) {
+        for (const mOrder of missingFromJson) {
+          try {
+            const isFakeVal = mOrder.is_fake ? 1 : 0;
+            const createdAtDate = mOrder.createdAt ? new Date(mOrder.createdAt) : new Date();
+            const createdAtVal = isNaN(createdAtDate.getTime())
+              ? new Date().toISOString().slice(0, 19).replace('T', ' ')
+              : createdAtDate.toISOString().slice(0, 19).replace('T', ' ');
+
+            await pool.query(
+              `INSERT IGNORE INTO orders (id, order_number, customer_id, customer_name, customer_email, customer_phone, shipping_address_json, subtotal, discount, shipping_fee, total_amount, coupon_code, referral_partner_code, status, payment_status, payment_method, cod_advance_fee_paid, cod_remaining_balance, awb_number, courier_name, tracking_url, payment_details_json, notes, is_fake, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [
+                mOrder.id,
+                mOrder.orderNumber,
+                mOrder.customer?.id || null,
+                mOrder.customer?.name || 'Valued Customer',
+                mOrder.customer?.email || '',
+                mOrder.customer?.phone || '',
+                JSON.stringify(mOrder.shippingAddress || {}),
+                mOrder.subtotal || 0,
+                mOrder.discount || 0,
+                mOrder.shippingFee || 0,
+                mOrder.totalAmount || 0,
+                mOrder.couponCode || null,
+                mOrder.referralPartnerCode || null,
+                mOrder.status || 'Pending',
+                mOrder.paymentStatus || 'Pending',
+                mOrder.paymentMethod || 'COD',
+                mOrder.codAdvanceFeePaid || 0,
+                mOrder.codRemainingBalance || 0,
+                mOrder.awbNumber || null,
+                mOrder.courierName || null,
+                mOrder.trackingUrl || null,
+                mOrder.paymentDetails ? JSON.stringify(mOrder.paymentDetails) : null,
+                mOrder.notes || null,
+                isFakeVal,
+                createdAtVal
+              ]
+            );
+
+            if (mOrder.items && mOrder.items.length > 0) {
+              for (const it of mOrder.items) {
+                await pool.query(
+                  `INSERT IGNORE INTO order_items (id, order_id, product_id, product_name, quantity, price, profit, variant_info) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                  [it.id || `item_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`, mOrder.id, it.productId || 'p_unknown', it.productName || 'Snack', it.quantity || 1, it.price || 0, it.profit || 0, it.variantInfo || null]
+                ).catch(() => {});
+              }
+            }
+          } catch (syncErr) {
+            console.warn('[OrderRepo] Auto-sync JSON order to MySQL failed:', mOrder.id, syncErr);
+          }
+        }
+      }
     }
+
+    rawOrders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
     // Enrich legacy orders with non-zero item prices if stored as 0
     let productsList: any[] = [];
     try {
-      productsList = await ProductRepository.getAll(true);
+      productsList = await ProductRepository.getAll(false);
     } catch {
       productsList = [];
     }

@@ -1,5 +1,18 @@
 [
   {
+    "id": "addr_1791968360111_cs6se",
+    "userId": "usr_1786900688379_gn030",
+    "name": "Faraz Online Customer",
+    "phone": "9876543210",
+    "email": "farazk0792@gmail.com",
+    "addressLine1": "Test Flat 101, Near Station",
+    "city": "Jalgaon",
+    "state": "Maharashtra",
+    "pincode": "425001",
+    "isDefault": false,
+    "createdAt": "2026-10-14T08:59:20.111Z"
+  },
+  {
     "id": "addr_1791883852920_l2zq7",
     "userId": "usr_1786900688379_gn030",
     "name": "Htklabs LLP",
