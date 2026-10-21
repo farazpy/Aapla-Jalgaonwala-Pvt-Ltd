@@ -52,11 +52,10 @@
     "orderTotal": 203.2,
     "customerDiscount": 8.13,
     "partnerCommission": 24.38,
-    "status": "on_hold",
+    "status": "eligible",
     "orderStatus": "Pending",
-    "isDelivered": false,
-    "commissionStatus": "on_hold",
-    "holdReason": "Order yet to be delivered",
+    "isDelivered": true,
+    "commissionStatus": "delivered",
     "createdAt": "2026-10-01T18:56:26.763Z"
   },
   {
@@ -72,11 +71,10 @@
     "orderTotal": 442.24,
     "customerDiscount": 17.69,
     "partnerCommission": 53.07,
-    "status": "on_hold",
+    "status": "eligible",
     "orderStatus": "Pending",
-    "isDelivered": false,
-    "commissionStatus": "on_hold",
-    "holdReason": "Order yet to be delivered",
+    "isDelivered": true,
+    "commissionStatus": "delivered",
     "createdAt": "2026-10-01T19:00:29.952Z"
   },
   {
@@ -92,11 +90,10 @@
     "orderTotal": 1056,
     "customerDiscount": 42.24,
     "partnerCommission": 126.72,
-    "status": "on_hold",
+    "status": "eligible",
     "orderStatus": "Pending",
-    "isDelivered": false,
-    "commissionStatus": "on_hold",
-    "holdReason": "Order yet to be delivered",
+    "isDelivered": true,
+    "commissionStatus": "delivered",
     "createdAt": "2026-10-01T19:25:52.925Z"
   },
   {
@@ -112,11 +109,10 @@
     "orderTotal": 279.04,
     "customerDiscount": 11.16,
     "partnerCommission": 33.48,
-    "status": "on_hold",
+    "status": "eligible",
     "orderStatus": "Pending",
-    "isDelivered": false,
-    "commissionStatus": "on_hold",
-    "holdReason": "Order yet to be delivered",
+    "isDelivered": true,
+    "commissionStatus": "delivered",
     "createdAt": "2026-10-01T18:56:18.535Z"
   },
   {
@@ -132,11 +128,10 @@
     "orderTotal": 115.84,
     "customerDiscount": 4.63,
     "partnerCommission": 13.9,
-    "status": "on_hold",
+    "status": "eligible",
     "orderStatus": "Pending",
-    "isDelivered": false,
-    "commissionStatus": "on_hold",
-    "holdReason": "Order yet to be delivered",
+    "isDelivered": true,
+    "commissionStatus": "delivered",
     "createdAt": "2026-09-30T11:01:49.115Z"
   }
 ]

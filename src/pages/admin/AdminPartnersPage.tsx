@@ -3050,8 +3050,6 @@ export default function AdminPartnersPage() {
                                   const refSt = String(r.status || '').toLowerCase().trim();
                                   const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
                                   const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
-                                  const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
-                                  const isDelivered = !isCancelled && !isFailed && !isOnHold && (Boolean(r.isDelivered) || orderSt === 'delivered' || refSt === 'settled');
 
                                   if (isCancelled) {
                                     return (
@@ -3069,18 +3067,10 @@ export default function AdminPartnersPage() {
                                       </div>
                                     );
                                   }
-                                  if (!isDelivered) {
-                                    return (
-                                      <div>
-                                        <span className="text-amber-800/80 text-xs font-semibold line-through">₹{r.partnerCommission}</span>
-                                        <span className="block text-[9px] text-amber-700 font-bold">On Hold (Not Counted)</span>
-                                      </div>
-                                    );
-                                  }
                                   return (
                                     <div>
                                       <span className="text-emerald-600 font-bold text-sm">+₹{r.partnerCommission}</span>
-                                      <span className="block text-[9px] text-emerald-700 font-bold">Delivered (Counted)</span>
+                                      <span className="block text-[9px] text-emerald-700 font-bold">Earned (Immediate)</span>
                                     </div>
                                   );
                                 })()}
@@ -3091,8 +3081,6 @@ export default function AdminPartnersPage() {
                                   const refSt = String(r.status || '').toLowerCase().trim();
                                   const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
                                   const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
-                                  const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
-                                  const isDelivered = !isCancelled && !isFailed && !isOnHold && (Boolean(r.isDelivered) || orderSt === 'delivered' || refSt === 'settled');
 
                                   if (isCancelled) {
                                     return (
@@ -3108,13 +3096,6 @@ export default function AdminPartnersPage() {
                                       </span>
                                     );
                                   }
-                                  if (!isDelivered) {
-                                    return (
-                                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                        On Hold (Pending Delivery)
-                                      </span>
-                                    );
-                                  }
                                   return (
                                     <span
                                       className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
@@ -3123,7 +3104,7 @@ export default function AdminPartnersPage() {
                                           : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                                       }`}
                                     >
-                                      {r.status === 'settled' ? 'Settled' : 'Delivered / Eligible'}
+                                      {r.status === 'settled' ? 'Settled' : 'Eligible for Payout'}
                                     </span>
                                   );
                                 })()}

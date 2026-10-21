@@ -125,31 +125,17 @@ export default function PartnerAnalyticsPage() {
       const refSt = String(r.status || '').toLowerCase().trim();
       const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
       const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
-      const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
-      if (isCancelled || isFailed || isOnHold) return false;
-      return r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
+      return !isCancelled && !isFailed;
     });
   }, [referrals]);
 
-  const onHoldReferrals = useMemo(() => {
-    return referrals.filter(r => {
-      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
-      const refSt = String(r.status || '').toLowerCase().trim();
-      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
-      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
-      if (isCancelled || isFailed) return false;
-      const isDelivered = r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
-      return !isDelivered;
-    });
-  }, [referrals]);
+  const onHoldReferrals = useMemo(() => [], []);
 
   const deliveredCommission = useMemo(() => {
     return deliveredReferrals.reduce((sum, r) => sum + (Number(r.partnerCommission) || 0), 0);
   }, [deliveredReferrals]);
 
-  const onHoldCommission = useMemo(() => {
-    return onHoldReferrals.reduce((sum, r) => sum + (Number(r.partnerCommission) || 0), 0);
-  }, [onHoldReferrals]);
+  const onHoldCommission = 0;
 
   const averageOrderValue = useMemo(() => {
     const count = partner?.totalOrdersCount || referrals.length || 0;
@@ -905,23 +891,23 @@ export default function PartnerAnalyticsPage() {
                     </div>
                     <p className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                      <span>Unlocked from delivered orders</span>
+                      <span>Instant 12% credited on order</span>
                     </p>
                   </div>
 
-                  {/* Amount On Hold - Orders not yet delivered */}
-                  <div className="bg-amber-50/90 p-4.5 sm:p-5 rounded-3xl border border-amber-200 shadow-xs space-y-2 hover:border-amber-300 transition-all">
+                  {/* Immediate Commission Payout Card */}
+                  <div className="bg-emerald-50/90 p-4.5 sm:p-5 rounded-3xl border border-emerald-200 shadow-xs space-y-2 hover:border-emerald-300 transition-all">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider">Amount On Hold</span>
-                      <div className="p-1.5 sm:p-2 rounded-xl bg-amber-100 text-amber-900 shrink-0">
-                        <Clock className="w-4 h-4" />
+                      <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider">Commission Payout</span>
+                      <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-100 text-emerald-800 shrink-0">
+                        <CheckCircle2 className="w-4 h-4" />
                       </div>
                     </div>
-                    <div className="text-2xl sm:text-3xl font-black text-amber-900">
-                      ₹{onHoldCommission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <div className="text-2xl sm:text-3xl font-black text-emerald-900">
+                      Instant Credit
                     </div>
-                    <p className="text-[10px] text-amber-800 font-bold">
-                      Order yet to be delivered
+                    <p className="text-[10px] text-emerald-800 font-bold">
+                      100% credited immediately on order (No Hold)
                     </p>
                   </div>
 
@@ -959,18 +945,18 @@ export default function PartnerAnalyticsPage() {
                   </div>
                 </div>
 
-                {/* Delivery-Based Commission Notice */}
-                <div className="bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200/90 rounded-2xl p-3.5 sm:p-4 flex items-start gap-3 shadow-2xs">
-                  <div className="p-2 rounded-xl bg-amber-100 text-amber-900 shrink-0 mt-0.5">
-                    <Info className="w-4 h-4" />
+                {/* Immediate Commission Policy Notice */}
+                <div className="bg-linear-to-r from-emerald-50 to-teal-50 border border-emerald-200/90 rounded-2xl p-3.5 sm:p-4 flex items-start gap-3 shadow-2xs">
+                  <div className="p-2 rounded-xl bg-emerald-100 text-emerald-900 shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div className="space-y-0.5 text-xs">
                     <p className="font-extrabold text-stone-900">
-                      Commission Delivery Policy:
+                      Immediate Commission Policy:
                     </p>
                     <p className="text-stone-600 leading-relaxed text-[11px] sm:text-xs">
-                      Commission (12%) is unlocked and added to your payable balance once customer orders are marked <strong className="text-emerald-800 font-bold">Delivered</strong>. 
-                      Orders currently being processed or in transit are shown under <strong className="text-amber-900 font-bold">Amount On Hold</strong> (showing <span className="italic font-semibold text-amber-900">"Order yet to be delivered"</span>) and are credited immediately upon delivery.
+                      Your 12% commission is credited <strong className="text-emerald-800 font-bold">immediately upon customer order placement</strong> with zero hold! 
+                      All active referral orders are automatically queued for direct bank/UPI deposit every Sunday.
                     </p>
                   </div>
                 </div>
@@ -1184,15 +1170,15 @@ export default function PartnerAnalyticsPage() {
 
                         {/* Step 2 */}
                         <div className="flex items-start gap-3 relative">
-                          <div className="w-7 h-7 rounded-full bg-amber-600 text-white text-xs font-black flex items-center justify-center shrink-0 shadow-2xs ring-2 ring-amber-100">
+                          <div className="w-7 h-7 rounded-full bg-emerald-600 text-white text-xs font-black flex items-center justify-center shrink-0 shadow-2xs ring-2 ring-emerald-100">
                             2
                           </div>
                           <div className="space-y-0.5 flex-1">
                             <h5 className="text-xs sm:text-sm font-bold text-stone-900">
-                              12% Commission Unlocked Upon Delivery
+                              Instant 12% Commission Credited
                             </h5>
                             <p className="text-xs text-stone-600 leading-relaxed">
-                              Orders in transit are tracked safely under <strong>Amount On Hold</strong> (showing <em>Order yet to be delivered</em>). Once marked delivered, your 12% commission is automatically unlocked for Sunday payout.
+                              Every referral order instantly earns you 12% commission upon placement with zero hold or waiting time.
                             </p>
                           </div>
                         </div>
@@ -1492,20 +1478,20 @@ export default function PartnerAnalyticsPage() {
                     <div className="text-2xl sm:text-3xl font-black text-emerald-600">
                       ₹{deliveredCommission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </div>
-                    <p className="text-[10px] text-emerald-700 font-medium">Unlocked across delivered orders</p>
+                    <p className="text-[10px] text-emerald-700 font-medium">Credited immediately on all orders</p>
                   </div>
 
-                  <div className="bg-amber-50/90 p-5 rounded-3xl border border-amber-200 shadow-sm space-y-2">
+                  <div className="bg-emerald-50/90 p-5 rounded-3xl border border-emerald-200 shadow-sm space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-amber-900 uppercase tracking-wider">Amount On Hold</span>
-                      <div className="p-2 rounded-xl bg-amber-100 text-amber-900">
-                        <Clock className="w-4 h-4" />
+                      <span className="text-[10px] font-bold text-emerald-900 uppercase tracking-wider">Commission Credit</span>
+                      <div className="p-2 rounded-xl bg-emerald-100 text-emerald-800">
+                        <CheckCircle2 className="w-4 h-4" />
                       </div>
                     </div>
-                    <div className="text-2xl sm:text-3xl font-black text-amber-900">
-                      ₹{onHoldCommission.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <div className="text-2xl sm:text-3xl font-black text-emerald-900">
+                      Instant
                     </div>
-                    <p className="text-[10px] text-amber-800 font-bold">Order yet to be delivered</p>
+                    <p className="text-[10px] text-emerald-800 font-bold">100% credited on order creation (No Hold)</p>
                   </div>
 
                   <div className="bg-white p-5 rounded-3xl border border-stone-200 shadow-sm space-y-2">
@@ -1619,11 +1605,11 @@ export default function PartnerAnalyticsPage() {
                   )}
                 </div>
 
-                {/* Delivery Rule Notice */}
-                <div className="bg-amber-50/70 border border-amber-200 rounded-2xl p-3 sm:p-3.5 flex items-start gap-2.5 text-xs text-stone-700">
-                  <Info className="w-4 h-4 text-amber-800 shrink-0 mt-0.5" />
+                {/* Immediate Commission Guarantee Notice */}
+                <div className="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-3 sm:p-3.5 flex items-start gap-2.5 text-xs text-stone-700">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-800 shrink-0 mt-0.5" />
                   <p className="leading-relaxed text-[11px] sm:text-xs">
-                    <strong>Delivery-Based Commission Policy:</strong> Commission is only unlocked and credited to your Sunday payout once the order is marked <strong>Delivered</strong>. For pending or in-transit shipments, the amount is held securely as <strong>Amount On Hold</strong> with the message <em>"Order yet to be delivered"</em>.
+                    <strong>Immediate Commission Guarantee:</strong> Your 12% partner commission is credited instantly upon customer order placement with zero hold! All earned commissions are transferred directly to your bank / UPI every Sunday.
                   </p>
                 </div>
 
@@ -1635,7 +1621,7 @@ export default function PartnerAnalyticsPage() {
                     <div className="space-y-1">
                       <h4 className="text-sm font-bold text-stone-800">No referral orders placed yet</h4>
                       <p className="text-xs text-stone-500 max-w-md mx-auto">
-                        Share your referral link on WhatsApp Status, Instagram, and with friends & family. Once an order is placed and delivered, your 12% commission unlocks automatically!
+                        Share your referral link on WhatsApp Status, Instagram, and with friends & family. Every placed order instantly earns you 12% commission!
                       </p>
                     </div>
                     <button
@@ -1671,8 +1657,8 @@ export default function PartnerAnalyticsPage() {
                           const refSt = String(ref.status || '').toLowerCase().trim();
                           const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
                           const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
-                          const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
-                          const isDelivered = !isCancelled && !isFailed && !isOnHold && (Boolean(ref.isDelivered) || orderSt === 'delivered' || refSt === 'settled');
+                          const isDelivered = orderSt === 'delivered';
+                          const isSettled = ref.status === 'settled' || Boolean(ref.settlementId);
 
                           return (
                             <tr key={ref.id} className="hover:bg-amber-50/40 transition-colors">
@@ -1696,38 +1682,31 @@ export default function PartnerAnalyticsPage() {
                                     Delivered
                                   </span>
                                 ) : (
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200">
-                                    <Clock className="w-3 h-3 text-amber-700 shrink-0" />
-                                    {isOnHold ? 'On Hold' : ref.orderStatus ? ref.orderStatus.charAt(0).toUpperCase() + ref.orderStatus.slice(1) : 'Processing / In Transit'}
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                                    <Clock className="w-3 h-3 text-blue-700 shrink-0" />
+                                    {ref.orderStatus ? ref.orderStatus.charAt(0).toUpperCase() + ref.orderStatus.slice(1) : 'Confirmed'}
                                   </span>
                                 )}
                               </td>
 
                               <td className="p-3.5 text-right font-semibold text-stone-900">₹{ref.orderTotal}</td>
 
-                              {/* Commission Column - Strict: Cancelled, Failed, and On Hold orders are NOT counted */}
+                              {/* Commission Column - Immediate Credit for all active orders */}
                               <td className="p-3.5 text-right">
                                 {isCancelled ? (
                                   <div className="text-right">
                                     <span className="text-xs font-semibold text-stone-400 line-through">₹{ref.partnerCommission}</span>
-                                    <span className="block text-[9px] text-rose-700 font-bold">Cancelled (Not Counted)</span>
+                                    <span className="block text-[9px] text-rose-700 font-bold">Cancelled (₹0)</span>
                                   </div>
                                 ) : isFailed ? (
                                   <div className="text-right">
                                     <span className="text-xs font-semibold text-stone-400 line-through">₹{ref.partnerCommission}</span>
-                                    <span className="block text-[9px] text-rose-700 font-bold">Failed (Not Counted)</span>
-                                  </div>
-                                ) : isDelivered ? (
-                                  <div className="text-right">
-                                    <span className="text-sm font-black text-emerald-600">+₹{ref.partnerCommission}</span>
-                                    <span className="block text-[9px] text-emerald-700 font-bold uppercase tracking-wider">✓ Unlocked</span>
+                                    <span className="block text-[9px] text-rose-700 font-bold">Failed (₹0)</span>
                                   </div>
                                 ) : (
                                   <div className="text-right">
-                                    <span className="text-xs font-semibold text-amber-900/80 line-through">₹{ref.partnerCommission}</span>
-                                    <span className="inline-block text-[9px] font-extrabold uppercase px-1.5 py-0.5 bg-amber-100 text-amber-900 rounded border border-amber-200">
-                                      On Hold (Not Counted)
-                                    </span>
+                                    <span className="text-sm font-black text-emerald-600">+₹{ref.partnerCommission}</span>
+                                    <span className="block text-[9px] text-emerald-700 font-bold uppercase tracking-wider">✓ Credited Immediately</span>
                                   </div>
                                 )}
                               </td>
@@ -1736,30 +1715,20 @@ export default function PartnerAnalyticsPage() {
                               <td className="p-3.5 text-center">
                                 {isCancelled ? (
                                   <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-500">
-                                    Order Cancelled (₹0)
+                                    Cancelled (₹0)
                                   </span>
                                 ) : isFailed ? (
                                   <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-500">
-                                    Payment Failed (₹0)
+                                    Failed (₹0)
                                   </span>
-                                ) : isDelivered ? (
-                                  <span className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                                    ref.status === 'settled'
-                                      ? 'bg-emerald-100 text-emerald-800'
-                                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                  }`}>
-                                    {ref.status === 'settled' ? 'Paid to Bank' : 'Eligible for Sunday'}
+                                ) : isSettled ? (
+                                  <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                    Paid to Bank
                                   </span>
                                 ) : (
-                                  <div className="text-center space-y-0.5">
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
-                                      <Clock className="w-3 h-3 text-amber-700 shrink-0" />
-                                      Held (Pending Delivery)
-                                    </span>
-                                    <p className="text-[10px] text-amber-800 font-bold whitespace-nowrap">
-                                      Unlocks after delivery
-                                    </p>
-                                  </div>
+                                  <span className="inline-block px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Eligible for Sunday
+                                  </span>
                                 )}
                               </td>
                             </tr>

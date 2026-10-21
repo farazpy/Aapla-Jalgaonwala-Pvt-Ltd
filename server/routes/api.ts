@@ -4312,30 +4312,9 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
     const totalOrdersCount = validRefs.length;
     const totalSalesAmount = validRefs.reduce((sum, r) => sum + (Number(r.orderTotal) || 0), 0);
 
-    // CRITICAL: Commission is ONLY counted for DELIVERED (or settled) orders!
-    // Cancelled, failed, or on hold orders DO NOT count towards earned commission!
-    const eligibleRefs = referrals.filter(r => {
-      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
-      const refSt = String(r.status || '').toLowerCase().trim();
-      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
-      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
-      const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
-      if (isCancelled || isFailed || isOnHold) return false;
-      return r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
-    });
-
-    const onHoldRefs = referrals.filter(r => {
-      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
-      const refSt = String(r.status || '').toLowerCase().trim();
-      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
-      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
-      if (isCancelled || isFailed) return false;
-      const isDelivered = r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
-      return !isDelivered;
-    });
-
-    const totalCommissionEarned = eligibleRefs.reduce((sum, r) => sum + (Number(r.partnerCommission) || 0), 0);
-    const onHoldCommission = onHoldRefs.reduce((sum, r) => sum + (Number(r.partnerCommission) || 0), 0);
+    // Immediate Commission: all non-cancelled, non-failed orders immediately earn commission upon placement!
+    const totalCommissionEarned = validRefs.reduce((sum, r) => sum + (Number(r.partnerCommission) || 0), 0);
+    const onHoldCommission = 0;
     const totalCommissionPaid = settlements
       .filter(s => s.status !== 'Failed')
       .reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
@@ -4389,7 +4368,7 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
       pendingCommission: pendingCommissionBalance,
       onHoldCommission: Math.round(onHoldCommission * 100) / 100,
       totalCommissionPaid: Math.round(totalCommissionPaid * 100) / 100,
-      deliveredOrdersCount: eligibleRefs.length
+      deliveredOrdersCount: validRefs.length
     };
 
     const summary = {
@@ -7040,26 +7019,6 @@ apiRouter.get('/partner-program/partners/:identifier', async (req: Request, res:
 
     // Compute fresh metrics strictly distinguishing delivered vs on-hold vs cancelled/failed
     // Cancelled, failed, or on hold orders DO NOT count towards earned commission!
-    const deliveredRefs = referrals.filter(r => {
-      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
-      const refSt = String(r.status || '').toLowerCase().trim();
-      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
-      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
-      const isOnHold = orderSt === 'on_hold' || orderSt === 'on hold' || orderSt.includes('hold') || refSt === 'on_hold';
-      if (isCancelled || isFailed || isOnHold) return false;
-      return r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
-    });
-
-    const onHoldRefs = referrals.filter(r => {
-      const orderSt = String(r.orderStatus || '').toLowerCase().trim();
-      const refSt = String(r.status || '').toLowerCase().trim();
-      const isCancelled = orderSt === 'cancelled' || orderSt.includes('cancel') || refSt === 'cancelled';
-      const isFailed = orderSt === 'failed' || orderSt.includes('fail') || refSt === 'failed';
-      if (isCancelled || isFailed) return false;
-      const isDelivered = r.isDelivered === true || orderSt === 'delivered' || refSt === 'settled';
-      return !isDelivered;
-    });
-
     const validNonCancelledRefs = referrals.filter(r => {
       const orderSt = String(r.orderStatus || '').toLowerCase().trim();
       const refSt = String(r.status || '').toLowerCase().trim();
@@ -7067,11 +7026,12 @@ apiRouter.get('/partner-program/partners/:identifier', async (req: Request, res:
              orderSt !== 'failed' && !orderSt.includes('fail') && refSt !== 'failed';
     });
 
-    const deliveredCommission = deliveredRefs.reduce((sum, r) => sum + (r.partnerCommission || 0), 0);
-    const onHoldCommission = onHoldRefs.reduce((sum, r) => sum + (r.partnerCommission || 0), 0);
+    // Immediate Commission: all non-cancelled, non-failed orders immediately earn commission upon placement!
+    const totalCommissionEarned = validNonCancelledRefs.reduce((sum, r) => sum + (r.partnerCommission || 0), 0);
+    const onHoldCommission = 0;
     const totalSalesAmount = validNonCancelledRefs.reduce((sum, r) => sum + (r.orderTotal || 0), 0);
     const paidCommission = settlements.reduce((sum, s) => sum + (s.amount || 0), 0);
-    const pendingCommission = Math.max(0, deliveredCommission - paidCommission);
+    const pendingCommission = Math.max(0, Math.round((totalCommissionEarned - paidCommission) * 100) / 100);
 
     const invitedPartners = await PartnerRepository.getInvitedPartners(partner.partnerCode);
     const computedBonus = invitedPartners.length * 200;
@@ -7086,10 +7046,10 @@ apiRouter.get('/partner-program/partners/:identifier', async (req: Request, res:
       referredByPartnerName: referrer ? referrer.fullName : undefined,
       totalOrdersCount: validNonCancelledRefs.length,
       totalSalesAmount,
-      totalCommissionEarned: deliveredCommission,
+      totalCommissionEarned: totalCommissionEarned,
       pendingCommission,
-      onHoldCommission,
-      deliveredOrdersCount: deliveredRefs.length,
+      onHoldCommission: 0,
+      deliveredOrdersCount: validNonCancelledRefs.length,
       totalCommissionPaid: paidCommission,
       referralBonusEarned: finalBonus,
       invitedPartnersCount: invitedPartners.length
