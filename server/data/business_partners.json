@@ -1,5 +1,46 @@
 [
   {
+    "id": "wbp_1792125718794_791",
+    "partnerCode": "AJW-433361",
+    "fullName": "Sandhya Balwant Shelar",
+    "phone": "9869723361",
+    "email": "sandhyashelar05@gmail.com",
+    "city": "Mulund West Mumbai Maharashtra 400080",
+    "state": "Maharashtra",
+    "socialPlatform": "WhatsApp",
+    "socialHandle": "",
+    "bankAccountName": "Sandhya Balwant Shelar",
+    "bankName": "PhonePe / GPay",
+    "bankAccountNumber": "9869723361",
+    "ifscCode": "UPI-PAYOUT",
+    "upiId": "9869723361",
+    "aadhaarPanNumber": "430058423091",
+    "documentUrl": "",
+    "status": "active",
+    "paymentStatus": "paid",
+    "paymentRef": "pay_ToS2QIXNV5ZHjo",
+    "transactionId": "pay_ToS2QIXNV5ZHjo",
+    "razorpayPaymentId": "pay_ToS2QIXNV5ZHjo",
+    "razorpayOrderId": "order_ToS1eIOQNDfEPo",
+    "paymentAmount": 699,
+    "paymentDate": "2026-10-16T04:41:58.000Z",
+    "commissionRate": 12,
+    "customerDiscountRate": 4,
+    "totalOrdersCount": 0,
+    "totalSalesAmount": 0,
+    "totalCommissionEarned": 0,
+    "totalCommissionPaid": 0,
+    "pendingCommission": 0,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 0,
+    "referredByPartnerCode": "AJW-277809",
+    "referralBonusEarned": 0,
+    "notes": "Registration Fee: ₹699 (Payment ID: pay_ToS2QIXNV5ZHjo, Order ID: order_ToS1eIOQNDfEPo) | Referred by Woman Partner: Sejal Sushilkumar Patne (AJW-277809)",
+    "approvedAt": "2026-10-16T04:41:58.000Z",
+    "createdAt": "2026-10-16T04:41:58.000Z",
+    "updatedAt": "2026-10-16T04:41:58.000Z"
+  },
+  {
     "id": "wbp_1791872398931_565",
     "partnerCode": "AJW-799310",
     "fullName": "Anjali tai sarsagar",
@@ -36,7 +77,7 @@
     "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A)",
     "approvedAt": "2026-10-13T06:19:58.000Z",
     "createdAt": "2026-10-13T06:19:58.000Z",
-    "updatedAt": "2026-10-14T14:39:20.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1791831171328_135",
@@ -104,19 +145,19 @@
     "paymentDate": "2026-10-12T18:40:03.000Z",
     "commissionRate": 12,
     "customerDiscountRate": 4,
-    "totalOrdersCount": 0,
-    "totalSalesAmount": 0,
-    "totalCommissionEarned": 0,
+    "totalOrdersCount": 2,
+    "totalSalesAmount": 1008,
+    "totalCommissionEarned": 120.96,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
+    "pendingCommission": 120.96,
     "onHoldCommission": 0,
-    "deliveredOrdersCount": 0,
+    "deliveredOrdersCount": 2,
     "referredByPartnerCode": "AJW-292981",
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A) | Referred by Woman Partner: राधा नारायण सोळंके (AJW-292981)",
-    "approvedAt": "2026-10-12T14:40:03.000Z",
+    "approvedAt": "2026-10-12T08:40:03.000Z",
     "createdAt": "2026-10-12T18:40:03.000Z",
-    "updatedAt": "2026-10-13T10:27:05.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1791830222598_668",
@@ -266,16 +307,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 2,
     "totalSalesAmount": 958.08,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 114.96,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 114.96,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 114.96,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 2,
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A)",
     "approvedAt": "2026-10-08T21:59:30.000Z",
     "createdAt": "2026-10-09T08:59:30.000Z",
-    "updatedAt": "2026-10-14T14:39:20.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1791449399090_603",
@@ -312,9 +353,9 @@
     "deliveredOrdersCount": 0,
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A)",
-    "approvedAt": "2026-10-08T08:49:59.000Z",
+    "approvedAt": "2026-10-08T04:49:59.000Z",
     "createdAt": "2026-10-08T08:49:59.000Z",
-    "updatedAt": "2026-10-08T08:49:59.000Z"
+    "updatedAt": "2026-10-20T17:55:55.000Z"
   },
   {
     "id": "wbp_1791445718157_410",
@@ -541,16 +582,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 2,
     "totalSalesAmount": 166.4,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 19.96,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 19.96,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 19.96,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 2,
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A)",
     "approvedAt": "2026-10-06T16:08:36.000Z",
     "createdAt": "2026-10-07T03:08:36.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1791342342853_421",
@@ -739,16 +780,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 2,
     "totalSalesAmount": 483.2,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 57.98,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 57.98,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 57.98,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 2,
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TiZs3U1U7KXTbE, Order ID: order_TiZrvou8tuHS7f)",
     "approvedAt": "2026-10-01T13:57:21.000Z",
     "createdAt": "2026-10-01T13:57:21.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790687077068_268",
@@ -779,17 +820,17 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 2,
     "totalSalesAmount": 482.24,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 57.86,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 57.86,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 57.86,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 2,
     "referredByPartnerCode": "AJW-803976",
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: pay_ThrWiw02nByZrD, Order ID: order_ThrWajr7k8zIvU) | Referred by Woman Partner: Shreya Rajput (AJW-803976)",
-    "approvedAt": "2026-09-29T18:34:37.000Z",
+    "approvedAt": "2026-09-29T14:34:37.000Z",
     "createdAt": "2026-09-29T18:34:37.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790679865027_966",
@@ -817,18 +858,18 @@
     "paymentDate": "2026-09-29T16:34:25.000Z",
     "commissionRate": 12,
     "customerDiscountRate": 4,
-    "totalOrdersCount": 1,
-    "totalSalesAmount": 1056,
-    "totalCommissionEarned": 0,
+    "totalOrdersCount": 6,
+    "totalSalesAmount": 3451.2000000000003,
+    "totalCommissionEarned": 414.12,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 126.72,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 414.12,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 6,
     "referralBonusEarned": 0,
     "notes": "Admin Bypassed Payment",
-    "approvedAt": "2026-09-29T12:34:25.000Z",
+    "approvedAt": "2026-09-28T18:34:25.000Z",
     "createdAt": "2026-09-29T16:34:25.000Z",
-    "updatedAt": "2026-10-14T14:39:22.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790670872289_180",
@@ -859,17 +900,17 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 1,
     "totalSalesAmount": 1200,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 144,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 144,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 144,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 1,
     "referredByPartnerCode": "AJW-688828",
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: pay_ThmvLt7GiBWkUb, Order ID: order_ThmvFVRufUFPPq) | Referred by Woman Partner: Rushali Pawar (AJW-688828)",
     "approvedAt": "2026-09-29T08:34:32.000Z",
     "createdAt": "2026-09-29T14:04:32.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790669671107_174",
@@ -940,16 +981,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 1,
     "totalSalesAmount": 115.84,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 13.9,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 13.9,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 13.9,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 1,
     "referralBonusEarned": 0,
     "notes": "Admin Bypassed Payment",
-    "approvedAt": "2026-09-29T05:53:00.000Z",
+    "approvedAt": "2026-09-29T03:53:00.000Z",
     "createdAt": "2026-09-29T09:53:00.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790594742099_627",
@@ -1219,17 +1260,17 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 2,
     "totalSalesAmount": 243.2,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 29.18,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 29.18,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 29.18,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 2,
     "referredByPartnerCode": "AJW-292981",
     "referralBonusEarned": 0,
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-26T07:15:59.000Z",
     "createdAt": "2026-09-26T09:15:59.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790323229210_11",
@@ -1299,17 +1340,17 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 4,
     "totalSalesAmount": 1235.2,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 148.22,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 148.22,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 148.22,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 4,
     "referredByPartnerCode": "AJW-688828",
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: pay_Tg928v6ztlfm8q, Order ID: order_Tg922GkL4j027l) | Referred by Woman Partner: Rushali Pawar (AJW-688828)",
     "approvedAt": "2026-09-25T10:25:19.000Z",
     "createdAt": "2026-09-25T10:25:19.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790236143176_76",
@@ -1417,16 +1458,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 3,
     "totalSalesAmount": 996.48,
-    "totalCommissionEarned": 200,
+    "totalCommissionEarned": 319.58000000000004,
     "totalCommissionPaid": 639.16,
     "pendingCommission": 0,
-    "onHoldCommission": 119.58,
-    "deliveredOrdersCount": 1,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 3,
     "referralBonusEarned": 600,
     "notes": "Admin Bypassed Payment | Earned ₹200 referral bonus for inviting Nikita aeun bansode (AJW-370140) | Earned ₹200 referral bonus for inviting Komal Rahul Thorat (AJW-544138) | Earned ₹200 referral bonus for inviting Vaishali Pralhad Jadhav (AJW-903904)",
     "approvedAt": "2026-09-23T17:35:18.000Z",
     "createdAt": "2026-09-23T19:35:18.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790150835829_437",
@@ -1494,18 +1535,18 @@
     "paymentDate": "2026-09-23T11:11:09.000Z",
     "commissionRate": 12,
     "customerDiscountRate": 4,
-    "totalOrdersCount": 1,
-    "totalSalesAmount": 513.6,
-    "totalCommissionEarned": 0,
+    "totalOrdersCount": 3,
+    "totalSalesAmount": 1471.68,
+    "totalCommissionEarned": 176.59,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 61.63,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 176.59,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 3,
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TfMlVAv9RPpAkQ, Order ID: order_TfMlJ1WhOX1ThB)",
-    "approvedAt": "2026-09-23T11:11:09.000Z",
+    "approvedAt": "2026-09-23T05:11:09.000Z",
     "createdAt": "2026-09-23T11:11:09.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790133684110_26",
@@ -1576,17 +1617,17 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 1,
     "totalSalesAmount": 197.44,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 23.69,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 23.69,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 23.69,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 1,
     "referredByPartnerCode": "AJW-688828",
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: pay_Tf1M068XUeTGzA, Order ID: order_Tf1LsDlRVLKlTa) | Referred by Woman Partner: Rushali Pawar (AJW-688828)",
     "approvedAt": "2026-09-22T14:14:27.000Z",
     "createdAt": "2026-09-22T14:14:27.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1790015371115_586",
@@ -1854,18 +1895,18 @@
     "paymentDate": "2026-09-18T18:29:34.000Z",
     "commissionRate": 12,
     "customerDiscountRate": 4,
-    "totalOrdersCount": 2,
-    "totalSalesAmount": 366.08,
+    "totalOrdersCount": 0,
+    "totalSalesAmount": 0,
     "totalCommissionEarned": 0,
     "totalCommissionPaid": 43.92,
     "pendingCommission": 0,
-    "onHoldCommission": 43.92,
+    "onHoldCommission": 0,
     "deliveredOrdersCount": 0,
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TdVYNUqG1omqCN, Order ID: order_TdVYDLn0kRH87E)",
     "approvedAt": "2026-09-18T18:29:34.000Z",
     "createdAt": "2026-09-18T18:29:34.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-20T23:27:51.000Z"
   },
   {
     "id": "wbp_1789727288674_564",
@@ -1934,16 +1975,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 2,
     "totalSalesAmount": 1034.88,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 124.18,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 124.18,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 124.18,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 2,
     "referralBonusEarned": 0,
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-18T13:40:53.000Z",
     "createdAt": "2026-09-18T13:40:53.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1789546858224_328",
@@ -1983,7 +2024,7 @@
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TcdkayHJ4kkyoA, Order ID: order_TcdkSYKVOgHgCk)",
     "approvedAt": "2026-09-16T13:50:58.000Z",
     "createdAt": "2026-09-16T13:50:58.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1789536304120_226",
@@ -2022,7 +2063,7 @@
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-16T10:55:04.000Z",
     "createdAt": "2026-09-16T10:55:04.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1789466746091_180",
@@ -2061,7 +2102,7 @@
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-15T15:35:46.000Z",
     "createdAt": "2026-09-15T15:35:46.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1789408841996_946",
@@ -2100,7 +2141,7 @@
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-14T23:30:41.000Z",
     "createdAt": "2026-09-14T23:30:41.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1789383993025_398",
@@ -2178,7 +2219,7 @@
     "notes": "Admin Bypassed Payment | Earned ₹200 referral bonus for inviting Sandhya shanteshwar mudkanna (AJW-939348)",
     "approvedAt": "2026-09-12T20:46:34.000Z",
     "createdAt": "2026-09-13T00:46:34.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1789136480927_654",
@@ -2336,7 +2377,7 @@
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TaPUmrWsZXeoQP, Order ID: order_TaPUbR0QW7JGcS)",
     "approvedAt": "2026-09-10T11:36:25.000Z",
     "createdAt": "2026-09-10T22:36:25.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1789038373163_114",
@@ -2455,7 +2496,7 @@
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-09T19:26:08.000Z",
     "createdAt": "2026-09-09T19:26:08.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788937075368_250",
@@ -2534,7 +2575,7 @@
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TZXFIhYoTlhqkv, Order ID: order_TZXD0VGSANmosH)",
     "approvedAt": "2026-09-08T17:31:56.000Z",
     "createdAt": "2026-09-08T17:31:56.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788840521456_555",
@@ -2845,11 +2886,11 @@
     "pendingCommission": 0,
     "onHoldCommission": 0,
     "deliveredOrdersCount": 3,
-    "referralBonusEarned": 0,
-    "notes": "Registration Fee: ₹699 (Payment ID: pay_TYNBRDhnfCKX2A, Order ID: order_TYNBCtjL6e4VK3)",
-    "approvedAt": "2026-09-05T19:02:39.000Z",
+    "referralBonusEarned": 200,
+    "notes": "Registration Fee: ₹699 (Payment ID: pay_TYNBRDhnfCKX2A, Order ID: order_TYNBCtjL6e4VK3) | Earned ₹200 referral bonus for inviting Sandhya Balwant Shelar (AJW-433361)",
+    "approvedAt": "2026-09-05T17:02:39.000Z",
     "createdAt": "2026-09-05T19:02:39.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788513680166_640",
@@ -2958,16 +2999,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 3,
     "totalSalesAmount": 2106.16,
-    "totalCommissionEarned": 34.32,
+    "totalCommissionEarned": 252.73999999999998,
     "totalCommissionPaid": 689.58,
     "pendingCommission": 0,
-    "onHoldCommission": 218.42,
-    "deliveredOrdersCount": 1,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 3,
     "referralBonusEarned": 0,
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-03T23:33:18.000Z",
     "createdAt": "2026-09-03T23:33:18.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788442029510_193",
@@ -3007,7 +3048,7 @@
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TXa17PPjpmZDtk, Order ID: order_TXa0z8f1PoBaKO)",
     "approvedAt": "2026-09-03T18:57:09.000Z",
     "createdAt": "2026-09-03T18:57:09.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788434342751_671",
@@ -3046,7 +3087,7 @@
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-03T16:49:02.000Z",
     "createdAt": "2026-09-03T16:49:02.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788354797314_981",
@@ -3117,16 +3158,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 3,
     "totalSalesAmount": 540.48,
-    "totalCommissionEarned": 23,
+    "totalCommissionEarned": 64.86,
     "totalCommissionPaid": 106.72,
     "pendingCommission": 0,
-    "onHoldCommission": 41.86,
-    "deliveredOrdersCount": 1,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 3,
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TX7lL3nhG9DVMg, Order ID: order_TX7lBG77ktBPTY)",
     "approvedAt": "2026-09-02T15:22:01.000Z",
     "createdAt": "2026-09-02T15:18:24.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788340246782_468",
@@ -3204,7 +3245,7 @@
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-02T13:59:32.000Z",
     "createdAt": "2026-09-02T13:59:32.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788336804911_173",
@@ -3399,7 +3440,7 @@
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-02T11:05:21.000Z",
     "createdAt": "2026-09-02T11:05:21.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788327017826_114",
@@ -3438,7 +3479,7 @@
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-02T11:00:17.000Z",
     "createdAt": "2026-09-02T11:00:17.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788326233355_827",
@@ -3468,16 +3509,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 1,
     "totalSalesAmount": 442.24,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 53.07,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 53.07,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 53.07,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 1,
     "referralBonusEarned": 0,
     "notes": "Admin Bypassed Payment",
-    "approvedAt": "2026-09-02T10:47:13.000Z",
+    "approvedAt": "2026-09-02T06:47:13.000Z",
     "createdAt": "2026-09-02T10:47:13.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788325853673_119",
@@ -3516,7 +3557,7 @@
     "notes": "Admin Bypassed Payment",
     "approvedAt": "2026-09-02T10:40:53.000Z",
     "createdAt": "2026-09-02T10:40:53.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788320801751_165",
@@ -3596,7 +3637,7 @@
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TX12xvXZKpjs0p, Order ID: order_TX12UjlqOtjQxm)",
     "approvedAt": "2026-09-02T10:16:16.000Z",
     "createdAt": "2026-09-02T08:44:50.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788284014588_222",
@@ -3636,7 +3677,7 @@
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TWr6IHKqLgi9ia, Order ID: order_TWr64bS1vUT3Fk)",
     "approvedAt": "2026-09-02T10:16:16.000Z",
     "createdAt": "2026-09-01T23:03:34.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788282939222_163",
@@ -3676,7 +3717,7 @@
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TWqqeJ9kEafUW2, Order ID: order_TWqqMQkEUJzgVL)",
     "approvedAt": "2026-09-02T10:16:16.000Z",
     "createdAt": "2026-09-01T22:45:39.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788282068752_575",
@@ -3715,7 +3756,7 @@
     "notes": "Admin Bypassed Payment | Earned ₹200 referral bonus for inviting आरती रघुनाथ चौधरी (AJW-258895)",
     "approvedAt": "2026-09-01T22:31:08.000Z",
     "createdAt": "2026-09-01T22:31:08.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788278994591_338",
@@ -4009,18 +4050,18 @@
     "paymentAmount": 0,
     "commissionRate": 12,
     "customerDiscountRate": 4,
-    "totalOrdersCount": 0,
-    "totalSalesAmount": 0,
+    "totalOrdersCount": 2,
+    "totalSalesAmount": 1056,
     "totalCommissionEarned": 0,
     "totalCommissionPaid": 0,
     "pendingCommission": 0,
-    "onHoldCommission": 0,
+    "onHoldCommission": 126.72,
     "deliveredOrdersCount": 0,
     "referralBonusEarned": 0,
     "notes": "Registration Fee: ₹699 (Payment ID: pay_TWo7zaYjHVUu08, Order ID: order_TWo7q95uaL3vf5)",
     "approvedAt": null,
     "createdAt": "2026-09-01T20:06:02.000Z",
-    "updatedAt": "2026-10-03T15:03:08.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788272901175_152",
@@ -4256,16 +4297,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 4,
     "totalSalesAmount": 616.8,
-    "totalCommissionEarned": 452.15999999999997,
+    "totalCommissionEarned": 494.02,
     "totalCommissionPaid": 452.15999999999997,
-    "pendingCommission": 0,
-    "onHoldCommission": 41.86,
-    "deliveredOrdersCount": 2,
+    "pendingCommission": 41.86,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 4,
     "referralBonusEarned": 800,
     "notes": "Free Onboarding (₹0 Fee) | Earned ₹200 referral bonus for inviting Priyanka Khetmalis (AJW-527237) | Earned ₹200 referral bonus for inviting Asha sachin gaikwad (AJW-903125) | Earned ₹200 referral bonus for inviting Anita Govinda Nerpagare (AJW-431704) | Earned ₹200 referral bonus for inviting pratiksha swaminath sake (AJW-287069)",
-    "approvedAt": "2026-09-02T11:20:17.000Z",
+    "approvedAt": "2026-09-02T07:20:17.000Z",
     "createdAt": "2026-09-01T15:04:44.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788191074026_996",
@@ -4291,16 +4332,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 6,
     "totalSalesAmount": 541.4,
-    "totalCommissionEarned": 864.04,
+    "totalCommissionEarned": 884.97,
     "totalCommissionPaid": 2566.83,
     "pendingCommission": 0,
-    "onHoldCommission": 20.93,
-    "deliveredOrdersCount": 5,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 6,
     "referralBonusEarned": 400,
     "notes": "Free Onboarding (₹0 Fee) | Earned ₹200 referral bonus for inviting Pradhnya Uttareshwar Pawal (AJW-561344) | Earned ₹200 referral bonus for inviting Rajkanya Bibhishan Raut (AJW-614560)",
     "approvedAt": "2026-09-01T05:55:25.000Z",
     "createdAt": "2026-08-31T21:14:34.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788188133550_588",
@@ -4475,7 +4516,7 @@
     "notes": "Free Onboarding (₹0 Fee)",
     "approvedAt": "2026-08-31T17:56:10.000Z",
     "createdAt": "2026-08-31T17:37:24.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788174012135_983",
@@ -4641,16 +4682,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 2,
     "totalSalesAmount": 464,
-    "totalCommissionEarned": 0,
+    "totalCommissionEarned": 55.68,
     "totalCommissionPaid": 0,
-    "pendingCommission": 0,
-    "onHoldCommission": 55.68,
-    "deliveredOrdersCount": 0,
+    "pendingCommission": 55.68,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 2,
     "referralBonusEarned": 0,
     "notes": "Free Onboarding (₹0 Fee)",
     "approvedAt": "2026-08-31T15:08:04.000Z",
     "createdAt": "2026-08-31T15:08:04.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788167336034_34",
@@ -4720,7 +4761,7 @@
     "notes": "Free Onboarding (₹0 Fee)",
     "approvedAt": "2026-08-31T13:39:12.000Z",
     "createdAt": "2026-08-31T13:39:12.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788157822331_707",
@@ -5026,16 +5067,16 @@
     "customerDiscountRate": 4,
     "totalOrdersCount": 2,
     "totalSalesAmount": 270.4,
-    "totalCommissionEarned": 32.45,
+    "totalCommissionEarned": 64.9,
     "totalCommissionPaid": 32.9,
-    "pendingCommission": 0,
-    "onHoldCommission": 32.45,
-    "deliveredOrdersCount": 1,
+    "pendingCommission": 32,
+    "onHoldCommission": 0,
+    "deliveredOrdersCount": 2,
     "referralBonusEarned": 0,
     "notes": "Free Onboarding (₹0 Fee)",
     "approvedAt": "2026-08-31T08:34:50.000Z",
     "createdAt": "2026-08-31T08:34:50.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   },
   {
     "id": "wbp_1788145063172_515",
@@ -5140,6 +5181,6 @@
     "notes": "Free Onboarding (₹0 Fee)",
     "approvedAt": "2026-08-30T17:09:34.000Z",
     "createdAt": "2026-08-30T21:09:34.000Z",
-    "updatedAt": "2026-10-14T14:39:21.000Z"
+    "updatedAt": "2026-10-21T15:38:37.000Z"
   }
 ]

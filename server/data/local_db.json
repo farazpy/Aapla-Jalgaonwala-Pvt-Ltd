@@ -47,6 +47,47 @@
   ],
   "business_partners": [
     {
+      "id": "wbp_1792125718794_791",
+      "partnerCode": "AJW-433361",
+      "fullName": "Sandhya Balwant Shelar",
+      "phone": "9869723361",
+      "email": "sandhyashelar05@gmail.com",
+      "city": "Mulund West Mumbai Maharashtra 400080",
+      "state": "Maharashtra",
+      "socialPlatform": "WhatsApp",
+      "socialHandle": "",
+      "bankAccountName": "Sandhya Balwant Shelar",
+      "bankName": "PhonePe / GPay",
+      "bankAccountNumber": "9869723361",
+      "ifscCode": "UPI-PAYOUT",
+      "upiId": "9869723361",
+      "aadhaarPanNumber": "430058423091",
+      "documentUrl": "",
+      "status": "active",
+      "paymentStatus": "paid",
+      "paymentRef": "pay_ToS2QIXNV5ZHjo",
+      "transactionId": "pay_ToS2QIXNV5ZHjo",
+      "razorpayPaymentId": "pay_ToS2QIXNV5ZHjo",
+      "razorpayOrderId": "order_ToS1eIOQNDfEPo",
+      "paymentAmount": 699,
+      "paymentDate": "2026-10-16T04:41:58.000Z",
+      "commissionRate": 12,
+      "customerDiscountRate": 4,
+      "totalOrdersCount": 0,
+      "totalSalesAmount": 0,
+      "totalCommissionEarned": 0,
+      "totalCommissionPaid": 0,
+      "pendingCommission": 0,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 0,
+      "referredByPartnerCode": "AJW-277809",
+      "referralBonusEarned": 0,
+      "notes": "Registration Fee: ₹699 (Payment ID: pay_ToS2QIXNV5ZHjo, Order ID: order_ToS1eIOQNDfEPo) | Referred by Woman Partner: Sejal Sushilkumar Patne (AJW-277809)",
+      "approvedAt": "2026-10-16T04:41:58.000Z",
+      "createdAt": "2026-10-16T04:41:58.000Z",
+      "updatedAt": "2026-10-16T04:41:58.000Z"
+    },
+    {
       "id": "wbp_1791872398931_565",
       "partnerCode": "AJW-799310",
       "fullName": "Anjali tai sarsagar",
@@ -83,7 +124,7 @@
       "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A)",
       "approvedAt": "2026-10-13T06:19:58.000Z",
       "createdAt": "2026-10-13T06:19:58.000Z",
-      "updatedAt": "2026-10-14T14:39:20.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1791831171328_135",
@@ -151,19 +192,19 @@
       "paymentDate": "2026-10-12T18:40:03.000Z",
       "commissionRate": 12,
       "customerDiscountRate": 4,
-      "totalOrdersCount": 0,
-      "totalSalesAmount": 0,
-      "totalCommissionEarned": 0,
+      "totalOrdersCount": 2,
+      "totalSalesAmount": 1008,
+      "totalCommissionEarned": 120.96,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
+      "pendingCommission": 120.96,
       "onHoldCommission": 0,
-      "deliveredOrdersCount": 0,
+      "deliveredOrdersCount": 2,
       "referredByPartnerCode": "AJW-292981",
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A) | Referred by Woman Partner: राधा नारायण सोळंके (AJW-292981)",
-      "approvedAt": "2026-10-12T14:40:03.000Z",
+      "approvedAt": "2026-10-12T08:40:03.000Z",
       "createdAt": "2026-10-12T18:40:03.000Z",
-      "updatedAt": "2026-10-13T10:27:05.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1791830222598_668",
@@ -313,16 +354,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 2,
       "totalSalesAmount": 958.08,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 114.96,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 114.96,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 114.96,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 2,
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A)",
       "approvedAt": "2026-10-08T21:59:30.000Z",
       "createdAt": "2026-10-09T08:59:30.000Z",
-      "updatedAt": "2026-10-14T14:39:20.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1791449399090_603",
@@ -359,9 +400,9 @@
       "deliveredOrdersCount": 0,
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A)",
-      "approvedAt": "2026-10-08T08:49:59.000Z",
+      "approvedAt": "2026-10-08T04:49:59.000Z",
       "createdAt": "2026-10-08T08:49:59.000Z",
-      "updatedAt": "2026-10-08T08:49:59.000Z"
+      "updatedAt": "2026-10-20T17:55:55.000Z"
     },
     {
       "id": "wbp_1791445718157_410",
@@ -588,16 +629,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 2,
       "totalSalesAmount": 166.4,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 19.96,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 19.96,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 19.96,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 2,
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: ADMIN_ONBOARDED, Order ID: N/A)",
       "approvedAt": "2026-10-06T16:08:36.000Z",
       "createdAt": "2026-10-07T03:08:36.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1791342342853_421",
@@ -786,16 +827,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 2,
       "totalSalesAmount": 483.2,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 57.98,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 57.98,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 57.98,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 2,
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TiZs3U1U7KXTbE, Order ID: order_TiZrvou8tuHS7f)",
       "approvedAt": "2026-10-01T13:57:21.000Z",
       "createdAt": "2026-10-01T13:57:21.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790687077068_268",
@@ -826,17 +867,17 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 2,
       "totalSalesAmount": 482.24,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 57.86,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 57.86,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 57.86,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 2,
       "referredByPartnerCode": "AJW-803976",
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: pay_ThrWiw02nByZrD, Order ID: order_ThrWajr7k8zIvU) | Referred by Woman Partner: Shreya Rajput (AJW-803976)",
-      "approvedAt": "2026-09-29T18:34:37.000Z",
+      "approvedAt": "2026-09-29T14:34:37.000Z",
       "createdAt": "2026-09-29T18:34:37.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790679865027_966",
@@ -864,18 +905,18 @@
       "paymentDate": "2026-09-29T16:34:25.000Z",
       "commissionRate": 12,
       "customerDiscountRate": 4,
-      "totalOrdersCount": 1,
-      "totalSalesAmount": 1056,
-      "totalCommissionEarned": 0,
+      "totalOrdersCount": 6,
+      "totalSalesAmount": 3451.2000000000003,
+      "totalCommissionEarned": 414.12,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 126.72,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 414.12,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 6,
       "referralBonusEarned": 0,
       "notes": "Admin Bypassed Payment",
-      "approvedAt": "2026-09-29T12:34:25.000Z",
+      "approvedAt": "2026-09-28T18:34:25.000Z",
       "createdAt": "2026-09-29T16:34:25.000Z",
-      "updatedAt": "2026-10-14T14:39:22.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790670872289_180",
@@ -906,17 +947,17 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 1,
       "totalSalesAmount": 1200,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 144,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 144,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 144,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 1,
       "referredByPartnerCode": "AJW-688828",
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: pay_ThmvLt7GiBWkUb, Order ID: order_ThmvFVRufUFPPq) | Referred by Woman Partner: Rushali Pawar (AJW-688828)",
       "approvedAt": "2026-09-29T08:34:32.000Z",
       "createdAt": "2026-09-29T14:04:32.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790669671107_174",
@@ -987,16 +1028,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 1,
       "totalSalesAmount": 115.84,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 13.9,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 13.9,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 13.9,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 1,
       "referralBonusEarned": 0,
       "notes": "Admin Bypassed Payment",
-      "approvedAt": "2026-09-29T05:53:00.000Z",
+      "approvedAt": "2026-09-29T03:53:00.000Z",
       "createdAt": "2026-09-29T09:53:00.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790594742099_627",
@@ -1266,17 +1307,17 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 2,
       "totalSalesAmount": 243.2,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 29.18,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 29.18,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 29.18,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 2,
       "referredByPartnerCode": "AJW-292981",
       "referralBonusEarned": 0,
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-26T07:15:59.000Z",
       "createdAt": "2026-09-26T09:15:59.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790323229210_11",
@@ -1346,17 +1387,17 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 4,
       "totalSalesAmount": 1235.2,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 148.22,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 148.22,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 148.22,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 4,
       "referredByPartnerCode": "AJW-688828",
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: pay_Tg928v6ztlfm8q, Order ID: order_Tg922GkL4j027l) | Referred by Woman Partner: Rushali Pawar (AJW-688828)",
       "approvedAt": "2026-09-25T10:25:19.000Z",
       "createdAt": "2026-09-25T10:25:19.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790236143176_76",
@@ -1464,16 +1505,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 3,
       "totalSalesAmount": 996.48,
-      "totalCommissionEarned": 200,
+      "totalCommissionEarned": 319.58000000000004,
       "totalCommissionPaid": 639.16,
       "pendingCommission": 0,
-      "onHoldCommission": 119.58,
-      "deliveredOrdersCount": 1,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 3,
       "referralBonusEarned": 600,
       "notes": "Admin Bypassed Payment | Earned ₹200 referral bonus for inviting Nikita aeun bansode (AJW-370140) | Earned ₹200 referral bonus for inviting Komal Rahul Thorat (AJW-544138) | Earned ₹200 referral bonus for inviting Vaishali Pralhad Jadhav (AJW-903904)",
       "approvedAt": "2026-09-23T17:35:18.000Z",
       "createdAt": "2026-09-23T19:35:18.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790150835829_437",
@@ -1541,18 +1582,18 @@
       "paymentDate": "2026-09-23T11:11:09.000Z",
       "commissionRate": 12,
       "customerDiscountRate": 4,
-      "totalOrdersCount": 1,
-      "totalSalesAmount": 513.6,
-      "totalCommissionEarned": 0,
+      "totalOrdersCount": 3,
+      "totalSalesAmount": 1471.68,
+      "totalCommissionEarned": 176.59,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 61.63,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 176.59,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 3,
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TfMlVAv9RPpAkQ, Order ID: order_TfMlJ1WhOX1ThB)",
-      "approvedAt": "2026-09-23T11:11:09.000Z",
+      "approvedAt": "2026-09-23T05:11:09.000Z",
       "createdAt": "2026-09-23T11:11:09.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790133684110_26",
@@ -1623,17 +1664,17 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 1,
       "totalSalesAmount": 197.44,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 23.69,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 23.69,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 23.69,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 1,
       "referredByPartnerCode": "AJW-688828",
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: pay_Tf1M068XUeTGzA, Order ID: order_Tf1LsDlRVLKlTa) | Referred by Woman Partner: Rushali Pawar (AJW-688828)",
       "approvedAt": "2026-09-22T14:14:27.000Z",
       "createdAt": "2026-09-22T14:14:27.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1790015371115_586",
@@ -1901,18 +1942,18 @@
       "paymentDate": "2026-09-18T18:29:34.000Z",
       "commissionRate": 12,
       "customerDiscountRate": 4,
-      "totalOrdersCount": 2,
-      "totalSalesAmount": 366.08,
+      "totalOrdersCount": 0,
+      "totalSalesAmount": 0,
       "totalCommissionEarned": 0,
       "totalCommissionPaid": 43.92,
       "pendingCommission": 0,
-      "onHoldCommission": 43.92,
+      "onHoldCommission": 0,
       "deliveredOrdersCount": 0,
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TdVYNUqG1omqCN, Order ID: order_TdVYDLn0kRH87E)",
       "approvedAt": "2026-09-18T18:29:34.000Z",
       "createdAt": "2026-09-18T18:29:34.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-20T23:27:51.000Z"
     },
     {
       "id": "wbp_1789727288674_564",
@@ -1981,16 +2022,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 2,
       "totalSalesAmount": 1034.88,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 124.18,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 124.18,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 124.18,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 2,
       "referralBonusEarned": 0,
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-18T13:40:53.000Z",
       "createdAt": "2026-09-18T13:40:53.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1789546858224_328",
@@ -2030,7 +2071,7 @@
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TcdkayHJ4kkyoA, Order ID: order_TcdkSYKVOgHgCk)",
       "approvedAt": "2026-09-16T13:50:58.000Z",
       "createdAt": "2026-09-16T13:50:58.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1789536304120_226",
@@ -2069,7 +2110,7 @@
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-16T10:55:04.000Z",
       "createdAt": "2026-09-16T10:55:04.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1789466746091_180",
@@ -2108,7 +2149,7 @@
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-15T15:35:46.000Z",
       "createdAt": "2026-09-15T15:35:46.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1789408841996_946",
@@ -2147,7 +2188,7 @@
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-14T23:30:41.000Z",
       "createdAt": "2026-09-14T23:30:41.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1789383993025_398",
@@ -2225,7 +2266,7 @@
       "notes": "Admin Bypassed Payment | Earned ₹200 referral bonus for inviting Sandhya shanteshwar mudkanna (AJW-939348)",
       "approvedAt": "2026-09-12T20:46:34.000Z",
       "createdAt": "2026-09-13T00:46:34.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1789136480927_654",
@@ -2383,7 +2424,7 @@
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TaPUmrWsZXeoQP, Order ID: order_TaPUbR0QW7JGcS)",
       "approvedAt": "2026-09-10T11:36:25.000Z",
       "createdAt": "2026-09-10T22:36:25.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:46.000Z"
     },
     {
       "id": "wbp_1789038373163_114",
@@ -2502,7 +2543,7 @@
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-09T19:26:08.000Z",
       "createdAt": "2026-09-09T19:26:08.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788937075368_250",
@@ -2581,7 +2622,7 @@
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TZXFIhYoTlhqkv, Order ID: order_TZXD0VGSANmosH)",
       "approvedAt": "2026-09-08T17:31:56.000Z",
       "createdAt": "2026-09-08T17:31:56.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788840521456_555",
@@ -2892,11 +2933,11 @@
       "pendingCommission": 0,
       "onHoldCommission": 0,
       "deliveredOrdersCount": 3,
-      "referralBonusEarned": 0,
-      "notes": "Registration Fee: ₹699 (Payment ID: pay_TYNBRDhnfCKX2A, Order ID: order_TYNBCtjL6e4VK3)",
-      "approvedAt": "2026-09-05T19:02:39.000Z",
+      "referralBonusEarned": 200,
+      "notes": "Registration Fee: ₹699 (Payment ID: pay_TYNBRDhnfCKX2A, Order ID: order_TYNBCtjL6e4VK3) | Earned ₹200 referral bonus for inviting Sandhya Balwant Shelar (AJW-433361)",
+      "approvedAt": "2026-09-05T17:02:39.000Z",
       "createdAt": "2026-09-05T19:02:39.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1788513680166_640",
@@ -3005,16 +3046,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 3,
       "totalSalesAmount": 2106.16,
-      "totalCommissionEarned": 34.32,
+      "totalCommissionEarned": 252.73999999999998,
       "totalCommissionPaid": 689.58,
       "pendingCommission": 0,
-      "onHoldCommission": 218.42,
-      "deliveredOrdersCount": 1,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 3,
       "referralBonusEarned": 0,
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-03T23:33:18.000Z",
       "createdAt": "2026-09-03T23:33:18.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1788442029510_193",
@@ -3054,7 +3095,7 @@
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TXa17PPjpmZDtk, Order ID: order_TXa0z8f1PoBaKO)",
       "approvedAt": "2026-09-03T18:57:09.000Z",
       "createdAt": "2026-09-03T18:57:09.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1788434342751_671",
@@ -3093,7 +3134,7 @@
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-03T16:49:02.000Z",
       "createdAt": "2026-09-03T16:49:02.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1788354797314_981",
@@ -3164,16 +3205,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 3,
       "totalSalesAmount": 540.48,
-      "totalCommissionEarned": 23,
+      "totalCommissionEarned": 64.86,
       "totalCommissionPaid": 106.72,
       "pendingCommission": 0,
-      "onHoldCommission": 41.86,
-      "deliveredOrdersCount": 1,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 3,
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TX7lL3nhG9DVMg, Order ID: order_TX7lBG77ktBPTY)",
       "approvedAt": "2026-09-02T15:22:01.000Z",
       "createdAt": "2026-09-02T15:18:24.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1788340246782_468",
@@ -3251,7 +3292,7 @@
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-02T13:59:32.000Z",
       "createdAt": "2026-09-02T13:59:32.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1788336804911_173",
@@ -3446,7 +3487,7 @@
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-02T11:05:21.000Z",
       "createdAt": "2026-09-02T11:05:21.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1788327017826_114",
@@ -3485,7 +3526,7 @@
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-02T11:00:17.000Z",
       "createdAt": "2026-09-02T11:00:17.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1788326233355_827",
@@ -3515,16 +3556,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 1,
       "totalSalesAmount": 442.24,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 53.07,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 53.07,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 53.07,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 1,
       "referralBonusEarned": 0,
       "notes": "Admin Bypassed Payment",
-      "approvedAt": "2026-09-02T10:47:13.000Z",
+      "approvedAt": "2026-09-02T06:47:13.000Z",
       "createdAt": "2026-09-02T10:47:13.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:44.000Z"
     },
     {
       "id": "wbp_1788325853673_119",
@@ -3563,7 +3604,7 @@
       "notes": "Admin Bypassed Payment",
       "approvedAt": "2026-09-02T10:40:53.000Z",
       "createdAt": "2026-09-02T10:40:53.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788320801751_165",
@@ -3643,7 +3684,7 @@
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TX12xvXZKpjs0p, Order ID: order_TX12UjlqOtjQxm)",
       "approvedAt": "2026-09-02T10:16:16.000Z",
       "createdAt": "2026-09-02T08:44:50.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788284014588_222",
@@ -3683,7 +3724,7 @@
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TWr6IHKqLgi9ia, Order ID: order_TWr64bS1vUT3Fk)",
       "approvedAt": "2026-09-02T10:16:16.000Z",
       "createdAt": "2026-09-01T23:03:34.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788282939222_163",
@@ -3723,7 +3764,7 @@
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TWqqeJ9kEafUW2, Order ID: order_TWqqMQkEUJzgVL)",
       "approvedAt": "2026-09-02T10:16:16.000Z",
       "createdAt": "2026-09-01T22:45:39.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788282068752_575",
@@ -3762,7 +3803,7 @@
       "notes": "Admin Bypassed Payment | Earned ₹200 referral bonus for inviting आरती रघुनाथ चौधरी (AJW-258895)",
       "approvedAt": "2026-09-01T22:31:08.000Z",
       "createdAt": "2026-09-01T22:31:08.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788278994591_338",
@@ -4056,18 +4097,18 @@
       "paymentAmount": 0,
       "commissionRate": 12,
       "customerDiscountRate": 4,
-      "totalOrdersCount": 0,
-      "totalSalesAmount": 0,
+      "totalOrdersCount": 2,
+      "totalSalesAmount": 1056,
       "totalCommissionEarned": 0,
       "totalCommissionPaid": 0,
       "pendingCommission": 0,
-      "onHoldCommission": 0,
+      "onHoldCommission": 126.72,
       "deliveredOrdersCount": 0,
       "referralBonusEarned": 0,
       "notes": "Registration Fee: ₹699 (Payment ID: pay_TWo7zaYjHVUu08, Order ID: order_TWo7q95uaL3vf5)",
       "approvedAt": null,
       "createdAt": "2026-09-01T20:06:02.000Z",
-      "updatedAt": "2026-10-03T15:03:08.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788272901175_152",
@@ -4303,16 +4344,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 4,
       "totalSalesAmount": 616.8,
-      "totalCommissionEarned": 452.15999999999997,
+      "totalCommissionEarned": 494.02,
       "totalCommissionPaid": 452.15999999999997,
-      "pendingCommission": 0,
-      "onHoldCommission": 41.86,
-      "deliveredOrdersCount": 2,
+      "pendingCommission": 41.86,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 4,
       "referralBonusEarned": 800,
       "notes": "Free Onboarding (₹0 Fee) | Earned ₹200 referral bonus for inviting Priyanka Khetmalis (AJW-527237) | Earned ₹200 referral bonus for inviting Asha sachin gaikwad (AJW-903125) | Earned ₹200 referral bonus for inviting Anita Govinda Nerpagare (AJW-431704) | Earned ₹200 referral bonus for inviting pratiksha swaminath sake (AJW-287069)",
-      "approvedAt": "2026-09-02T11:20:17.000Z",
+      "approvedAt": "2026-09-02T07:20:17.000Z",
       "createdAt": "2026-09-01T15:04:44.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788191074026_996",
@@ -4338,16 +4379,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 6,
       "totalSalesAmount": 541.4,
-      "totalCommissionEarned": 864.04,
+      "totalCommissionEarned": 884.97,
       "totalCommissionPaid": 2566.83,
       "pendingCommission": 0,
-      "onHoldCommission": 20.93,
-      "deliveredOrdersCount": 5,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 6,
       "referralBonusEarned": 400,
       "notes": "Free Onboarding (₹0 Fee) | Earned ₹200 referral bonus for inviting Pradhnya Uttareshwar Pawal (AJW-561344) | Earned ₹200 referral bonus for inviting Rajkanya Bibhishan Raut (AJW-614560)",
       "approvedAt": "2026-09-01T05:55:25.000Z",
       "createdAt": "2026-08-31T21:14:34.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788188133550_588",
@@ -4522,7 +4563,7 @@
       "notes": "Free Onboarding (₹0 Fee)",
       "approvedAt": "2026-08-31T17:56:10.000Z",
       "createdAt": "2026-08-31T17:37:24.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788174012135_983",
@@ -4688,16 +4729,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 2,
       "totalSalesAmount": 464,
-      "totalCommissionEarned": 0,
+      "totalCommissionEarned": 55.68,
       "totalCommissionPaid": 0,
-      "pendingCommission": 0,
-      "onHoldCommission": 55.68,
-      "deliveredOrdersCount": 0,
+      "pendingCommission": 55.68,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 2,
       "referralBonusEarned": 0,
       "notes": "Free Onboarding (₹0 Fee)",
       "approvedAt": "2026-08-31T15:08:04.000Z",
       "createdAt": "2026-08-31T15:08:04.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788167336034_34",
@@ -4767,7 +4808,7 @@
       "notes": "Free Onboarding (₹0 Fee)",
       "approvedAt": "2026-08-31T13:39:12.000Z",
       "createdAt": "2026-08-31T13:39:12.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788157822331_707",
@@ -5073,16 +5114,16 @@
       "customerDiscountRate": 4,
       "totalOrdersCount": 2,
       "totalSalesAmount": 270.4,
-      "totalCommissionEarned": 32.45,
+      "totalCommissionEarned": 64.9,
       "totalCommissionPaid": 32.9,
-      "pendingCommission": 0,
-      "onHoldCommission": 32.45,
-      "deliveredOrdersCount": 1,
+      "pendingCommission": 32,
+      "onHoldCommission": 0,
+      "deliveredOrdersCount": 2,
       "referralBonusEarned": 0,
       "notes": "Free Onboarding (₹0 Fee)",
       "approvedAt": "2026-08-31T08:34:50.000Z",
       "createdAt": "2026-08-31T08:34:50.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     },
     {
       "id": "wbp_1788145063172_515",
@@ -5187,7 +5228,7 @@
       "notes": "Free Onboarding (₹0 Fee)",
       "approvedAt": "2026-08-30T17:09:34.000Z",
       "createdAt": "2026-08-30T21:09:34.000Z",
-      "updatedAt": "2026-10-14T14:39:21.000Z"
+      "updatedAt": "2026-10-21T15:45:45.000Z"
     }
   ],
   "user_addresses": [
@@ -5216,6 +5257,1438 @@
       "pincode": "425001",
       "isDefault": true,
       "createdAt": "2026-10-13T09:30:52.920Z"
+    }
+  ],
+  "analytics_sessions": [
+    {
+      "id": "sess_1789049535899_6u2jtw",
+      "sessionId": "sid_1789049535504_aa9wbeik081oi902",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "city": "Maharashtra",
+      "country": "India",
+      "referrer": "https://aistudio.google.com/",
+      "referrerDomain": "Google Search",
+      "landingPage": "/",
+      "exitPage": "/",
+      "pageViewsCount": 4,
+      "eventsCount": 0,
+      "durationSeconds": 381,
+      "isBounce": false,
+      "hasCartAdd": false,
+      "hasCheckout": false,
+      "hasConverted": false,
+      "startedAt": "2026-09-10T14:12:15.899Z",
+      "lastActiveAt": "2026-09-10T14:18:37.484Z"
+    },
+    {
+      "id": "sess_1789049930188_ojn5ua",
+      "sessionId": "sid_1789049929591_xi6o23tbcjpe0q05",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "city": "Maharashtra",
+      "country": "India",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "referrerDomain": "External Referral",
+      "landingPage": "/",
+      "exitPage": "/",
+      "pageViewsCount": 2,
+      "eventsCount": 0,
+      "durationSeconds": 0,
+      "isBounce": false,
+      "hasCartAdd": false,
+      "hasCheckout": false,
+      "hasConverted": false,
+      "startedAt": "2026-09-10T14:18:50.188Z",
+      "lastActiveAt": "2026-09-10T14:18:50.188Z"
+    },
+    {
+      "id": "sess_1789302916062_2gg12v",
+      "sessionId": "sid_1789302915636_fhf3ff09g887xt9m",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "city": "Maharashtra",
+      "country": "India",
+      "referrer": "https://aistudio.google.com/",
+      "referrerDomain": "Google Search",
+      "landingPage": "/",
+      "exitPage": "/",
+      "pageViewsCount": 6,
+      "eventsCount": 0,
+      "durationSeconds": 2807,
+      "isBounce": false,
+      "hasCartAdd": false,
+      "hasCheckout": false,
+      "hasConverted": false,
+      "startedAt": "2026-09-13T12:35:16.061Z",
+      "lastActiveAt": "2026-09-13T13:22:03.900Z"
+    },
+    {
+      "id": "sess_1789308925340_xmdq15",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "city": "Maharashtra",
+      "country": "India",
+      "referrer": "https://aistudio.google.com/",
+      "referrerDomain": "Google Search",
+      "landingPage": "/",
+      "exitPage": "/",
+      "pageViewsCount": 32,
+      "eventsCount": 0,
+      "durationSeconds": 6928,
+      "isBounce": false,
+      "hasCartAdd": false,
+      "hasCheckout": false,
+      "hasConverted": false,
+      "startedAt": "2026-09-13T14:15:25.340Z",
+      "lastActiveAt": "2026-09-13T16:10:53.349Z"
+    },
+    {
+      "id": "sess_1789311482002_8pmzbn",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "city": "Maharashtra",
+      "country": "India",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "referrerDomain": "External Referral",
+      "landingPage": "/",
+      "exitPage": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "pageViewsCount": 10,
+      "eventsCount": 0,
+      "durationSeconds": 590,
+      "isBounce": false,
+      "hasCartAdd": false,
+      "hasCheckout": false,
+      "hasConverted": false,
+      "startedAt": "2026-09-13T14:58:02.002Z",
+      "lastActiveAt": "2026-09-13T15:07:52.908Z"
+    },
+    {
+      "id": "sess_1789314079521_ni6sqn",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "city": "Maharashtra",
+      "country": "India",
+      "referrer": "",
+      "referrerDomain": "Direct",
+      "landingPage": "/admin",
+      "exitPage": "/admin/woman-graphics",
+      "pageViewsCount": 11,
+      "eventsCount": 0,
+      "durationSeconds": 1560,
+      "isBounce": false,
+      "hasCartAdd": false,
+      "hasCheckout": false,
+      "hasConverted": false,
+      "startedAt": "2026-09-13T15:41:19.521Z",
+      "lastActiveAt": "2026-09-13T16:07:20.239Z"
+    },
+    {
+      "id": "sess_1789315862355_rcm84w",
+      "sessionId": "sid_1789315860989_mj8m2z3821a60h18",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "city": "Maharashtra",
+      "country": "India",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "referrerDomain": "External Referral",
+      "landingPage": "/",
+      "exitPage": "/",
+      "pageViewsCount": 2,
+      "eventsCount": 0,
+      "durationSeconds": 0,
+      "isBounce": false,
+      "hasCartAdd": false,
+      "hasCheckout": false,
+      "hasConverted": false,
+      "startedAt": "2026-09-13T16:11:02.355Z",
+      "lastActiveAt": "2026-09-13T16:11:02.356Z"
+    },
+    {
+      "id": "sess_1792576936972_vsizor",
+      "sessionId": "sid_1792576157808_nywu3d6mr8epnsn9",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "city": "Maharashtra",
+      "country": "India",
+      "referrer": "https://aistudio.google.com/",
+      "referrerDomain": "Google Search",
+      "landingPage": "/?__aistudio_auth_token=L_qT4Ybhbh1v3rr4vTOSOby_d6Oo8zPJi97xS-C5nwo%3D",
+      "exitPage": "/?__aistudio_auth_token=L_qT4Ybhbh1v3rr4vTOSOby_d6Oo8zPJi97xS-C5nwo%3D",
+      "pageViewsCount": 2,
+      "eventsCount": 0,
+      "durationSeconds": 0,
+      "isBounce": false,
+      "hasCartAdd": false,
+      "hasCheckout": false,
+      "hasConverted": false,
+      "startedAt": "2026-10-21T10:02:16.972Z",
+      "lastActiveAt": "2026-10-21T10:02:16.973Z"
+    }
+  ],
+  "analytics_pageviews": [
+    {
+      "id": "pv_1788182704891_init",
+      "sessionId": "sid_1788165380799_kbzx9veqqqd3q2vd",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-08-31T13:18:05.940Z"
+    },
+    {
+      "id": "pv_1788182704892_gyphdn",
+      "sessionId": "sid_1788165380799_kbzx9veqqqd3q2vd",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-08-31T13:25:04.892Z"
+    },
+    {
+      "id": "pv_1788182704893_azx966",
+      "sessionId": "sid_1788165380799_kbzx9veqqqd3q2vd",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-08-31T13:25:04.893Z"
+    },
+    {
+      "id": "pv_1788183502999_lnowtz",
+      "sessionId": "sid_1788165380799_kbzx9veqqqd3q2vd",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/product/black-pepper-flavour-banana-chips-aapla-jalgaonwala",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 798,
+      "createdAt": "2026-08-31T13:38:22.999Z"
+    },
+    {
+      "id": "pv_1788183623074_xd9sd7",
+      "sessionId": "sid_1788165380799_kbzx9veqqqd3q2vd",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-08-31T13:40:23.074Z"
+    },
+    {
+      "id": "pv_1788183623075_yi4b1n",
+      "sessionId": "sid_1788165380799_kbzx9veqqqd3q2vd",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-08-31T13:40:23.075Z"
+    },
+    {
+      "id": "pv_1788183634004_o8mavg",
+      "sessionId": "sid_1788165380799_kbzx9veqqqd3q2vd",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/shop",
+      "title": "Shop Authentic Jalgaon Snacks & Masalas | Aapla Jalgaonwala",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 9,
+      "createdAt": "2026-08-31T13:40:34.004Z"
+    },
+    {
+      "id": "pv_1788183639982_gr24nx",
+      "sessionId": "sid_1788183639621_75ne88086p9mjapp",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/diwali-special",
+      "title": "Diwali Special Offer Box (दिवाळी स्पेशल कॉम्बो) | Complete Diwali In One Box | Aapla Jalgaonwala",
+      "referrer": "",
+      "durationSeconds": 0,
+      "createdAt": "2026-08-31T13:40:39.982Z"
+    },
+    {
+      "id": "pv_1788183639982_okg2if",
+      "sessionId": "sid_1788183639621_75ne88086p9mjapp",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/diwali-special",
+      "title": "Diwali Special Offer Box (दिवाळी स्पेशल कॉम्बो) | Complete Diwali In One Box | Aapla Jalgaonwala",
+      "referrer": "",
+      "durationSeconds": 1,
+      "createdAt": "2026-08-31T13:40:39.982Z"
+    },
+    {
+      "id": "pv_1788183687007_ylbp99",
+      "sessionId": "sid_1788183686366_stseiy30pds3pvd6",
+      "visitorId": "vid_1788183686366_pl68nc7gqp8azz4r",
+      "path": "/diwali-special",
+      "title": "Diwali Special Offer Box (दिवाळी स्पेशल कॉम्बो) | Complete Diwali In One Box | Aapla Jalgaonwala",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 0,
+      "createdAt": "2026-08-31T13:41:27.007Z"
+    },
+    {
+      "id": "pv_1788183687008_rq2u4b",
+      "sessionId": "sid_1788183686366_stseiy30pds3pvd6",
+      "visitorId": "vid_1788183686366_pl68nc7gqp8azz4r",
+      "path": "/diwali-special",
+      "title": "Diwali Special Offer Box (दिवाळी स्पेशल कॉम्बो) | Complete Diwali In One Box | Aapla Jalgaonwala",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 1,
+      "createdAt": "2026-08-31T13:41:27.008Z"
+    },
+    {
+      "id": "pv_1789049535899_0f3c59",
+      "sessionId": "sid_1789049535504_aa9wbeik081oi902",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-10T14:12:15.899Z"
+    },
+    {
+      "id": "pv_1789049535900_efkzcs",
+      "sessionId": "sid_1789049535504_aa9wbeik081oi902",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-10T14:12:15.900Z"
+    },
+    {
+      "id": "pv_1789049768190_aqio8h",
+      "sessionId": "sid_1789049535504_aa9wbeik081oi902",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-10T14:16:08.190Z"
+    },
+    {
+      "id": "pv_1789049768191_kwb113",
+      "sessionId": "sid_1789049535504_aa9wbeik081oi902",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-10T14:16:08.191Z"
+    },
+    {
+      "id": "pv_1789049930188_ft617p",
+      "sessionId": "sid_1789049929591_xi6o23tbcjpe0q05",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-10T14:18:50.188Z"
+    },
+    {
+      "id": "pv_1789049930189_jywdhy",
+      "sessionId": "sid_1789049929591_xi6o23tbcjpe0q05",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-10T14:18:50.188Z"
+    },
+    {
+      "id": "pv_1789231305468_jhzcrf",
+      "sessionId": "sid_1789231303838_pgmigxusoq014dcz",
+      "visitorId": "vid_1789033041533_mfwrrje9ba43hpr2",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-12T16:41:45.468Z"
+    },
+    {
+      "id": "pv_1789231305469_8hxxfk",
+      "sessionId": "sid_1789231303838_pgmigxusoq014dcz",
+      "visitorId": "vid_1789033041533_mfwrrje9ba43hpr2",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T16:41:45.469Z"
+    },
+    {
+      "id": "pv_1789232463945_xgtmq7",
+      "sessionId": "sid_1789232461642_4kmsxjnx64fwngi5",
+      "visitorId": "vid_1789033041533_mfwrrje9ba43hpr2",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-12T17:01:03.945Z"
+    },
+    {
+      "id": "pv_1789232463945_2m7t8o",
+      "sessionId": "sid_1789232461642_4kmsxjnx64fwngi5",
+      "visitorId": "vid_1789033041533_mfwrrje9ba43hpr2",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T17:01:03.945Z"
+    },
+    {
+      "id": "pv_1789234118884_b63myb",
+      "sessionId": "sid_1789234118252_u6kb4xc9enwd95q5",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-12T17:28:38.884Z"
+    },
+    {
+      "id": "pv_1789234118886_zq5wc4",
+      "sessionId": "sid_1789234118252_u6kb4xc9enwd95q5",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T17:28:38.886Z"
+    },
+    {
+      "id": "pv_1789234805963_5xna58",
+      "sessionId": "sid_1789234118252_u6kb4xc9enwd95q5",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-12T17:40:05.963Z"
+    },
+    {
+      "id": "pv_1789234805964_ac8wly",
+      "sessionId": "sid_1789234118252_u6kb4xc9enwd95q5",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T17:40:05.964Z"
+    },
+    {
+      "id": "pv_1789234814665_rm2a21",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-12T17:40:14.665Z"
+    },
+    {
+      "id": "pv_1789234814666_4eestp",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T17:40:14.666Z"
+    },
+    {
+      "id": "pv_1789234819120_ud9dgj",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/orders",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 5,
+      "createdAt": "2026-09-12T17:40:19.120Z"
+    },
+    {
+      "id": "pv_1789235049681_qk2n0d",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/partners",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 231,
+      "createdAt": "2026-09-12T17:44:09.681Z"
+    },
+    {
+      "id": "pv_1789235218369_y5owe8",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/configs",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 169,
+      "createdAt": "2026-09-12T17:46:58.369Z"
+    },
+    {
+      "id": "pv_1789235224691_y3u947",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/branding",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 6,
+      "createdAt": "2026-09-12T17:47:04.691Z"
+    },
+    {
+      "id": "pv_1789235312013_yi74i0",
+      "sessionId": "sid_1789234118252_u6kb4xc9enwd95q5",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-12T17:48:32.013Z"
+    },
+    {
+      "id": "pv_1789235312014_3iiqp3",
+      "sessionId": "sid_1789234118252_u6kb4xc9enwd95q5",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T17:48:32.014Z"
+    },
+    {
+      "id": "pv_1789235363621_b6oeby",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/configs",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 139,
+      "createdAt": "2026-09-12T17:49:23.621Z"
+    },
+    {
+      "id": "pv_1789235373965_zr4udf",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/branding",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 10,
+      "createdAt": "2026-09-12T17:49:33.965Z"
+    },
+    {
+      "id": "pv_1789235464551_1u946w",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/coupons",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 91,
+      "createdAt": "2026-09-12T17:51:04.551Z"
+    },
+    {
+      "id": "pv_1789235510045_vrsqqj",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/partners",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 45,
+      "createdAt": "2026-09-12T17:51:50.045Z"
+    },
+    {
+      "id": "pv_1789235653885_p62o9i",
+      "sessionId": "sid_1789235653268_vmqyugbs4hz09g8n",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/admin/partners",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-12T17:54:13.885Z"
+    },
+    {
+      "id": "pv_1789235653886_k106jg",
+      "sessionId": "sid_1789235653268_vmqyugbs4hz09g8n",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/admin/partners",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T17:54:13.886Z"
+    },
+    {
+      "id": "pv_1789235656941_kkgs0b",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/partners",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-12T17:54:16.941Z"
+    },
+    {
+      "id": "pv_1789235656941_ap60dx",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/partners",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T17:54:16.941Z"
+    },
+    {
+      "id": "pv_1789235784084_9sbl4c",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/reviews",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 127,
+      "createdAt": "2026-09-12T17:56:24.084Z"
+    },
+    {
+      "id": "pv_1789235785924_5jzxs1",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/products",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 2,
+      "createdAt": "2026-09-12T17:56:25.924Z"
+    },
+    {
+      "id": "pv_1789235793948_jz6y1r",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/products/32",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 8,
+      "createdAt": "2026-09-12T17:56:33.948Z"
+    },
+    {
+      "id": "pv_1789235845500_5mdyjp",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/favicons",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 52,
+      "createdAt": "2026-09-12T17:57:25.500Z"
+    },
+    {
+      "id": "pv_1789235906610_dlcvny",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/coupons",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 61,
+      "createdAt": "2026-09-12T17:58:26.610Z"
+    },
+    {
+      "id": "pv_1789235915388_h4ec97",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/reviews",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 9,
+      "createdAt": "2026-09-12T17:58:35.387Z"
+    },
+    {
+      "id": "pv_1789235916444_y0dhhg",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/coupons",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T17:58:36.444Z"
+    },
+    {
+      "id": "pv_1789235971854_wsunkv",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/cod-settings",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 55,
+      "createdAt": "2026-09-12T17:59:31.854Z"
+    },
+    {
+      "id": "pv_1789235997738_3w5kv6",
+      "sessionId": "sid_1789234118252_u6kb4xc9enwd95q5",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-12T17:59:57.738Z"
+    },
+    {
+      "id": "pv_1789235997739_6hh8jq",
+      "sessionId": "sid_1789234118252_u6kb4xc9enwd95q5",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-12T17:59:57.739Z"
+    },
+    {
+      "id": "pv_1789236452158_fq98s8",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/partners",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 480,
+      "createdAt": "2026-09-12T18:07:32.158Z"
+    },
+    {
+      "id": "pv_1789236505686_mmv3oo",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/orders",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 54,
+      "createdAt": "2026-09-12T18:08:25.686Z"
+    },
+    {
+      "id": "pv_1789236857155_tac6dp",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/media",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 351,
+      "createdAt": "2026-09-12T18:14:17.155Z"
+    },
+    {
+      "id": "pv_1789236864261_wdbq3v",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/products",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 7,
+      "createdAt": "2026-09-12T18:14:24.261Z"
+    },
+    {
+      "id": "pv_1789236866033_ch1g27",
+      "sessionId": "sid_1789234814045_wvhmokg2muj9nt34",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/products/32",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 2,
+      "createdAt": "2026-09-12T18:14:26.033Z"
+    },
+    {
+      "id": "pv_1789302916062_expfoq",
+      "sessionId": "sid_1789302915636_fhf3ff09g887xt9m",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T12:35:16.061Z"
+    },
+    {
+      "id": "pv_1789302916062_52e8vy",
+      "sessionId": "sid_1789302915636_fhf3ff09g887xt9m",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T12:35:16.062Z"
+    },
+    {
+      "id": "pv_1789303394319_2azxd9",
+      "sessionId": "sid_1789302915636_fhf3ff09g887xt9m",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T12:43:14.319Z"
+    },
+    {
+      "id": "pv_1789303394320_nk1k98",
+      "sessionId": "sid_1789302915636_fhf3ff09g887xt9m",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T12:43:14.320Z"
+    },
+    {
+      "id": "pv_1789304599305_xgw3jj",
+      "sessionId": "sid_1789302915636_fhf3ff09g887xt9m",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T13:03:19.305Z"
+    },
+    {
+      "id": "pv_1789304599307_acys7e",
+      "sessionId": "sid_1789302915636_fhf3ff09g887xt9m",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T13:03:19.307Z"
+    },
+    {
+      "id": "pv_1789308925340_54f1ni",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T14:15:25.340Z"
+    },
+    {
+      "id": "pv_1789308925341_mi4qvk",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T14:15:25.341Z"
+    },
+    {
+      "id": "pv_1789309677683_arfgb2",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T14:27:57.683Z"
+    },
+    {
+      "id": "pv_1789309677684_wqgorm",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T14:27:57.683Z"
+    },
+    {
+      "id": "pv_1789309832417_14adh7",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T14:30:32.417Z"
+    },
+    {
+      "id": "pv_1789309832418_srkt5m",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T14:30:32.418Z"
+    },
+    {
+      "id": "pv_1789310607187_osfnyl",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T14:43:27.187Z"
+    },
+    {
+      "id": "pv_1789310607188_iq72rf",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T14:43:27.188Z"
+    },
+    {
+      "id": "pv_1789311093876_zyrt6i",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T14:51:33.876Z"
+    },
+    {
+      "id": "pv_1789311093876_yn6bw1",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T14:51:33.876Z"
+    },
+    {
+      "id": "pv_1789311313366_y6qfi6",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T14:55:13.366Z"
+    },
+    {
+      "id": "pv_1789311313367_78fidq",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T14:55:13.367Z"
+    },
+    {
+      "id": "pv_1789311482002_ipn94c",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T14:58:02.002Z"
+    },
+    {
+      "id": "pv_1789311482003_zrha79",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T14:58:02.003Z"
+    },
+    {
+      "id": "pv_1789311484577_xgfey2",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T14:58:04.577Z"
+    },
+    {
+      "id": "pv_1789311484578_otfj69",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T14:58:04.578Z"
+    },
+    {
+      "id": "pv_1789311596500_xdz4gx",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T14:59:56.500Z"
+    },
+    {
+      "id": "pv_1789311596501_zh765h",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T14:59:56.501Z"
+    },
+    {
+      "id": "pv_1789311782493_bur7b9",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:03:02.493Z"
+    },
+    {
+      "id": "pv_1789311782494_rpwq2n",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:03:02.493Z"
+    },
+    {
+      "id": "pv_1789312031187_koaans",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:07:11.187Z"
+    },
+    {
+      "id": "pv_1789312031188_uz01k7",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:07:11.188Z"
+    },
+    {
+      "id": "pv_1789312060353_nb5ho3",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:07:40.353Z"
+    },
+    {
+      "id": "pv_1789312060354_qhz79l",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:07:40.353Z"
+    },
+    {
+      "id": "pv_1789312067173_zhe3dv",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/iframe/tracking/ord_1788711022875_tfvz9",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:07:47.173Z"
+    },
+    {
+      "id": "pv_1789312067174_fkaplz",
+      "sessionId": "sid_1789311481563_47e00vm4id47cwwt",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/iframe/tracking/ord_1788711022875_tfvz9",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:07:47.174Z"
+    },
+    {
+      "id": "pv_1789312083010_kq5vc4",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:08:03.010Z"
+    },
+    {
+      "id": "pv_1789312083010_h284bk",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:08:03.010Z"
+    },
+    {
+      "id": "pv_1789312161943_d7029d",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:09:21.943Z"
+    },
+    {
+      "id": "pv_1789312161944_iz79dx",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:09:21.944Z"
+    },
+    {
+      "id": "pv_1789312183965_z69qs0",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:09:43.965Z"
+    },
+    {
+      "id": "pv_1789312183965_p2phin",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/iframe/tracking/ord_1788711022875_tfvz9",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:09:43.965Z"
+    },
+    {
+      "id": "pv_1789312868540_zzm0cr",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:21:08.540Z"
+    },
+    {
+      "id": "pv_1789312868541_tehlum",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:21:08.541Z"
+    },
+    {
+      "id": "pv_1789313674665_qyxcot",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:34:34.665Z"
+    },
+    {
+      "id": "pv_1789313674666_xn86nn",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:34:34.666Z"
+    },
+    {
+      "id": "pv_1789314079521_7s4m3b",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:41:19.521Z"
+    },
+    {
+      "id": "pv_1789314079522_zok4yn",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:41:19.522Z"
+    },
+    {
+      "id": "pv_1789314086613_o2kvc8",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:41:26.613Z"
+    },
+    {
+      "id": "pv_1789314086613_8z2qws",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:41:26.613Z"
+    },
+    {
+      "id": "pv_1789314100474_dfo0a8",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:41:40.474Z"
+    },
+    {
+      "id": "pv_1789314100474_oeasdw",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:41:40.474Z"
+    },
+    {
+      "id": "pv_1789314156492_z072ue",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:42:36.492Z"
+    },
+    {
+      "id": "pv_1789314156493_825kg0",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:42:36.493Z"
+    },
+    {
+      "id": "pv_1789314162091_xp7ik4",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/admin",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:42:42.091Z"
+    },
+    {
+      "id": "pv_1789314162092_tsh116",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/admin",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:42:42.092Z"
+    },
+    {
+      "id": "pv_1789314171477_6k56sk",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/woman-graphics",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/admin",
+      "durationSeconds": 9,
+      "createdAt": "2026-09-13T15:42:51.477Z"
+    },
+    {
+      "id": "pv_1789314606100_70tzfu",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T15:50:06.100Z"
+    },
+    {
+      "id": "pv_1789314606101_2zbwqm",
+      "sessionId": "sid_1789308924895_7wqmim5xee7nsn0j",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T15:50:06.101Z"
+    },
+    {
+      "id": "pv_1789315373149_f4k5zz",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/woman-graphics",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/admin",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T16:02:53.149Z"
+    },
+    {
+      "id": "pv_1789315373149_ya8sm2",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/woman-graphics",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/admin",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T16:02:53.149Z"
+    },
+    {
+      "id": "pv_1789315640238_oyl5pt",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/woman-graphics",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/admin",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T16:07:20.238Z"
+    },
+    {
+      "id": "pv_1789315640239_6xb7to",
+      "sessionId": "sid_1789314077980_ep628azpgjus6jkv",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/admin/woman-graphics",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/admin",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T16:07:20.239Z"
+    },
+    {
+      "id": "pv_1789315862355_b97jae",
+      "sessionId": "sid_1789315860989_mj8m2z3821a60h18",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 0,
+      "createdAt": "2026-09-13T16:11:02.355Z"
+    },
+    {
+      "id": "pv_1789315862356_hprc7u",
+      "sessionId": "sid_1789315860989_mj8m2z3821a60h18",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 1,
+      "createdAt": "2026-09-13T16:11:02.356Z"
+    },
+    {
+      "id": "pv_1792576936972_9iivb4",
+      "sessionId": "sid_1792576157808_nywu3d6mr8epnsn9",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/?__aistudio_auth_token=L_qT4Ybhbh1v3rr4vTOSOby_d6Oo8zPJi97xS-C5nwo%3D",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 0,
+      "createdAt": "2026-10-21T10:02:16.972Z"
+    },
+    {
+      "id": "pv_1792576936973_28w6zc",
+      "sessionId": "sid_1792576157808_nywu3d6mr8epnsn9",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "path": "/?__aistudio_auth_token=L_qT4Ybhbh1v3rr4vTOSOby_d6Oo8zPJi97xS-C5nwo%3D",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://aistudio.google.com/",
+      "durationSeconds": 1,
+      "createdAt": "2026-10-21T10:02:16.973Z"
+    },
+    {
+      "id": "pv_1792576962675_bftugs",
+      "sessionId": "sid_1792576962525_qbyl8o0ih67mfon1",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 0,
+      "createdAt": "2026-10-21T10:02:42.675Z"
+    },
+    {
+      "id": "pv_1792576962676_a6hmnj",
+      "sessionId": "sid_1792576962525_qbyl8o0ih67mfon1",
+      "visitorId": "vid_1788183639621_04qmysjf4yc4jzbi",
+      "path": "/",
+      "title": "Aapla Jalgaonwala | Authentic Jalgaon Taste in Every Bite",
+      "referrer": "https://ais-dev-iipwhasb4wr24nxboe5xn7-521941673548.asia-southeast1.run.app/",
+      "durationSeconds": 1,
+      "createdAt": "2026-10-21T10:02:42.676Z"
+    }
+  ],
+  "woman_graphics": [
+    {
+      "id": "wg_1789318672588_0_yz90",
+      "title": "Woman Graphic #4",
+      "caption": "",
+      "imageUrl": "https://res.cloudinary.com/xbtfj9zf/image/upload/v1789318660/woman_graphics/1789318657791_ChatGPT_Image_Sep_13__2026__10_15_30_PM.png",
+      "publicId": "",
+      "createdAt": "2026-09-13T16:57:52.000Z"
+    },
+    {
+      "id": "wg_1789318618240_0_6eic",
+      "title": "Woman Graphic #3",
+      "caption": "",
+      "imageUrl": "https://res.cloudinary.com/xbtfj9zf/image/upload/v1789318606/woman_graphics/1789318603735_ChatGPT_Image_Sep_13__2026__10_15_47_PM__2_.png",
+      "publicId": "",
+      "createdAt": "2026-09-13T16:56:58.000Z"
+    },
+    {
+      "id": "wg_1789318593768_0_jedh",
+      "title": "Woman Graphic #2",
+      "caption": "",
+      "imageUrl": "https://res.cloudinary.com/xbtfj9zf/image/upload/v1789318581/woman_graphics/1789318579439_ChatGPT_Image_Sep_13__2026__10_15_53_PM.png",
+      "publicId": "",
+      "createdAt": "2026-09-13T16:56:33.000Z"
+    },
+    {
+      "id": "wg_1789318231170_0_y91m",
+      "title": "Woman Graphic #1",
+      "caption": "",
+      "imageUrl": "https://res.cloudinary.com/xbtfj9zf/image/upload/v1789318159/woman_graphics/1789318157426_ChatGPT_Image_Sep_13__2026__10_15_53_PM.png",
+      "publicId": "",
+      "createdAt": "2026-09-13T16:50:31.000Z"
     }
   ]
 }

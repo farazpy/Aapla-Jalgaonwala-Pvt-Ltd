@@ -10,8 +10,10 @@ const REFERRALS_FILE = 'partner_referrals.json';
 const SETTLEMENTS_FILE = 'partner_settlements.json';
 
 let partnerMemoryCache: { data: BusinessPartner[]; timestamp: number } | null = null;
-const CACHE_TTL_MS = 3000;
+const CACHE_TTL_MS = 15000;
 let isSyncing = false;
+let lastSyncTimestamp = 0;
+const SYNC_COOLDOWN_MS = 20000;
 
 function toSqlDateTime(val?: string | Date | null): string {
   if (!val) return new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -28,9 +30,11 @@ export class PartnerRepository {
   // ----------------------------------------------------
   // AUTOMATIC ORDERS & REFERRAL SYNCHRONIZATION
   // ----------------------------------------------------
-  static async syncAllPartnerReferrals(): Promise<void> {
+  static async syncAllPartnerReferrals(force: boolean = false): Promise<void> {
     if (isSyncing) return;
+    if (!force && Date.now() - lastSyncTimestamp < SYNC_COOLDOWN_MS) return;
     isSyncing = true;
+    lastSyncTimestamp = Date.now();
     try {
       const orders = await OrderRepository.getAll();
       const pool = getDbPool();
@@ -101,7 +105,7 @@ export class PartnerRepository {
         existingOrderNumbers.add(order.orderNumber);
       }
 
-      await this.recalculateAllPartnerMetrics();
+      this.recalculateAllPartnerMetrics().catch(err => console.warn('[PartnerRepo] Background metrics recalc warning:', err));
     } catch (err) {
       console.warn('[PartnerRepo] syncAllPartnerReferrals warning:', err);
     } finally {
@@ -161,13 +165,53 @@ export class PartnerRepository {
 
   static async getByCode(code: string): Promise<BusinessPartner | null> {
     if (!code) return null;
-    const cleanCode = code.trim().toUpperCase();
+    const raw = String(code).replace(/['"\s]/g, '').trim().toUpperCase();
+    if (!raw) return null;
+
+    // Build candidate variations
+    const candidates = new Set<string>();
+    candidates.add(raw);
+
+    if (raw.startsWith('AJW-')) {
+      const num = raw.slice(4);
+      candidates.add(`WBP-${num}`);
+      candidates.add(`AJW${num}`);
+      candidates.add(num);
+    } else if (raw.startsWith('WBP-')) {
+      const num = raw.slice(4);
+      candidates.add(`AJW-${num}`);
+      candidates.add(`WBP${num}`);
+      candidates.add(num);
+    } else if (raw.startsWith('AJW')) {
+      const num = raw.slice(3);
+      candidates.add(`AJW-${num}`);
+      candidates.add(`WBP-${num}`);
+      candidates.add(num);
+    } else if (raw.startsWith('WBP')) {
+      const num = raw.slice(3);
+      candidates.add(`WBP-${num}`);
+      candidates.add(`AJW-${num}`);
+      candidates.add(num);
+    } else if (/^\d+$/.test(raw)) {
+      candidates.add(`AJW-${raw}`);
+      candidates.add(`WBP-${raw}`);
+      candidates.add(`AJW${raw}`);
+      candidates.add(`WBP${raw}`);
+    }
+
+    const candidateList = Array.from(candidates);
     const pool = getDbPool();
     if (pool) {
       try {
         const [rows]: any = await pool.query(
-          'SELECT * FROM business_partners WHERE UPPER(partner_code) = ? LIMIT 1',
-          [cleanCode]
+          `SELECT * FROM business_partners 
+           WHERE UPPER(partner_code) IN (?) 
+              OR REPLACE(UPPER(partner_code), '-', '') IN (?)
+              OR id = ?
+              OR phone LIKE ?
+           ORDER BY (UPPER(partner_code) = ?) DESC, created_at DESC
+           LIMIT 1`,
+          [candidateList, candidateList, raw, `%${raw.slice(-10)}`, raw]
         );
         if (Array.isArray(rows) && rows.length > 0) {
           return this.mapDbToPartner(rows[0]);
@@ -176,8 +220,20 @@ export class PartnerRepository {
         console.warn('[PartnerRepo] MySQL getByCode failed:', err);
       }
     }
-    const all = await this.getAll();
-    return all.find(p => p.partnerCode.toUpperCase() === cleanCode) || null;
+
+    const all = await this.getAll(true);
+    return all.find(p => {
+      const pCode = (p.partnerCode || '').toUpperCase();
+      const pClean = pCode.replace(/[^A-Z0-9]/g, '');
+      const rawClean = raw.replace(/[^A-Z0-9]/g, '');
+      if (candidateList.includes(pCode)) return true;
+      if (pClean && rawClean && pClean === rawClean) return true;
+      if (p.id && (p.id.toUpperCase() === raw || p.id === code)) return true;
+      const pDigits = pCode.replace(/\D/g, '');
+      const rawDigits = raw.replace(/\D/g, '');
+      if (pDigits && rawDigits && pDigits === rawDigits && rawDigits.length >= 4) return true;
+      return false;
+    }) || null;
   }
 
   static async isCodeExists(code: string): Promise<boolean> {

@@ -24,7 +24,7 @@ export class WomanGraphicsRepository {
         await pool.query("DELETE FROM woman_graphics WHERE id IN ('wg_1', 'wg_2')").catch(() => {});
 
         const [rows]: any = await pool.query('SELECT * FROM woman_graphics ORDER BY created_at DESC');
-        if (Array.isArray(rows)) {
+        if (Array.isArray(rows) && rows.length > 0) {
           return rows.map((r: any) => ({
             id: r.id,
             title: r.title || 'Woman Graphic',
@@ -39,7 +39,11 @@ export class WomanGraphicsRepository {
       }
     }
     const jsonPosts = await readJson<WomanGraphicPost[]>(FILE_NAME, []);
-    return (jsonPosts || []).filter(p => p.id !== 'wg_1' && p.id !== 'wg_2');
+    const validPosts = (jsonPosts || []).filter(p => p.id !== 'wg_1' && p.id !== 'wg_2');
+    if (pool && validPosts.length > 0) {
+      this.saveAll(validPosts).catch(() => {});
+    }
+    return validPosts;
   }
 
   static async saveAll(posts: WomanGraphicPost[]): Promise<WomanGraphicPost[]> {

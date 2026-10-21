@@ -3947,6 +3947,93 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
     const action = (bodyObj.action || req.body?.action || req.query?.action || '').toString().trim().toLowerCase();
     
     if (action) {
+      if (action === 'check_woman' || action === 'verify_woman' || action === 'verify_partner' || action === 'auth' || action === 'check') {
+        const auth_code = (
+          req.body?.auth_code ||
+          req.body?.authCode ||
+          req.body?.woman_code ||
+          req.body?.womanCode ||
+          req.body?.code ||
+          req.query?.auth_code ||
+          req.query?.woman_code ||
+          req.query?.code ||
+          rawReferralCode
+        ).toString().trim();
+
+        if (!auth_code) {
+          return res.status(400).json({
+            success: false,
+            status: 'error',
+            exists: false,
+            registered: false,
+            authenticated: false,
+            valid: false,
+            message: 'auth_code or woman_code is required for partner verification.',
+            error: 'auth_code or woman_code is required for partner verification.'
+          });
+        }
+
+        let partner = await PartnerRepository.getByCode(auth_code);
+        if (!partner) partner = await PartnerRepository.getById(auth_code);
+        if (!partner) partner = await PartnerRepository.getByPhoneOrEmail(auth_code, auth_code);
+
+        if (!partner) {
+          return res.status(404).json({
+            success: false,
+            status: 'error',
+            exists: false,
+            registered: false,
+            authenticated: false,
+            valid: false,
+            message: `No registered woman partner found matching code: "${auth_code}".`,
+            error: `No registered woman partner found matching code: "${auth_code}".`
+          });
+        }
+
+        const isBlocked = partner.status === 'blocked' || partner.status === 'rejected';
+
+        return res.json({
+          success: !isBlocked,
+          status: isBlocked ? 'blocked' : 'success',
+          exists: true,
+          registered: true,
+          authenticated: !isBlocked,
+          valid: !isBlocked,
+          message: isBlocked ? 'Partner account is blocked or inactive.' : 'Partner verified successfully',
+          auth_code: partner.partnerCode,
+          woman_code: partner.partnerCode,
+          partner_code: partner.partnerCode,
+          partnerCode: partner.partnerCode,
+          fullName: partner.fullName,
+          full_name: partner.fullName,
+          name: partner.fullName,
+          phone: partner.phone,
+          city: partner.city,
+          state: partner.state,
+          partnerStatus: partner.status,
+          partner_status: partner.status,
+          partner: partner,
+          data: {
+            exists: true,
+            registered: true,
+            authenticated: !isBlocked,
+            valid: !isBlocked,
+            auth_code: partner.partnerCode,
+            woman_code: partner.partnerCode,
+            partner_code: partner.partnerCode,
+            partnerCode: partner.partnerCode,
+            fullName: partner.fullName,
+            full_name: partner.fullName,
+            name: partner.fullName,
+            phone: partner.phone,
+            city: partner.city,
+            state: partner.state,
+            status: partner.status,
+            partner: partner
+          }
+        });
+      }
+
       if (action === 'get_media' || action === 'get_graphics' || action === 'get_posts' || action === 'media') {
         const graphics = await WomanGraphicsRepository.getAll();
         const formattedMedia = graphics.map(g => {
@@ -3964,9 +4051,12 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
 
         return res.json({
           success: true,
+          status: 'success',
           action: 'get_media',
           count: formattedMedia.length,
-          data: formattedMedia
+          data: formattedMedia,
+          media: formattedMedia,
+          graphics: formattedMedia
         });
       }
 
@@ -3975,6 +4065,7 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
           req.body?.woman_code ||
           req.body?.referral_code ||
           req.body?.code ||
+          req.body?.auth_code ||
           req.query?.woman_code ||
           req.query?.referral_code ||
           req.query?.code ||
@@ -4027,14 +4118,24 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
           courierPartner: o.courierPartner || 'DTDC Express',
           items: (o.items || []).map(item => ({
             id: item.id,
-            name: item.name,
+            name: item.productName || (item as any).name || 'Special Jalgaon Snack',
+            productName: item.productName || (item as any).name || 'Special Jalgaon Snack',
             quantity: item.quantity,
             price: item.price,
-            unit: item.unit
+            unit: (item as any).unit || (item as any).variantInfo || ''
           }))
         }));
         
-        return res.json({ success: true, orders: formattedOrders, data: { orders: formattedOrders } });
+        return res.json({
+          success: true,
+          status: 'success',
+          count: formattedOrders.length,
+          orders: formattedOrders,
+          data: {
+            orders: formattedOrders,
+            count: formattedOrders.length
+          }
+        });
       }
 
       if (action === 'update_profile' || action === 'update_bank') {
@@ -4099,7 +4200,21 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
       }
     }
 
-    if (!rawReferralCode) {
+    const targetCode = (
+      req.body?.woman_code ||
+      req.body?.womanCode ||
+      req.body?.auth_code ||
+      req.body?.authCode ||
+      req.body?.code ||
+      req.body?.referral_code ||
+      req.body?.referralCode ||
+      req.query?.woman_code ||
+      req.query?.auth_code ||
+      req.query?.code ||
+      rawReferralCode
+    ).toString().trim();
+
+    if (!targetCode) {
       return res.status(400).json(createErrorResponse('referral_code or woman_code is required. Please provide the woman partner referral code, mobile number, or email.'));
     }
 
@@ -4107,29 +4222,29 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
     await PartnerRepository.syncAllPartnerReferrals();
 
     // Look up partner by code, ID, phone, or email
-    let partner = await PartnerRepository.getByCode(rawReferralCode);
+    let partner = await PartnerRepository.getByCode(targetCode);
 
     if (!partner) {
-      partner = await PartnerRepository.getById(rawReferralCode);
+      partner = await PartnerRepository.getById(targetCode);
     }
     if (!partner) {
-      partner = await PartnerRepository.getByPhoneOrEmail(rawReferralCode, rawReferralCode);
+      partner = await PartnerRepository.getByPhoneOrEmail(targetCode, targetCode);
     }
     if (!partner) {
       const allPartners = await PartnerRepository.getAll();
-      const cleanSearch = rawReferralCode.toUpperCase();
-      const cleanPhone = rawReferralCode.replace(/\D/g, '');
+      const cleanSearch = targetCode.toUpperCase();
+      const cleanPhone = targetCode.replace(/\D/g, '');
       partner = allPartners.find(
         p =>
           p.partnerCode.toUpperCase() === cleanSearch ||
           p.id.toUpperCase() === cleanSearch ||
           (cleanPhone && cleanPhone.length >= 10 && p.phone.replace(/\D/g, '').endsWith(cleanPhone.slice(-10))) ||
-          (p.email && p.email.toLowerCase() === rawReferralCode.toLowerCase())
+          (p.email && p.email.toLowerCase() === targetCode.toLowerCase())
       ) || null;
     }
 
     if (!partner) {
-      return res.status(404).json(createErrorResponse(`No Woman Business Partner found matching referral code or credentials: "${rawReferralCode}"`));
+      return res.status(404).json(createErrorResponse(`No Woman Business Partner found matching referral code or credentials: "${targetCode}"`));
     }
 
     // Fetch all referrals, settlements, and associated store orders
@@ -4293,8 +4408,29 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
       whatsappShareUrl
     };
 
+    const flatFields = {
+      ...enrichedPartner,
+      ...summary,
+      partner_name: enrichedPartner.fullName,
+      full_name: enrichedPartner.fullName,
+      partner_code: enrichedPartner.partnerCode,
+      code: enrichedPartner.partnerCode,
+      total_commission_earned: summary.totalCommissionEarned,
+      pending_commission: summary.pendingCommissionBalance,
+      on_hold_commission: summary.onHoldCommission,
+      total_commission_paid: summary.totalCommissionPaid,
+      total_orders_count: summary.totalOrdersCount,
+      total_sales_amount: summary.totalSalesAmount,
+      delivered_orders_count: enrichedPartner.deliveredOrdersCount,
+      commission_rate: summary.commissionRatePercent,
+      customer_discount_rate: summary.customerDiscountPercent
+    };
+
     const responsePayload = {
       success: true,
+      status: 'success',
+      action: action || 'get_details',
+      ...flatFields,
       partner: enrichedPartner,
       summary,
       referrals,
@@ -4302,6 +4438,7 @@ const handleWomanPartnerDetailsRequest = async (req: Request, res: Response) => 
       orders: matchedOrders,
       invitedPartners,
       data: {
+        ...flatFields,
         partner: enrichedPartner,
         summary,
         referrals,
@@ -6755,8 +6892,20 @@ apiRouter.get('/partner-program/verify/:code', async (req: Request, res: Respons
         isPartnerCode: true,
         partnerCode: partner.partnerCode,
         partnerName: partner.fullName,
+        fullName: partner.fullName,
+        full_name: partner.fullName,
+        partner_name: partner.fullName,
+        code: partner.partnerCode,
+        partner_code: partner.partnerCode,
+        phone: partner.phone,
+        city: partner.city,
+        partnerCity: partner.city,
+        status: partner.status,
         customerDiscountRate: partner.customerDiscountRate || 4.0,
-        partnerCity: partner.city
+        customer_discount_rate: partner.customerDiscountRate || 4.0,
+        commissionRate: partner.commissionRate || 12.0,
+        commission_rate: partner.commissionRate || 12.0,
+        partner
       }));
     }
 
@@ -6946,12 +7095,33 @@ apiRouter.get('/partner-program/partners/:identifier', async (req: Request, res:
       invitedPartnersCount: invitedPartners.length
     };
 
-    return res.json(createSuccessResponse({
+    const flatFields = {
+      ...enrichedPartner,
       partner: enrichedPartner,
+      partner_name: enrichedPartner.fullName,
+      full_name: enrichedPartner.fullName,
+      partner_code: enrichedPartner.partnerCode,
+      code: enrichedPartner.partnerCode,
+      total_commission_earned: enrichedPartner.totalCommissionEarned,
+      pending_commission: enrichedPartner.pendingCommission,
+      on_hold_commission: enrichedPartner.onHoldCommission,
+      total_commission_paid: enrichedPartner.totalCommissionPaid,
+      total_orders_count: enrichedPartner.totalOrdersCount,
+      total_sales_amount: enrichedPartner.totalSalesAmount,
+      delivered_orders_count: enrichedPartner.deliveredOrdersCount,
+      commission_rate: enrichedPartner.commissionRate,
+      customer_discount_rate: enrichedPartner.customerDiscountRate,
       referrals,
       settlements,
       invitedPartners
-    }));
+    };
+
+    return res.json({
+      success: true,
+      partner: enrichedPartner,
+      data: flatFields,
+      ...flatFields
+    });
   } catch (error: any) {
     return res.status(500).json(createErrorResponse(error.message || 'Failed to load partner details'));
   }
