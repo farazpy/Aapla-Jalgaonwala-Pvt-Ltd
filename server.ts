@@ -10,6 +10,7 @@ import { initDatabase, getDbPool, getDbConfig, getLastDbError, resetDbPool } fro
 import { UserRepository } from './server/repositories/UserRepository';
 import { SettingsRepository } from './server/repositories/SettingsRepository';
 import { initOrderCleanupJob } from './server/utils/orderCleanup';
+import { exec } from 'child_process';
 
 // Load environment variables with comprehensive VPS loading paths & fallbacks
 const envPaths = [
@@ -278,6 +279,26 @@ app.use('/woman', (req, res, next) => {
 app.use('/women', (req, res, next) => {
   req.url = '/women' + req.url;
   apiRouter(req, res, next);
+});
+
+// Deployment update route
+app.get('/update', (req: Request, res: Response) => {
+  const scriptPath = path.join(process.cwd(), 'deploy.sh');
+  console.log(`[Update] Triggered auto-deploy via ${scriptPath}`);
+
+  // Use a simple response first because pm2 restart might kill the process
+  res.status(200).send('<h1>Deployment Triggered</h1><p>The application is pulling latest changes and rebuilding. This process may take 1-2 minutes. The server will restart automatically.</p><pre id="output">Starting...</pre>');
+
+  exec(`bash "${scriptPath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`[Update] Deployment failed: ${error.message}`);
+      return;
+    }
+    if (stderr) {
+      console.warn(`[Update] Deployment stderr: ${stderr}`);
+    }
+    console.log(`[Update] Deployment stdout: ${stdout}`);
+  });
 });
 
 // Prevent search engines from indexing private iframe and tracking pages
