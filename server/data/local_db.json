@@ -1,6 +1,756 @@
 {
   "orders": [
     {
+      "id": "ord_1792582423359_zwb1s",
+      "orderNumber": "AJW-423359-4395",
+      "customer": {
+        "name": "AJW-423359-4395",
+        "email": "aaplajalgaonwala@gmail.com",
+        "phone": "8080318699"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-423359-4395",
+        "phone": "8080318699",
+        "email": "aaplajalgaonwala@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370504",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-423359-4395)",
+          "quantity": 1,
+          "price": 73.6,
+          "profit": 20
+        }
+      ],
+      "subtotal": 73.6,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 73.6,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TqXk9ASiW7Y1PF",
+        "razorpayOrderId": "order_TqXk3oEsyyD9s2",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-21T11:33:49.000Z",
+        "upiVpa": "8080318699-5@ybl",
+        "rrn": "144703169744"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TqXk9ASiW7Y1PF] UPI VPA: 8080318699-5@ybl, RRN: 144703169744",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.505Z",
+      "updatedAt": "2026-11-06T11:59:30.505Z"
+    },
+    {
+      "id": "ord_1792656490812_n1ptv",
+      "orderNumber": "AJW-490812-3137",
+      "customer": {
+        "name": "AJW-490812-3137",
+        "email": "abhishekpathak28082002@gmail.com",
+        "phone": "8010871301"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-490812-3137",
+        "phone": "8010871301",
+        "email": "abhishekpathak28082002@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370493",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-490812-3137)",
+          "quantity": 1,
+          "price": 119,
+          "profit": 20
+        }
+      ],
+      "subtotal": 119,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 119,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TqsmEENUIqYHrd",
+        "razorpayOrderId": "order_Tqsm3nP4FQw3za",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-22T08:08:22.000Z",
+        "upiVpa": "8010871301@ptyes",
+        "rrn": "616567984761"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TqsmEENUIqYHrd] UPI VPA: 8010871301@ptyes, RRN: 616567984761",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.493Z",
+      "updatedAt": "2026-11-06T11:59:30.493Z"
+    },
+    {
+      "id": "ord_1792721813143_u9rpg",
+      "orderNumber": "AJW-813143-1483",
+      "customer": {
+        "name": "AJW-813143-1483",
+        "email": "pawarsarika4740@gmail.com",
+        "phone": "8010222488"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-813143-1483",
+        "phone": "8010222488",
+        "email": "pawarsarika4740@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370484",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-813143-1483)",
+          "quantity": 1,
+          "price": 489.6,
+          "profit": 20
+        }
+      ],
+      "subtotal": 489.6,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 489.6,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TrBKEsngisuDHS",
+        "razorpayOrderId": "order_TrBK5ZLhIQpRtf",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-23T02:17:02.000Z",
+        "upiVpa": "9021654740@rbl",
+        "rrn": "629621038444"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TrBKEsngisuDHS] UPI VPA: 9021654740@rbl, RRN: 629621038444",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.484Z",
+      "updatedAt": "2026-11-06T11:59:30.484Z"
+    },
+    {
+      "id": "ord_1792855037918_648bz",
+      "orderNumber": "AJW-037918-2972",
+      "customer": {
+        "name": "AJW-037918-2972",
+        "email": "ja5434147@gmail.com",
+        "phone": "9371248226"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-037918-2972",
+        "phone": "9371248226",
+        "email": "ja5434147@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370474",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-037918-2972)",
+          "quantity": 1,
+          "price": 504,
+          "profit": 20
+        }
+      ],
+      "subtotal": 504,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 504,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_Trn9h8RdkxS58w",
+        "razorpayOrderId": "order_Trn9arzOXkdWLJ",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-24T15:17:25.000Z",
+        "upiVpa": "8554036959@axl",
+        "rrn": "951104422928"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_Trn9h8RdkxS58w] UPI VPA: 8554036959@axl, RRN: 951104422928",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.474Z",
+      "updatedAt": "2026-11-06T11:59:30.474Z"
+    },
+    {
+      "id": "ord_1792988539052_xiggi",
+      "orderNumber": "AJW-539052-4425",
+      "customer": {
+        "name": "AJW-539052-4425",
+        "email": "santosh.was.thakur@gmail.com",
+        "phone": "9321233279"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-539052-4425",
+        "phone": "9321233279",
+        "email": "santosh.was.thakur@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370464",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-539052-4425)",
+          "quantity": 1,
+          "price": 479.04,
+          "profit": 20
+        }
+      ],
+      "subtotal": 479.04,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 479.04,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TsP4GDdYsZACWQ",
+        "razorpayOrderId": "order_TsP3xKOTbGQqOS",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-26T04:22:38.000Z",
+        "upiVpa": "9321233279@yescred",
+        "rrn": "666520906271"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TsP4GDdYsZACWQ] UPI VPA: 9321233279@yescred, RRN: 666520906271",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.464Z",
+      "updatedAt": "2026-11-06T11:59:30.464Z"
+    },
+    {
+      "id": "ord_1793069444718_8czyr",
+      "orderNumber": "AJW-444718-2689",
+      "customer": {
+        "name": "AJW-444718-2689",
+        "email": "vaishalivarmavaishalivarma331@gmail.com",
+        "phone": "7744888696"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-444718-2689",
+        "phone": "7744888696",
+        "email": "vaishalivarmavaishalivarma331@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370451",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-444718-2689)",
+          "quantity": 1,
+          "price": 120,
+          "profit": 20
+        }
+      ],
+      "subtotal": 120,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 120,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_Tsm2Vou0iruD5M",
+        "razorpayOrderId": "order_Tsm2MBgtisBZOu",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-27T02:50:55.000Z",
+        "upiVpa": "7744888696@ybl",
+        "rrn": "362763496603"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_Tsm2Vou0iruD5M] UPI VPA: 7744888696@ybl, RRN: 362763496603",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.451Z",
+      "updatedAt": "2026-11-06T11:59:30.451Z"
+    },
+    {
+      "id": "ord_1793103873981_dx53z",
+      "orderNumber": "AJW-873981-2126",
+      "customer": {
+        "name": "AJW-873981-2126",
+        "email": "aaplajalgaonwala@gmail.com",
+        "phone": "8080318699"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-873981-2126",
+        "phone": "8080318699",
+        "email": "aaplajalgaonwala@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370439",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-873981-2126)",
+          "quantity": 1,
+          "price": 73.6,
+          "profit": 20
+        }
+      ],
+      "subtotal": 73.6,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 73.6,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TsvpGPhUIn1t2l",
+        "razorpayOrderId": "order_Tsvp8QZHbqXFkq",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-27T12:25:19.000Z",
+        "upiVpa": "8080318699-5@axl",
+        "rrn": "430654042835"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TsvpGPhUIn1t2l] UPI VPA: 8080318699-5@axl, RRN: 430654042835",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.440Z",
+      "updatedAt": "2026-11-06T11:59:30.440Z"
+    },
+    {
+      "id": "ord_1793184189804_pg899",
+      "orderNumber": "AJW-189804-5315",
+      "customer": {
+        "name": "AJW-189804-5315",
+        "email": "sejalpatne9@gmail.com",
+        "phone": "9833897809"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-189804-5315",
+        "phone": "9833897809",
+        "email": "sejalpatne9@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370422",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-189804-5315)",
+          "quantity": 1,
+          "price": 116.8,
+          "profit": 20
+        }
+      ],
+      "subtotal": 116.8,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 116.8,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TtIcdgZqG0ulCp",
+        "razorpayOrderId": "order_TtIcV0HMU8UPwu",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-28T10:43:19.000Z",
+        "upiVpa": "sejalpatne9-2@okicici",
+        "rrn": "630107228379"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TtIcdgZqG0ulCp] UPI VPA: sejalpatne9-2@okicici, RRN: 630107228379",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.423Z",
+      "updatedAt": "2026-11-06T11:59:30.423Z"
+    },
+    {
+      "id": "ord_1793269139298_1s4n5",
+      "orderNumber": "AJW-139298-7502",
+      "customer": {
+        "name": "AJW-139298-7502",
+        "email": "swapnaliyelve@gmail.com",
+        "phone": "9702875644"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-139298-7502",
+        "phone": "9702875644",
+        "email": "swapnaliyelve@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370409",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-139298-7502)",
+          "quantity": 1,
+          "price": 480,
+          "profit": 20
+        }
+      ],
+      "subtotal": 480,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 480,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TtgkBxVkQVjUvW",
+        "razorpayOrderId": "order_Ttgk5im43JteLS",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-29T10:19:07.000Z",
+        "upiVpa": "swapnaliyelve-2@okicici",
+        "rrn": "666877838005"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TtgkBxVkQVjUvW] UPI VPA: swapnaliyelve-2@okicici, RRN: 666877838005",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.410Z",
+      "updatedAt": "2026-11-06T11:59:30.410Z"
+    },
+    {
+      "id": "ord_1793281757975_on100",
+      "orderNumber": "AJW-757975-1578",
+      "customer": {
+        "name": "AJW-757975-1578",
+        "email": "nishajadhav3092@gmail.com",
+        "phone": "9768034180"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-757975-1578",
+        "phone": "9768034180",
+        "email": "nishajadhav3092@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370397",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-757975-1578)",
+          "quantity": 1,
+          "price": 370.24,
+          "profit": 20
+        }
+      ],
+      "subtotal": 370.24,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 370.24,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TtkKIrRUXeipwS",
+        "razorpayOrderId": "order_TtkKF56aQXraiY",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-29T13:49:23.000Z",
+        "upiVpa": "nishapappi3092@okaxis",
+        "rrn": "630295255824"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TtkKIrRUXeipwS] UPI VPA: nishapappi3092@okaxis, RRN: 630295255824",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.397Z",
+      "updatedAt": "2026-11-06T11:59:30.397Z"
+    },
+    {
+      "id": "ord_1793285800060_c9b1v",
+      "orderNumber": "AJW-800060-3406",
+      "customer": {
+        "name": "AJW-800060-3406",
+        "email": "punitmahale.pm@gmail.com",
+        "phone": "9820517977"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-800060-3406",
+        "phone": "9820517977",
+        "email": "punitmahale.pm@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370383",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-800060-3406)",
+          "quantity": 1,
+          "price": 576,
+          "profit": 20
+        }
+      ],
+      "subtotal": 576,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 576,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TtlTZxV2uhaoC3",
+        "razorpayOrderId": "order_TtlTOrrskI2l5g",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-29T14:56:51.000Z",
+        "upiVpa": "9820517977-2@ybl",
+        "rrn": "920597523566"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TtlTZxV2uhaoC3] UPI VPA: 9820517977-2@ybl, RRN: 920597523566",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.383Z",
+      "updatedAt": "2026-11-06T11:59:30.383Z"
+    },
+    {
+      "id": "ord_1793289160669_kkffp",
+      "orderNumber": "AJW-160669-7225",
+      "customer": {
+        "name": "AJW-160669-7225",
+        "email": "gangurde.hitesh007@gmail.com",
+        "phone": "9423513777"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-160669-7225",
+        "phone": "9423513777",
+        "email": "gangurde.hitesh007@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370368",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-160669-7225)",
+          "quantity": 1,
+          "price": 232,
+          "profit": 20
+        }
+      ],
+      "subtotal": 232,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 232,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TtmR3LBBvqqL8v",
+        "razorpayOrderId": "order_TtmQZRl5EjkA4k",
+        "remainingBalance": 0,
+        "paidAt": "2026-10-29T15:53:09.000Z",
+        "upiVpa": "gangurde.hitesh007@okaxis",
+        "rrn": "630206791392"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TtmR3LBBvqqL8v] UPI VPA: gangurde.hitesh007@okaxis, RRN: 630206791392",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.369Z",
+      "updatedAt": "2026-11-06T11:59:30.369Z"
+    },
+    {
+      "id": "ord_1793721291513_2udjl",
+      "orderNumber": "AJW-291513-4776",
+      "customer": {
+        "name": "AJW-291513-4776",
+        "email": "ramakumar04@gmail.com",
+        "phone": "9960614671"
+      },
+      "shippingAddress": {
+        "fullName": "AJW-291513-4776",
+        "phone": "9960614671",
+        "email": "ramakumar04@gmail.com",
+        "addressLine1": "Customer Address (Payment Received via UPI/Razorpay)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370353",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-291513-4776)",
+          "quantity": 1,
+          "price": 514,
+          "profit": 20
+        }
+      ],
+      "subtotal": 514,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 514,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TvlB32wENvji5z",
+        "razorpayOrderId": "order_Tvl8TfgYamPVSU",
+        "remainingBalance": 0,
+        "paidAt": "2026-11-03T15:57:19.000Z",
+        "upiVpa": "ramki04@ptyes",
+        "rrn": "617415623401"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TvlB32wENvji5z] UPI VPA: ramki04@ptyes, RRN: 617415623401",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.354Z",
+      "updatedAt": "2026-11-06T11:59:30.354Z"
+    },
+    {
+      "id": "ord_1793904590896_02a1w",
+      "orderNumber": "AJW-590896-6869",
+      "customer": {
+        "name": "Mahendra Manral",
+        "email": "mahendra.manral1@gmail.com",
+        "phone": "9860789827"
+      },
+      "shippingAddress": {
+        "fullName": "Mahendra Manral",
+        "phone": "9860789827",
+        "email": "mahendra.manral1@gmail.com",
+        "addressLine1": "Delivery Address (UPI: mahendra.manral1@okicici)",
+        "city": "Maharashtra",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370304",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-590896-6869)",
+          "quantity": 1,
+          "price": 520,
+          "profit": 20
+        }
+      ],
+      "subtotal": 520,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 520,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TwbCD6ZyFoNdwn",
+        "razorpayOrderId": "order_TwbBZM9Xcani2B",
+        "remainingBalance": 0,
+        "paidAt": "2026-11-05T18:50:29.000Z",
+        "upiVpa": "mahendra.manral1@okicici",
+        "rrn": "631068123995"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TwbCD6ZyFoNdwn] UPI VPA: mahendra.manral1@okicici, RRN: 631068123995",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.306Z",
+      "updatedAt": "2026-11-06T12:00:18.555Z"
+    },
+    {
+      "id": "ord_1793931123908_3thte",
+      "orderNumber": "AJW-123908-2071",
+      "customer": {
+        "name": "Hitesh Gangurde",
+        "email": "gangurde.hitesh007@gmail.com",
+        "phone": "9423513777"
+      },
+      "shippingAddress": {
+        "fullName": "Hitesh Gangurde",
+        "phone": "9423513777",
+        "email": "gangurde.hitesh007@gmail.com",
+        "addressLine1": "Delivery Address (UPI: gangurde.hitesh007@okaxis)",
+        "city": "Jalgaon",
+        "state": "Maharashtra",
+        "pincode": "425001"
+      },
+      "items": [
+        {
+          "id": "item_rec_1793966370271",
+          "productId": "online_order",
+          "productName": "Aapla Jalgaonwala Order Items (AJW-123908-2071)",
+          "quantity": 1,
+          "price": 240,
+          "profit": 20
+        }
+      ],
+      "subtotal": 240,
+      "discount": 0,
+      "shippingFee": 0,
+      "totalAmount": 240,
+      "status": "Confirmed",
+      "paymentStatus": "Paid",
+      "paymentMethod": "Razorpay",
+      "codAdvanceFeePaid": 0,
+      "codRemainingBalance": 0,
+      "paymentDetails": {
+        "method": "Razorpay",
+        "transactionId": "pay_TwiirbpVD0geEE",
+        "razorpayOrderId": "order_TwiigSQ2WwAXWO",
+        "remainingBalance": 0,
+        "paidAt": "2026-11-06T02:12:15.000Z",
+        "upiVpa": "gangurde.hitesh007@okaxis",
+        "rrn": "667671663837"
+      },
+      "notes": "[Auto-Reconstructed from Razorpay Payment pay_TwiirbpVD0geEE] UPI VPA: gangurde.hitesh007@okaxis, RRN: 667671663837",
+      "is_fake": 0,
+      "createdAt": "2026-11-06T11:59:30.272Z",
+      "updatedAt": "2026-11-06T12:00:18.544Z"
+    },
+    {
       "id": "ord_1791885415918_jbkz4",
       "orderNumber": "AJW-222661-6619",
       "customer": {
@@ -5482,6 +6232,29 @@
       "hasConverted": false,
       "startedAt": "2026-10-21T10:02:16.972Z",
       "lastActiveAt": "2026-10-21T10:02:16.973Z"
+    },
+    {
+      "id": "sess_1793965987249_ch00e3",
+      "sessionId": "sid_1793965987085_49tcvalunw2pudzt",
+      "visitorId": "vid_1788165380798_5ogoz1wk9q6ecmvk",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+      "deviceType": "desktop",
+      "browser": "Chrome",
+      "city": "Maharashtra",
+      "country": "India",
+      "referrer": "https://aistudio.google.com/",
+      "referrerDomain": "Google Search",
+      "landingPage": "/",
+      "exitPage": "/",
+      "pageViewsCount": 2,
+      "eventsCount": 0,
+      "durationSeconds": 0,
+      "isBounce": false,
+      "hasCartAdd": false,
+      "hasCheckout": false,
+      "hasConverted": false,
+      "startedAt": "2026-11-06T11:53:07.248Z",
+      "lastActiveAt": "2026-11-06T11:53:07.250Z"
     }
   ],
   "analytics_pageviews": [

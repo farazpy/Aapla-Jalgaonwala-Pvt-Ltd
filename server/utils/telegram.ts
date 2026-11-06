@@ -228,30 +228,45 @@ export async function sendTelegramAlertDetailed(
     }
 
     const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: message,
-        parse_mode: 'HTML',
-        disable_web_page_preview: false
-      })
-    });
+    let res: any;
+    let json: any;
+    const maxAttempts = 3;
 
-    const json: any = await res.json().catch(e => ({
-      ok: false,
-      error_code: res.status,
-      description: `Failed to parse Telegram API JSON response: ${e.message}`
-    }));
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: message,
+          parse_mode: 'HTML',
+          disable_web_page_preview: false
+        })
+      });
 
-    if (json.ok) {
-      console.log('[Telegram Alert] Message sent successfully to chat:', chatId);
-      return {
-        success: true,
-        message: 'Telegram alert delivered successfully!',
-        telegramResponse: json
-      };
+      json = await res.json().catch(e => ({
+        ok: false,
+        error_code: res.status,
+        description: `Failed to parse Telegram API JSON response: ${e.message}`
+      }));
+
+      if (json.ok) {
+        console.log('[Telegram Alert] Message sent successfully to chat:', chatId);
+        return {
+          success: true,
+          message: 'Telegram alert delivered successfully!',
+          telegramResponse: json
+        };
+      }
+
+      // Check if rate limited (429)
+      if (json.error_code === 429 && attempt < maxAttempts) {
+        const retrySec = json.parameters?.retry_after || (attempt * 2);
+        console.warn(`[Telegram Alert] Rate limited (429). Retrying after ${retrySec}s (Attempt ${attempt}/${maxAttempts})...`);
+        await new Promise(r => setTimeout(r, (retrySec + 1) * 1000));
+        continue;
+      }
+      break;
     }
 
     // Handle Telegram API failure with specific diagnostic hints

@@ -651,23 +651,37 @@ export default function CheckoutPage() {
               clearCart();
               navigate(`/order/${dbOrder.id}?${isCodAdvanceCharge ? 'status=success&codAdvance=true' : 'payment=success'}`);
             } else {
-              setFormError('Payment verification failed. Please contact our support team.');
-              setIsSubmitting(false);
-              await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ reason: `Payment verification failed: ${verifyResult.error?.message || 'Invalid signature'}` })
-              }).catch(() => {});
+              setFormError('Payment verification failed on the browser. Checking payment status with server...');
+              setIsSubmitting(true);
+              // Poll backend status to see if webhook or server-side reconciliation verified payment
+              setTimeout(async () => {
+                try {
+                  const checkRes = await fetch(`/api/orders/${dbOrder.id}`);
+                  const checkData = await checkRes.json();
+                  if (checkData.success && (checkData.data?.status === 'Confirmed' || checkData.data?.paymentStatus === 'Paid')) {
+                    clearCart();
+                    navigate(`/order/${dbOrder.id}?payment=success`);
+                    return;
+                  }
+                } catch (_) {}
+                setIsSubmitting(false);
+                setFormError('Payment could not be verified immediately. If money was debited, your order will automatically confirm shortly.');
+              }, 3000);
             }
           } catch (verifyErr) {
             console.error('Payment verification request failed:', verifyErr);
-            setFormError('Signature verification failed. Please contact support.');
             setIsSubmitting(false);
-            await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ reason: 'Payment verification exception / network failure' })
-            }).catch(() => {});
+            setFormError('Network hiccup during verification. Checking order status...');
+            setTimeout(async () => {
+              try {
+                const checkRes = await fetch(`/api/orders/${dbOrder.id}`);
+                const checkData = await checkRes.json();
+                if (checkData.success && (checkData.data?.status === 'Confirmed' || checkData.data?.paymentStatus === 'Paid')) {
+                  clearCart();
+                  navigate(`/order/${dbOrder.id}?payment=success`);
+                }
+              } catch (_) {}
+            }, 3000);
           }
         },
         prefill: {
@@ -684,23 +698,25 @@ export default function CheckoutPage() {
             if (paymentCompletedSuccessfully || paymentHandlerInvoked) {
               return; // Do nothing if payment was captured or handler invoked
             }
-            // Delay 1.5 seconds to guarantee asynchronous payment handler wasn't in flight
+            // Mobile UPI flows (Google Pay, PhonePe, Paytm, Cred) temporarily dismiss or background the webview
+            // DO NOT cancel the order! Instead, check if payment was completed or captured.
             setTimeout(async () => {
               if (paymentCompletedSuccessfully || paymentHandlerInvoked) {
                 return;
               }
-              setIsSubmitting(false);
-              setFormError('Payment was cancelled or closed before completion. Your order was recorded as payment cancelled.');
               try {
-                await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ reason: 'Razorpay payment window closed before completion by customer' })
-                });
-              } catch (cancelErr) {
-                console.warn('[Checkout] Failed to report payment cancellation:', cancelErr);
-              }
-            }, 1500);
+                const checkRes = await fetch(`/api/orders/${dbOrder.id}`);
+                const checkData = await checkRes.json();
+                if (checkData.success && (checkData.data?.status === 'Confirmed' || checkData.data?.paymentStatus === 'Paid')) {
+                  clearCart();
+                  navigate(`/order/${dbOrder.id}?payment=success`);
+                  return;
+                }
+              } catch (_) {}
+
+              setIsSubmitting(false);
+              setFormError('Payment window closed. If you completed payment in your UPI app, your order will automatically be confirmed shortly.');
+            }, 2000);
           }
         }
       };
@@ -713,16 +729,7 @@ export default function CheckoutPage() {
         }
         setIsSubmitting(false);
         const failReason = failedResponse?.error?.description || failedResponse?.error?.reason || 'Payment transaction failed or declined';
-        setFormError(`Payment failed: ${failReason}. Your order was recorded as payment failed.`);
-        try {
-          await fetch(`/api/orders/${dbOrder.id}/cancel-payment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reason: `Payment Failed: ${failReason}` })
-          });
-        } catch (cancelErr) {
-          console.warn('[Checkout] Failed to report payment failure:', cancelErr);
-        }
+        setFormError(`Payment failed: ${failReason}. You can retry payment.`);
       });
 
       rzp.open();

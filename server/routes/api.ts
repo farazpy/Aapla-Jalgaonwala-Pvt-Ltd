@@ -60,6 +60,7 @@ import {
   updateWebManifestJson,
   syncAllIconsToS3
 } from '../utils/faviconManager';
+import { syncRecentRazorpayPayments } from '../utils/orderCleanup';
 
 export const apiRouter: Router = express.Router();
 
@@ -3649,24 +3650,48 @@ apiRouter.post('/payment/razorpay/verify', async (req: Request, res: Response) =
     const { orderId, razorpay_order_id, razorpay_payment_id, razorpay_signature, isCodAdvance, advanceFeePaid, remainingBalance, isTestOrder } = req.body;
 
     const siteSettings = await SettingsRepository.get();
+    const keyId = (siteSettings.razorpayKeyId || '').trim() || process.env.RAZORPAY_KEY_ID || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
     const keySecret = (siteSettings.razorpayKeySecret || '').trim() || process.env.RAZORPAY_KEY_SECRET;
 
     if (!keySecret) {
       return res.status(400).json(createErrorResponse('Razorpay key secret is not configured on the server.'));
     }
 
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-      return res.status(400).json(createErrorResponse('Missing required Razorpay payment verification parameters.'));
+    if (!razorpay_payment_id) {
+      return res.status(400).json(createErrorResponse('Missing required Razorpay payment id parameter.'));
     }
 
-    // Verify cryptographic HMAC signature
-    const expectedSignature = crypto
-      .createHmac('sha256', keySecret)
-      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-      .digest('hex');
+    let isVerified = false;
 
-    if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json(createErrorResponse('Invalid payment signature verification.'));
+    // 1. Verify cryptographic HMAC signature if parameters are present
+    if (razorpay_order_id && razorpay_signature) {
+      const expectedSignature = crypto
+        .createHmac('sha256', keySecret)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest('hex');
+
+      if (expectedSignature === razorpay_signature) {
+        isVerified = true;
+      }
+    }
+
+    // 2. Authoritative Fallback: Directly verify with Razorpay API if HMAC was not satisfied
+    if (!isVerified && keyId && keySecret) {
+      try {
+        const Razorpay = (await import('razorpay')).default;
+        const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
+        const paymentObj = await rzp.payments.fetch(razorpay_payment_id);
+        if (paymentObj && (paymentObj.status === 'captured' || paymentObj.status === 'authorized')) {
+          isVerified = true;
+          console.log(`[Razorpay Verify] Payment ${razorpay_payment_id} verified authoritatively via Razorpay API (Status: ${paymentObj.status}).`);
+        }
+      } catch (apiErr) {
+        console.warn('[Razorpay Verify] Direct API payment verification check failed:', apiErr);
+      }
+    }
+
+    if (!isVerified) {
+      return res.status(400).json(createErrorResponse('Invalid payment signature verification and payment not confirmed by gateway.'));
     }
 
     if (orderId) {
@@ -3710,6 +3735,158 @@ apiRouter.post('/payment/razorpay/verify', async (req: Request, res: Response) =
   }
 });
 
+// ----------------------------------------------------
+// RAZORPAY WEBHOOK HANDLER (Asynchronous Server-to-Server Payment Capture)
+// ----------------------------------------------------
+async function handleRazorpayWebhook(req: Request, res: Response) {
+  try {
+    const event = req.body?.event;
+    const payload = req.body?.payload;
+
+    console.log(`[Razorpay Webhook] Received webhook event: ${event}`);
+
+    // Immediately acknowledge Razorpay with 200 OK
+    res.status(200).json({ status: 'ok', received: true });
+
+    if (!payload) return;
+
+    const payment = payload.payment?.entity;
+    const orderEntity = payload.order?.entity;
+
+    if (event === 'payment.captured' || event === 'order.paid' || (payment && payment.status === 'captured')) {
+      const paymentId = payment?.id;
+      const razorpayOrderId = payment?.order_id || orderEntity?.id;
+      const notesOrderId = payment?.notes?.orderId || orderEntity?.notes?.orderId;
+      const receiptNumber = orderEntity?.receipt || payment?.notes?.receipt || payment?.description?.match(/AJW-\d+-\d+/)?.[0];
+      const isCodAdvance = payment?.notes?.isCodAdvance === 'true';
+      const advanceFee = Number(payment?.notes?.advanceFee || 0);
+      const remainingBalance = Number(payment?.notes?.remainingBalance || 0);
+
+      console.log(`[Razorpay Webhook] Processing captured payment ${paymentId} for order ${notesOrderId || receiptNumber || 'Unknown'}`);
+
+      const allOrders = await OrderRepository.getAll(true);
+      let matchedOrder = allOrders.find(o => 
+        (notesOrderId && o.id === notesOrderId) ||
+        (receiptNumber && o.orderNumber === receiptNumber) ||
+        (paymentId && o.paymentDetails?.transactionId === paymentId) ||
+        (razorpayOrderId && o.paymentDetails?.razorpayOrderId === razorpayOrderId)
+      );
+
+      if (matchedOrder) {
+        const isAlreadyPaid = matchedOrder.paymentStatus === 'Paid' || (isCodAdvance && matchedOrder.paymentStatus === 'Partial Paid');
+        const isAlreadyConfirmed = matchedOrder.status === 'Confirmed' || matchedOrder.status === 'Processing' || matchedOrder.status === 'Shipped' || matchedOrder.status === 'Delivered';
+
+        if (!isAlreadyPaid || !isAlreadyConfirmed) {
+          const updates: any = {
+            status: 'Confirmed',
+            paymentStatus: isCodAdvance ? 'Partial Paid' : 'Paid',
+            paymentMethod: isCodAdvance ? 'COD' : 'Razorpay',
+            paymentDetails: {
+              ...(matchedOrder.paymentDetails || {}),
+              method: isCodAdvance ? 'COD Deposit (Razorpay)' : 'Razorpay',
+              transactionId: paymentId,
+              razorpayOrderId: razorpayOrderId,
+              advanceFeePaid: isCodAdvance ? advanceFee : undefined,
+              remainingBalance: isCodAdvance ? remainingBalance : 0,
+              paidAt: payment?.created_at ? new Date(payment.created_at * 1000).toISOString() : new Date().toISOString(),
+              upiVpa: payment?.vpa || payment?.upi?.vpa,
+              rrn: payment?.acquirer_data?.rrn
+            }
+          };
+
+          if (isCodAdvance) {
+            updates.codAdvanceFeePaid = advanceFee;
+            updates.codRemainingBalance = remainingBalance;
+          }
+
+          const updated = await OrderRepository.update(matchedOrder.id, updates);
+          if (updated) {
+            await dispatchOrderConfirmationNotifications(updated);
+            console.log(`[Razorpay Webhook] Confirmed order #${updated.orderNumber} via webhook payment ${paymentId}`);
+          }
+        }
+      } else if (paymentId) {
+        // Order was not in database (e.g. deleted or failed earlier), reconstruct it!
+        console.log(`[Razorpay Webhook] Reconstructing missing order for payment ${paymentId}...`);
+        const orderNum = receiptNumber || `AJW-${Date.now().toString().slice(-6)}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const customerName = payment?.description?.replace(/^(Full Payment for Order|COD Advance Deposit for Order)\s*/i, '').trim() || 
+          (payment?.email ? payment.email.split('@')[0].replace(/\./g, ' ') : 'Valued Customer');
+        const customerEmail = payment?.email || '';
+        const customerPhone = (payment?.contact || '').replace(/\D/g, '').slice(-10);
+        const paidAmount = Number(payment?.amount || 0) / 100;
+
+        const reconstructedOrder = await OrderRepository.create({
+          id: notesOrderId || `ord_${Date.now()}_rec`,
+          orderNumber: orderNum,
+          customer: {
+            name: customerName,
+            email: customerEmail,
+            phone: customerPhone
+          },
+          shippingAddress: {
+            fullName: customerName,
+            phone: customerPhone,
+            email: customerEmail,
+            addressLine1: 'Customer Address (Payment Received via Razorpay)',
+            city: 'Maharashtra',
+            state: 'Maharashtra',
+            pincode: '425001'
+          },
+          items: [
+            {
+              id: `item_rec_${Date.now()}`,
+              productId: 'online_order',
+              productName: `Aapla Jalgaonwala Order Items (${orderNum})`,
+              quantity: 1,
+              price: paidAmount,
+              profit: 20
+            }
+          ],
+          subtotal: paidAmount,
+          discount: 0,
+          shippingFee: 0,
+          totalAmount: paidAmount,
+          status: 'Confirmed',
+          paymentStatus: isCodAdvance ? 'Partial Paid' : 'Paid',
+          paymentMethod: isCodAdvance ? 'COD' : 'Razorpay',
+          paymentDetails: {
+            method: isCodAdvance ? 'COD Deposit (Razorpay)' : 'Razorpay',
+            transactionId: paymentId,
+            razorpayOrderId: razorpayOrderId,
+            paidAt: payment?.created_at ? new Date(payment.created_at * 1000).toISOString() : new Date().toISOString(),
+            upiVpa: payment?.vpa || payment?.upi?.vpa,
+            rrn: payment?.acquirer_data?.rrn
+          },
+          notes: `[Auto-Reconstructed from Webhook Payment ${paymentId}]`
+        });
+
+        if (reconstructedOrder) {
+          await dispatchOrderConfirmationNotifications(reconstructedOrder);
+          console.log(`[Razorpay Webhook] Successfully reconstructed and confirmed order #${reconstructedOrder.orderNumber}`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[Razorpay Webhook] Error processing event:', err);
+  }
+}
+
+apiRouter.post('/payment/razorpay/webhook', handleRazorpayWebhook);
+apiRouter.post('/payment/webhook', handleRazorpayWebhook);
+
+// ----------------------------------------------------
+// RAZORPAY MANUAL / BACKGROUND SYNC ENDPOINT
+// ----------------------------------------------------
+apiRouter.all('/payment/razorpay/sync', async (req: Request, res: Response) => {
+  try {
+    const result = await syncRecentRazorpayPayments();
+    return res.json(createSuccessResponse(result));
+  } catch (error: any) {
+    console.error('[Razorpay Sync] Error:', error);
+    return res.status(500).json(createErrorResponse(error.message || 'Payment sync failed'));
+  }
+});
+
 apiRouter.post('/orders/:id/cancel-payment', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -3734,6 +3911,42 @@ apiRouter.post('/orders/:id/cancel-payment', async (req: Request, res: Response)
       Boolean(existing.paymentDetails?.transactionId)
     ) {
       return res.json(createSuccessResponse({ cancelled: false, status: existing.status, message: 'Order is already confirmed or paid.' }));
+    }
+
+    // Check with Razorpay API before allowing cancellation to ensure customer money was not debited
+    try {
+      const siteSettings = await SettingsRepository.get();
+      const keyId = (siteSettings.razorpayKeyId || '').trim() || process.env.RAZORPAY_KEY_ID;
+      const keySecret = (siteSettings.razorpayKeySecret || '').trim() || process.env.RAZORPAY_KEY_SECRET;
+
+      if (keyId && keySecret) {
+        const Razorpay = (await import('razorpay')).default;
+        const rzp = new Razorpay({ key_id: keyId, key_secret: keySecret });
+
+        const razorpayOrderId = existing.paymentDetails?.razorpayOrderId;
+        if (razorpayOrderId) {
+          const payments = await rzp.orders.fetchPayments(razorpayOrderId).catch(() => null);
+          const capturedPay = payments?.items?.find((p: any) => p.status === 'captured');
+          if (capturedPay) {
+            console.log(`[Cancel Protection] Prevented cancellation of order ${existing.orderNumber}! Captured payment found: ${capturedPay.id}`);
+            const updated = await OrderRepository.update(id, {
+              status: 'Confirmed',
+              paymentStatus: 'Paid',
+              paymentDetails: {
+                ...(existing.paymentDetails || {}),
+                transactionId: capturedPay.id,
+                paidAt: new Date(capturedPay.created_at * 1000).toISOString()
+              }
+            });
+            if (updated) {
+              await dispatchOrderConfirmationNotifications(updated);
+            }
+            return res.json(createSuccessResponse({ cancelled: false, status: 'Confirmed', message: 'Payment was captured, order confirmed!' }));
+          }
+        }
+      }
+    } catch (checkErr) {
+      console.warn('[Cancel Protection] Could not verify with Razorpay:', checkErr);
     }
 
     const isExplicitFail = Boolean(reason && /fail|declined|error|invalid|reject|window|closed|timeout|abort/i.test(reason));
